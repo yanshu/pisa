@@ -1,0 +1,152 @@
+{
+    "_comment": "This is the default file for the parametric analysis that matches the comparisons that TCA had made with Lukas' PaPA produced templates, on 12 July 2014.",
+    "template": {
+	"ebins": [
+    	    1.0, 1.115776601291768, 1.244957423990209,
+	    1.38909436329275, 1.549918987548337,
+	    1.7293633402042616, 1.9295831501316907,
+	    2.152983729163801, 2.402248867962862, 
+	    2.6803730773525998, 2.990697562442441,
+	    3.3369503617136016, 3.7232911332721383,
+	    4.154361126302161, 4.635338938044067,
+	    5.172002726126203, 5.770799623628854,
+	    6.438923190788416, 7.184399833796646,
+	    8.016185228874765, 8.944271909999157,
+	    9.97980931276829, 11.135237716540537,
+	    12.424437693937508, 13.862896863102923,
+	    15.467895945971293, 17.258716367730567,
+	    19.25687189144502, 21.486367070547505,
+	    23.973985624082857, 26.749612199056877,
+	    29.8465913853365, 33.30212829607492,
+	    37.15773552597689, 41.459731856872885,
+	    46.259798701729665, 51.61560097185727,
+	    57.59147982601098, 64.25922562362996,
+	    71.69894036797473, 80.0
+	],
+	"czbins": [
+		-1.0, -0.975, -0.95, -0.925, -0.9, -0.875, -0.85, -0.825,
+		-0.8, -0.775, -0.75, -0.725, -0.7, -0.675, -0.65, -0.625,
+		-0.6, -0.575, -0.55, -0.525, -0.5, -0.475, -0.45, -0.425,
+		-0.4, -0.375, -0.35, -0.325, -0.3, -0.275, -0.25, -0.225,
+		-0.2, -0.175, -0.15, -0.125, -0.1, -0.075, -0.05, -0.025, 0.0
+	],
+	"flux_file": "$PISA/pisa/resources/flux/spl-solmin-aa.d",
+	"osc_code": "prob3",
+	"earth_model": "$PISA/pisa/resources/oscillations/PREM_4layer.dat",
+	"aeff_files": {
+            "NC": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nuall_nc.dat",
+            "NC_bar": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nuallbar_nc.dat",
+            "nue": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nue.dat",
+            "nue_bar": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nuebar.dat",
+            "numu": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_numu.dat",
+            "numu_bar": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_numubar.dat",
+            "nutau": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nutau.dat",
+            "nutau_bar": "$PISA/pisa/resources/aeff/V15/cuts_V3_OW_log/a_eff_nutaubar.dat"
+        },
+	"aeff_coszen": {
+            "nue": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "numu": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "nutau": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "NC": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363"
+        },
+	"aeff_weight_file": "$PISA/pisa/resources/events/V15_weighted_aeff_join_papa_pisa_cmp.hdf5",
+	"parametric": true,
+	"particle_ID": {
+	    "nue_cc": {
+		"cscd": "lambda E: 1.-(0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113)",
+		"trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"
+	    },
+	    "numu_cc": {
+		"cscd": "lambda E: 1. - (0.878/(np.exp((0.866 - np.log10(E))/0.133) + 1.) + 0.010)",
+		"trck": "lambda E: 0.878/(np.exp((0.866 - np.log10(E))/0.133) + 1.) + 0.010"
+	    },
+	    "nutau_cc": {
+		"cscd": "lambda E: 1. - (0.118/(np.exp((0.835-np.log10(E))/0.177) + 1.) + 0.0113)",
+		"trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"
+	    },
+	    "nuall_nc": {
+		"cscd": "lambda E: 1.-(0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113)",
+		"trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"
+	    }
+	},
+	"livetime": 1.0
+    },
+    "bounds": {
+	"osc": {
+	    "deltam31_nh": {
+		"max": 0.0026,
+		"best": 0.00246,
+		"min": 0.0023,
+		"vary": true,
+		"scale": 1.0e2
+	    },
+	    "deltam31_ih": {
+		"max": -0.0022,
+		"best": -0.00238,
+		"min": -0.0025,
+		"vary": true,
+		"scale": 1.0e2
+	    },
+	    "theta23": {
+		"max": 0.785398,
+		"best": 0.6745,
+		"min": 0.6331,
+		"vary": true,
+		"scale": 1.0
+	    },
+	    "theta13": {
+	    	"max": 0.1771,
+		"best": 0.1562,
+		"min": 0.1394,
+		"vary": true,
+		"scale": 1.0
+	    },
+	    "deltacp": {
+		"max": 6.283185307179586,
+		"best": 3.141592653589793,
+		"min": 0.0,
+		"vary": false,
+		"scale": 1.0
+	    },
+	    "deltam21": {
+		"max": 7.8e-05,
+		"best": 7.54e-05,
+		"min": 7.32e-05,
+		"vary": false,
+		"scale": 1.0e4
+	    },
+	    "theta12": {
+		"max": 0.6246,
+		"best": 0.5873,
+		"min": 0.5520,
+		"vary": false,
+		"scale": 1.0
+	    }
+	},
+	"detector": {
+	    "nu_xsec_scale": {
+		"max":  1.10,
+		"best": 1.0,
+		"min":  0.9,
+		"vary": true,
+		"scale": 1.0
+	    },
+	    "nubar_xsec_scale": {
+		"max":  1.10,
+		"best": 1.0,
+		"min":  0.9,
+		"vary": true,
+		"scale": 1.0
+	    }
+	}
+    },
+    "opt_settings": {
+    	"factr": 1.0e9,
+        "epsilon": 1.0e-4,
+	"pgtol": 1.0e-5,
+	"m": 10,
+	"maxfun": 15000,
+	"maxiter": 20
+    }	
+}
+
