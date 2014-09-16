@@ -38,7 +38,7 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,theta12=
     Obtain a map in energy and cos(zenith) of the oscillation probabilities from
     the OscillationService and compute the oscillated flux.
     Inputs:
-      flux_maps - dictionary of atmospheric flux ['nue','numu','nue_bar','numu_bar']
+      flux_maps - dictionary of atmospheric flux ['nue','numu','nue_bar','numu_bar','muons']
       osc_service - a handle to an OscillationService
       others - oscillation parameters to compute oscillation probability maps from.
     '''
@@ -66,7 +66,12 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,theta12=
                               numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
                        }
             osc_flux_maps[to_flav+mID] = oscflux
-            
+    oscflux = {'ebins':ebins,
+               'czbins':czbins,
+               'map':flux_maps['muons']['map']
+              }
+    osc_flux_maps['muons'] = oscflux        
+
     return osc_flux_maps
 
         

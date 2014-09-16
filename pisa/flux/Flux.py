@@ -34,14 +34,13 @@ def get_flux_maps(flux_service, ebins, czbins, **params):
     maps = {'params': params}
 
     for prim in primaries:
-
         #Get the flux for this primary
         maps[prim] = {'ebins': ebins,
                       'czbins': czbins,
                       'map': flux_service.get_flux(ebins,czbins,prim)}
     
         #be a bit verbose
-        logging.debug("Total flux of %s is %u [s^-1 m^-2]"%
+        logging.debug("Total flux of %s is %f [s^-1 m^-2]"%
                                 (prim,maps[prim]['map'].sum()))
 
     #return this map
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--czbins', metavar='[-1.0,-0.8.,...]', type=json_string,
         help= '''Edges of the cos(zenith) bins, default is '''
               '''21 edges (20 bins) from -1. (upward) to 0. horizontal in linear spacing.''',
-        default = np.linspace(-1.,0.,21))
+        default = np.linspace(-1.,1.,21))
     
     parser.add_argument('--flux_file', metavar='FILE', type=str,
         help= '''Input flux file in Honda format. ''',

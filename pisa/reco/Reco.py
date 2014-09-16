@@ -27,8 +27,8 @@ from pisa.reco.RecoService import RecoServiceMC
 import numpy as np
 
 
-def get_reco_maps(true_event_maps,reco_service=None,e_reco_scale=None,
-                  cz_reco_scale=None, **kwargs):
+def get_reco_maps(true_event_maps,reco_service=None, mu_scale=None,
+                  e_reco_scale=None, cz_reco_scale=None,**kwargs):
     '''
     Primary function for this module, which returns the reconstructed
     event rate maps from the true event rate maps, and from the
@@ -41,7 +41,6 @@ def get_reco_maps(true_event_maps,reco_service=None,e_reco_scale=None,
     }
     Note that in this function, the nu<x> is now combined with nu_bar<x>.
     '''
-
     #Be verbose on input
     params = get_params()
     report_params(params, units = ['',''])
@@ -53,20 +52,29 @@ def get_reco_maps(true_event_maps,reco_service=None,e_reco_scale=None,
     kernel_dict = reco_service.get_kernels()
 
     ebins, czbins = get_binning(true_event_maps)
-
-    flavours = ['nue','numu','nutau']
+    if(mu_scale>0):
+      flavours = ['nue','numu','nutau','muons']
+    else:
+      flavours = ['nue','numu','nutau']
     int_types = ['cc','nc']
     
-    
+       
     for int_type in int_types:
         for flavor in flavours:
             logging.info("Getting reco event rates for %s %s"%(flavor,int_type))
             reco_evt_rate = np.zeros((len(ebins)-1,len(czbins)-1),
                                      dtype=np.float32)
-            for mID in ['','_bar']:
+            if(mu_scale>0 and flavor=='muons'):
+              c_types = ['']
+            else:
+              c_types = ['','_bar']
+            for mID in c_types:
                 flav = flavor+mID
-                true_evt_rate = true_event_maps[flav][int_type]['map']
-                
+                if(mu_scale>0 and flavor=='muons'):
+                  true_evt_rate = mu_scale*true_event_maps[flav][int_type]['map']
+                else:
+                  true_evt_rate = true_event_maps[flav][int_type]['map']
+                   
                 kernels = kernel_dict[flav][int_type]
                     
                 for ie,egy in enumerate(ebins[:-1]):
@@ -135,6 +143,8 @@ Expects the file format to be:
                         help='''Reconstructed energy scaling.''')
     parser.add_argument('--cz_reco_scale',type=float,default=1.0,
                         help='''Reconstructed coszen scaling.''')
+    parser.add_argument('--muon_scale',type=float,default=1.0,
+                        help='''Cosmic ray muon scale.''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
                         action='store',default="reco.json",
                         help='''file to store the output''')
@@ -149,9 +159,9 @@ Expects the file format to be:
     ebins, czbins = check_binning(args.event_rate_maps)
 
     logging.info("Defining RecoService...")
-    reco_service = RecoServiceMC(ebins,czbins,simfile=args.weighted_aeff_file)
+    reco_service = RecoServiceMC(ebins,czbins,simfile=args.weighted_aeff_file,muon_scale_serv=args.muon_scale)
 
-    event_rate_reco_maps = get_reco_maps(args.event_rate_maps,reco_service,args.e_reco_scale,
+    event_rate_reco_maps = get_reco_maps(args.event_rate_maps,reco_service,args.muon_scale,args.e_reco_scale,
                                          args.cz_reco_scale)
     
     logging.info("Saving output to: %s"%args.outfile)

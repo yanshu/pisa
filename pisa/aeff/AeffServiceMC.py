@@ -33,7 +33,7 @@ class AeffServiceMC:
 
         self.aeff_dict = {}
         logging.info("Creating effective area dict...")
-        for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+        for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']:
             flavor_dict = {}
             logging.debug("Working on %s effective areas"%flavor)
             for int_type in ['cc','nc']:

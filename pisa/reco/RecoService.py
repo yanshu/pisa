@@ -24,10 +24,11 @@ class RecoServiceMC:
     From these histograms, and the true event rate maps, calculates
     the reconstructed even rate templates.
     '''
-    def __init__(self,ebins,czbins,simfile=None):
+    def __init__(self,ebins,czbins,simfile=None,muon_scale_serv=0.0):
         self.ebins = ebins
         self.czbins = czbins
         
+        print simfile
         logging.info('Opening file: %s'%(simfile))
         try:
             fh = h5py.File(find_resource(simfile),'r')
@@ -39,7 +40,11 @@ class RecoServiceMC:
         # Create the 4D distribution kernels...
         self.kernel_dict = {}
         logging.info("Creating kernel dict...")
-        for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+        if(muon_scale_serv>0):
+          flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
+        else:
+          flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']
+        for flavor in flavors:
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
             for int_type in ['cc','nc']:

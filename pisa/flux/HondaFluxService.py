@@ -22,7 +22,7 @@ from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import open_resource
 
 #Global definition of primaries for which there is a neutrino flux
-primaries = ['numu', 'numu_bar', 'nue', 'nue_bar']
+primaries = ['numu', 'numu_bar', 'nue', 'nue_bar', 'muons']
 
 class HondaFluxService():
     '''Load a neutrino flux from Honda-styles flux tables in
@@ -47,7 +47,6 @@ class HondaFluxService():
             flux_dict[key] = np.array(np.split(flux_dict[key], 20))
             if not key=='energy':
                 flux_dict[key] = flux_dict[key].T
-    
         #Set the zenith and energy range 
         flux_dict['energy'] = flux_dict['energy'][0]
         flux_dict['coszen'] = np.linspace(0.95, -0.95, 20)

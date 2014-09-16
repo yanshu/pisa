@@ -30,7 +30,7 @@ from scipy.constants import Julian_year
 
 
 def get_event_rates(osc_flux_maps,aeff_service=None,livetime=None,nu_xsec_scale=None,
-                    nubar_xsec_scale=None,**kwargs):
+                    nubar_xsec_scale=None,muon_scale=None,**kwargs):
     '''
     Main function for this module, which returns the event rate maps
     for each flavor and interaction type, using true energy and zenith
@@ -51,14 +51,18 @@ def get_event_rates(osc_flux_maps,aeff_service=None,livetime=None,nu_xsec_scale=
     
     #Get effective area
     aeff_dict = aeff_service.get_aeff()
-    
     ebins, czbins = get_binning(osc_flux_maps)
     
     # apply the scaling for nu_xsec_scale and nubar_xsec_scale...
-    flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']
+    if(muon_scale>0):
+      flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar','muons']
+    else:
+      flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']
     for flavour in flavours:
         osc_flux_map = osc_flux_maps[flavour]['map']
         int_type_dict = {}
+        if(muon_scale>0 and flavour=='muons'):
+          livetime=livetime*muon_scale
         for int_type in ['cc','nc']:
             event_rate = osc_flux_map*aeff_dict[flavour][int_type]*livetime*Julian_year
             int_type_dict[int_type] = {'map':event_rate,
@@ -108,6 +112,8 @@ if __name__ == '__main__':
                         help='''Overall scale on nu xsec.''')
     parser.add_argument('--nubar_xsec_scale',type=float,default=1.0,
                         help='''Overall scale on nu_bar xsec.''')
+    parser.add_argument('--muon_scale',type=float,default=1.0,
+                        help='''Overall scale on cosmic ray muon rate.''')
     parser.add_argument('--parametric',action='store_true', default=False,
                         help='''Use parametrized effective areas instead of
                         extracting them from event data.''')
@@ -134,7 +140,8 @@ if __name__ == '__main__':
         aeff_service = AeffServiceMC(ebins,czbins,simfile=args.weighted_aeff_file)
         
     event_rate_maps = get_event_rates(args.osc_flux_maps,aeff_service,args.livetime,
-                                      args.nu_xsec_scale,args.nubar_xsec_scale)
+                                      args.nu_xsec_scale,args.nubar_xsec_scale,
+                                      args.muon_scale)
     
     logging.info("Saving output to: %s"%args.outfile)
     to_json(event_rate_maps,args.outfile)
