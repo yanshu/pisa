@@ -1,0 +1,145 @@
+{
+    "binning": {
+	"ebins": [
+	    1.0, 1.11891521, 1.25197126, 1.40084969,
+            1.56743203, 1.75382354, 1.96237985, 2.19573667,
+            2.45684316, 2.74899919, 3.07589702, 3.44166797,
+            3.85093466, 4.30886938, 4.82125951, 5.39458061,
+            6.03607832, 6.75385987, 7.55699656, 8.45563843,
+            9.46114249, 10.58621627, 11.84507845, 13.25363849,
+            14.82969775, 16.59317444, 18.56635533, 20.77417746,
+            23.24454322, 26.00867306, 29.10149999, 32.5621111 ,
+            36.43424152, 40.76682716, 45.61462315, 51.03889584,
+            57.10819707, 63.89923057, 71.49782126, 80.0],
+	"czbins": [
+	    -1.0,  -0.95, -0.9, -0.85, -0.8, -0.75, -0.7, -0.65, -0.6,
+    	    -0.55, -0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15,
+     	    -0.1,  -0.05, 0.0]
+    },
+    "template": {
+	"flux_file": "flux/frj-solmin-mountain-aa.d",
+	"osc_code": "prob3",
+	"earth_model": "oscillations/PREM_4layer.dat",
+	"aeff_egy_par": {
+            "NC": "aeff/V15/cuts_V3_OW_log/a_eff_nuall_nc.dat",
+            "NC_bar": "aeff/V15/cuts_V3_OW_log/a_eff_nuallbar_nc.dat",
+            "nue": "aeff/V15/cuts_V3_OW_log/a_eff_nue.dat",
+            "nue_bar": "aeff/V15/cuts_V3_OW_log/a_eff_nuebar.dat",
+            "numu": "aeff/V15/cuts_V3_OW_log/a_eff_numu.dat",
+            "numu_bar": "aeff/V15/cuts_V3_OW_log/a_eff_numubar.dat",
+            "nutau": "aeff/V15/cuts_V3_OW_log/a_eff_nutau.dat",
+            "nutau_bar": "aeff/V15/cuts_V3_OW_log/a_eff_nutaubar.dat"
+        },
+	"aeff_coszen_par": {
+            "nue": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "numu": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "nutau": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363",
+            "NC": "lambda cz: 0.903 * np.abs(cz)**0.420 + 0.363"
+        },
+	"aeff_weight_file": "events/V15_weighted_aeff_join_papa_pisa_cmp.hdf5",
+	"parametric": true,
+	"particle_ID": {
+	    "nuall_nc": {"cscd": "lambda E: 1. - (0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113)",
+			 "trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"},
+	    "nue_cc": {"cscd": "lambda E: 1. - (0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113)",
+                       "trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"},
+	    "numu_cc": {"cscd": "lambda E: 1. - (0.878/(np.exp((0.866 - np.log10(E))/0.133) + 1.) + 0.010)",
+			"trck": "lambda E: 0.878/(np.exp((0.866 - np.log10(E))/0.133) + 1.) + 0.010"},
+	    "nutau_cc": {"cscd": "lambda E: 1. - (0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113)",
+			 "trck": "lambda E: 0.118/(np.exp((0.835 - np.log10(E))/0.177) + 1.) + 0.0113"}	    
+        },
+	"livetime": 1.0
+    },
+    "fiducial": {
+	"deltam31_nh": {
+	    "max": 0.0026,
+	    "best": 0.00246,
+	    "min": 0.0023,
+	    "fixed": false,
+	    "scale": 1.0e2,
+	    "prior": null
+	},
+	"deltam31_ih": {
+	    "max": -0.0022,
+	    "best": -0.00238,
+	    "min": -0.0025,
+	    "fixed": false,
+	    "scale": 1.0e2,
+	    "prior": null
+	},
+	"theta23": {
+	    "max": 0.785398,
+	    "best": 0.6745,
+	    "min": 0.6331,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": null
+	},
+	"theta13": {
+	    "max": 0.1771,
+	    "best": 0.15587216,
+	    "min": 0.1394,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": 0.008162
+	},
+	"deltacp": {
+	    "max": 6.283185307179586,
+	    "best": 0.0,
+	    "min": 0.0,
+	    "fixed": true,
+	    "scale": 1.0,
+	    "prior": null
+	},
+	"deltam21": {
+	    "max": 7.8e-05,
+	    "best": 7.54e-05,
+	    "min": 7.32e-05,
+	    "fixed": true,
+	    "scale": 1.0e4,
+	    "prior": 2.4e-06
+	},
+	"theta12": {
+	    "max": 0.6246,
+	    "best": 0.5872523,
+	    "min": 0.5520,
+	    "fixed": true,
+	    "scale": 1.0,
+	    "prior": 0.01842
+	},
+	"energy_scale": {
+	    "max": 1.1,
+	    "best": 1.0,
+	    "min": 0.9,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": 0.05
+	},
+	"aeff_scale": {
+	    "max":  1.10,
+	    "best": 1.0,
+	    "min":  0.9,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": null
+	},
+	"nu_xsec_scale": {
+	    "max":  1.10,
+	    "best": 1.0,
+	    "min":  0.9,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": 0.15
+	},
+	"nubar_xsec_scale": {
+	    "max":  1.10,
+	    "best": 1.0,
+	    "min":  0.9,
+	    "fixed": false,
+	    "scale": 1.0,
+	    "prior": 0.15
+	}
+	
+    }
+}
+
