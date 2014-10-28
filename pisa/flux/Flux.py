@@ -21,8 +21,9 @@ from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
+from pisa.flux.MuonFluxService import MuonFluxService
 
-def get_flux_maps(flux_service, ebins, czbins, **params):
+def get_flux_maps(flux_service, muon_flux_service, ebins, czbins, **params):
     '''Get a set of flux maps for the different primaries'''
 
     #Be verbose on input
@@ -31,16 +32,21 @@ def get_flux_maps(flux_service, ebins, czbins, **params):
 
     #Initialize return dict
     maps = {'params': params}
-
-    for prim in primaries:
+    prims = primaries + ['muons']
+    for prim in prims:
         #Get the flux for this primary
-        maps[prim] = {'ebins': ebins,
-                      'czbins': czbins,
-                      'map': flux_service.get_flux(ebins,czbins,prim)}
-    
+        if(not(prim=='muons')):
+            maps[prim] = {'ebins': ebins,
+                        'czbins': czbins,
+                        'map': flux_service.get_flux(ebins,czbins,prim)}
+        else:
+            maps[prim] = {'ebins': ebins,
+                        'czbins': czbins,
+                        'map': muon_flux_service.get_flux(ebins,czbins)}
+ 
         #be a bit verbose
         physics.trace("Total flux of %s is %u [s^-1 m^-2]"%
-                                (prim,maps[prim]['map'].sum()))
+                     (prim,maps[prim]['map'].sum()))
 
     #return this map
     return maps
@@ -66,6 +72,10 @@ if __name__ == '__main__':
         help= '''Input flux file in Honda format. ''',
         default = 'flux/spl-solmin-aa.d')
 
+    parser.add_argument('--muon_flux_file', metavar='FILE', type=str,
+        help= '''Input flux file for CR muons. ''',
+        default = 'flux/GaisserH4a_atmod12_SIBYLL.d')
+
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', 
                         type=str, action='store', default='flux.json',
                         help='file to store the output')    
@@ -85,9 +95,10 @@ if __name__ == '__main__':
 
     #Instantiate a flux model
     flux_model = HondaFluxService(args.flux_file)
+    muon_flux_model = MuonFluxService(args.muon_flux_file)
     
     #get the flux 
-    flux_maps = get_flux_maps(flux_model,args.ebins,args.czbins)
+    flux_maps = get_flux_maps(flux_model,muon_flux_model,args.ebins,args.czbins)
 
     #write out to a file
     logging.info("Saving output to: %s"%args.outfile)
