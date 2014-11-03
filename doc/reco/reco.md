@@ -1,39 +1,36 @@
 # Stage 4: Reconstruction
 
-The purpose of this stage is to apply an assumed detector resolution to 
-the incoming flux to convert the events' "true" energies and directions 
-into the "reconstructed" ones.
+The purpose of this stage is to apply the detector resolution to 
+the detected events by convertubg the events' _true_ energies and directions 
+into the _reconstructed_ ones.
 
 ## Main module
 
-The main module for this stage is `Reco.py`, which takes a true, 
-triggered event rate file (output of `Aeff.py`) as input and produces a 
+The main module for this stage is `Reco.py`, which provides a function that takes a set of triggered event rate truth maps (output of `Aeff.py`) as input and produces a 
 set of reconstructed templates of nue CC, numu CC, nutau CC, and NC 
-events. Note that in this stage, the counts of neutrinos and corresponding 
-anti-neutrinos are summed.
-
+events. Note that in this stage, the counts of neutrinos and corresponding  anti-neutrinos are summed.
+```
+def get_reco_maps(true_event_maps,reco_service=None,
+                  e_reco_scale=None, cz_reco_scale=None, **kwargs)
+```
 ### Parameters
 
-* `event_rate_maps`: Event rate input file (`JSON`) with the following fields:
-```
-{"nue": {'cc':{'czbins':[], 'ebins':[], 'map':[]},'nc':...},
- "numu": {...},
- "nutau": {...},
- "nue_bar": {...},
- "numu_bar": {...},
- "nutau_bar": {...} }
-```
-* `mode`: Defines which service to use for the reconstruction. One of 
- [`MC`, `param`, `stored`]. Details below.
-* Depending on the chosen reco mode, one of [`mc_file` (`HDF5`), `param_file` (`JSON`), `kernel_file` (`JSON`)] 
- has to be specified, providing the actual reco information.
-* `e_reco_scale`, `cz_reco_scale`: Scales the width of the energy (zenith) 
- reco by a given factor (default: 1.0). Currently only supported by the 
- parametrized reconstruction service.
+* `event_rate_maps`: Event rate input dictionary with one map for each flavour and interaction type:
+
+    ```
+    {"nue": {'cc':{'czbins':[], 'ebins':[], 'map':[]},'nc':...},
+     "numu": {...},
+     "nutau": {...},
+     "nue_bar": {...},
+     "numu_bar": {...}, 
+     "nutau_bar": {...} }
+    ```
+* `reco_service`: A _reconstruction service_ that provides resolution kernels for energy and cos(zenith) as a function of the true energy and cos(zenith). See below for a choice of services.
+* `e_reco_scale`, `cz_reco_scale`: Scales the width of the energy  or cos(zenith) reco by a given factor. Currently only supported by the parametrized reconstruction service.
 
 ### Output
 
-This stage returns maps of reconstructed event counts for each "flavour":
+This stage returns maps of reconstructed event counts for each _flavour_ and _interaction type_:
 
 ```
 {"nue_cc": {'czbins':[], 'ebins':[], 'map':[]},
@@ -44,19 +41,21 @@ This stage returns maps of reconstructed event counts for each "flavour":
 
 ## Services
 
-The base service class `RecoServiceBase` contains everything that is 
-related to actually applying the reconstruction kernels to the data, as 
-well as sanity checks of the kernels. The methods common to all reco 
-services (which are all implemented here) are:
+### RecoServiceBase
+The base service class `RecoServiceBase` contains the functions that actually apply the reconstruction kernels to the data, as 
+well as sanity checks of the kernels. This method defined here are:
 
 * `get_reco_kernels`: This method is called to construct the reco kernels, 
- i.e. a 4D histogram of true (1st and 2nd axis) vs. reconstructed (3rd and
- 4th axis) energy (1st and 3rd axis) and cos(zenith) (2nd and 4th axis). 
- It individually implemented in the derived classes, since the way the reco 
- kernels are generated is the depends on the reco method. 
+ i.e. a 4D histogram of true vs. reconstructed energy and cos(zenith). The order of the axis is
+     1. true energy
+     2. true cos(zenith)
+     3. reconstructed energy
+     4. reconstructed cos(zenith) 
+
+    This method is individually implemented in the derived classes, since the way the reco kernels are generated depends on the reconstruction service. 
 * `check_kernels`: Test whether the reco kernels have the correct shape
- (see above).
-* `normalize_kernels`: Ensure that all reco kernels are normalized.
+ to match the given input maps.
+* `normalize_kernels`: Ensure that all kernels are normalized.
 * `get_reco_maps(true_event_maps, recalculate=False, **kwargs)`: Apply the 
  reconstruction kernels to the "true" event histograms and return the 
  "reconstructed" histograms. If `recalculate` is `True`, call `recalculate_kernels` 
