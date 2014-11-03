@@ -66,7 +66,7 @@ if __name__ == '__main__':
         help= '''Edges of the cos(zenith) bins, default is '''
               '''21 edges (20 bins) from -1. (upward) to 0. horizontal in linear spacing.''',
         default = np.linspace(-1.,1.,21))
-    parser.add_argument('--flux_file', metavar='FILE', type=str,
+    parser.add_argument('--nu_flux_file', metavar='FILE', type=str,
         help= '''Input flux file in Honda format. ''',
         default = 'flux/spl-solmin-aa.d')
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate a flux model
-    flux_model = HondaFluxService(args.flux_file)
+    flux_model = HondaFluxService(args.nu_flux_file)
     muon_flux_model = MuonFluxService(args.muon_flux_file)
     
     #get the flux 

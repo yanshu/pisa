@@ -6,15 +6,11 @@
 # azimuth-averaged data) and uses spline interpolation to provide the integrated
 # flux per bin to be consistent with the neutrino flux method.
 #
-# If desired, this will create a .json output file with the results of
-# the current stage of processing.
-#
 # author: Melanie Day 
 #         melanie.day@icecube.wisc.edu 
 #
 # date:   2014-10-28
 
-import os
 import numpy as np
 from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging

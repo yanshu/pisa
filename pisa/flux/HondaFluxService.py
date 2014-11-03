@@ -6,15 +6,11 @@
 # azimuth-averaged data) and uses spline interpolation to provide the integrated
 # flux per bin.
 #
-# If desired, this will create a .json output file with the results of
-# the current stage of processing.
-#
 # author: Sebastian Boeser
 #         sboeser@physik.uni-bonn.de
 #
 # date:   2014-01-27
 
-import os
 import numpy as np
 from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging

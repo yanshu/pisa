@@ -35,13 +35,21 @@ class AeffServiceMC:
 
         self.aeff_dict = {}
         logging.info("Creating effective area dict...")
-        for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']:
+        flavours = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
+
+        int_types = {flavour:['cc','nc'] for flavour in flavours}
+        int_types['muons'] = ['any']
+
+        for flavor in flavours:
             flavor_dict = {}
             logging.debug("Working on %s effective areas"%flavor)
-            for int_type in ['cc','nc']:
+
+            for int_type in int_types[flavor]:
+                if(flavor=='muons'): int_type='cc' #Temporary TODO when I figure out what I am doing with the hd5 file
                 weighted_aeff = np.array(fh[flavor+'/'+int_type+'/weighted_aeff'])
                 true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
                 true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
+                if(flavor=='muons'): int_type='any' #Temporary TODO when I figure out what I am doing with the hd5 file
 
                 bins = (self.ebins,self.czbins)
                 aeff_hist,_,_ = np.histogram2d(true_energy,true_coszen,

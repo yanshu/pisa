@@ -59,9 +59,9 @@ class AeffServicePar:
 #Cosmic ray muons
         flavor_dict = {}
         aeff2d = self.get_aeff_flavor("muons",aeff_egy_par,aeff_coszen_par)        
-        aeff2d_nc = self.get_aeff_flavor("Zeroes",aeff_egy_par,aeff_coszen_par)        
-        flavor_dict['cc'] = aeff2d
-        flavor_dict['nc'] = aeff2d_nc    
+#        aeff2d_nc = self.get_aeff_flavor("Zeroes",aeff_egy_par,aeff_coszen_par)        
+        flavor_dict['any'] = aeff2d
+#        flavor_dict['nc'] = aeff2d_nc    
         self.aeff_dict['muons'] = flavor_dict
 
         return
@@ -71,9 +71,9 @@ class AeffServicePar:
         Creates the 2d aeff file from the parameterized aeff
         vs. energy .dat file, an input to the parametric settings file.
         '''
-        b_flavor = flavor
-        if(flavor=='Zeroes'):
-          flavor='NC'
+#        b_flavor = flavor
+#        if(flavor=='Zeroes'):
+#          flavor='NC'
         aeff_file = aeff_egy_par[flavor]
         aeff_arr = np.loadtxt(open_resource(aeff_file)).T
         # interpolate
@@ -84,10 +84,10 @@ class AeffServicePar:
         ecen = get_bin_centers(self.ebins)
 
         # Get 1D array interpolated values at bin centers, assume no cz dep
-        if(b_flavor=='Zeroes'):
-          aeff1d = len(aeff_func(ecen))*[0]
-        else:
-          aeff1d = aeff_func(ecen)
+#        if(b_flavor=='Zeroes'):
+#          aeff1d = len(aeff_func(ecen))*[0]
+#        else:
+        aeff1d = aeff_func(ecen)
         
         # Make this into a 2D array:
         aeff2d = np.reshape(np.repeat(aeff1d, len(czcen)), (len(ecen), len(czcen)))

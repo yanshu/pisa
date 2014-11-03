@@ -54,23 +54,21 @@ def get_event_rates(osc_flux_maps,aeff_service=None,livetime=None,nu_xsec_scale=
     ebins, czbins = get_binning(osc_flux_maps)
 
     # apply the scaling for nu_xsec_scale and nubar_xsec_scale...
-    if(muon_scale>0):
-      flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar','muons']
-    else:
-      flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']
+    flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar','muons']
+    scales = {flavour:nu_xsec_scale for flavour in flavours if not('bar' in flavour)}
+    scales.update({flavour:nubar_xsec_scale for flavour in flavours if('bar' in flavour)})
+    scales['muons'] = muon_scale
+
+    int_types = {flavour:['cc','nc'] for flavour in flavours}
+    int_types['muons'] = ['any']
+
     for flavour in flavours:
         osc_flux_map = osc_flux_maps[flavour]['map']
         int_type_dict = {}
-        if(muon_scale>0 and flavour=='muons'):
-          livetime=livetime*muon_scale
-        for int_type in ['cc','nc']:
+        for int_type in int_types[flavour]:
             event_rate = osc_flux_map*aeff_dict[flavour][int_type]*aeff_scale
 
-            if(muon_scale>0 and flavour=='muons'):
-              scale = 1.0 
-            else:
-              scale = nubar_xsec_scale if 'bar' in flavour else nu_xsec_scale
-            event_rate *= (scale*livetime*Julian_year)
+            event_rate *= (scales[flavour]*livetime*Julian_year)
             int_type_dict[int_type] = {'map':event_rate,
                                        'ebins':ebins,
                                        'czbins':czbins}
