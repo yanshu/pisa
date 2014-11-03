@@ -24,7 +24,7 @@ class RecoServiceMC:
     From these histograms, and the true event rate maps, calculates
     the reconstructed even rate templates.
     '''
-    def __init__(self,ebins,czbins,reco_weight_file=None,muon_scale_serv=0.0):
+    def __init__(self,ebins,czbins,reco_weight_file=None):
         self.ebins = ebins
         self.czbins = czbins
         
@@ -41,18 +41,19 @@ class RecoServiceMC:
         # Create the 4D distribution kernels...
         self.kernel_dict = {}
         logging.info("Creating kernel dict...")
-        if(muon_scale_serv>0):
-          flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
-        else:
-          flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']
+        flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
+        int_types = {flavor:['cc','nc'] for flavor in flavors}
+        int_types['muons'] = ['any']
         for flavor in flavors:
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
-            for int_type in ['cc','nc']:
+            for int_type in int_types[flavor]:
+                if(flavor=='muons'): int_type='cc' #Temporary TODO when I figure out what I am doing with the hd5 file
                 true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
                 true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
                 reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
                 reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                if(flavor=='muons'): int_type='any' #Temporary TODO when I figure out what I am doing with the hd5 file
 
                 # True binning, reco binning...
                 bins = (self.ebins,self.czbins,self.ebins,self.czbins)

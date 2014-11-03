@@ -1,5 +1,5 @@
 {
-  "muons_cc": {
+  "muons_any": {
     "czbins": [
       -1.0,
       -0.9,
@@ -4751,7 +4751,6 @@
   },
   "params": {
     "aeff_scale": 1.0,
-    "cz_reco_scale": 1.0,
     "deltacp": 3.141592653589793,
     "deltam21": 7.54e-05,
     "deltam31": 0.00246,
