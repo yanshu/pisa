@@ -23,7 +23,7 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
 from pisa.flux.MuonFluxService import MuonFluxService
 
-def get_flux_maps(flux_service, muon_flux_service, ebins, czbins, **params):
+def get_flux_maps(nu_flux_service, muon_flux_service, ebins, czbins, **params):
     '''Get a set of flux maps for the different primaries'''
 
     #Be verbose on input
@@ -32,17 +32,15 @@ def get_flux_maps(flux_service, muon_flux_service, ebins, czbins, **params):
 
     #Initialize return dict
     maps = {'params': params}
-    prims = primaries + ['muons']
-    for prim in prims:
+    
+    p_services = dict.fromkeys(primaries,nu_flux_service) 
+    p_services['muons'] = muon_flux_service
+
+    for prim, service in p_services.items():
         #Get the flux for this primary
-        if(not(prim=='muons')):
-            maps[prim] = {'ebins': ebins,
-                        'czbins': czbins,
-                        'map': flux_service.get_flux(ebins,czbins,prim)}
-        else:
-            maps[prim] = {'ebins': ebins,
-                        'czbins': czbins,
-                        'map': muon_flux_service.get_flux(ebins,czbins)}
+        maps[prim] = {'ebins': ebins,
+                    'czbins': czbins,
+                    'map': service.get_flux(ebins,czbins,prim)}
  
         #be a bit verbose
         physics.trace("Total flux of %s is %u [s^-1 m^-2]"%

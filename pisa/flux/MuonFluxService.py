@@ -60,10 +60,10 @@ class MuonFluxService():
         #and store
         self.spline_dict['muons'] = spline
 
-    def get_flux(self, ebins, czbins):
+    def get_flux(self, ebins, czbins, prim='muons'):
         '''Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith).'''
-        
+        #Currently there is no use for prim except to make this function behave like the others 
         #Evaluate the flux at the bin centers
         evals = get_bin_centers(ebins)
         czvals = get_bin_centers(czbins)
