@@ -24,7 +24,7 @@ from pisa.pid.PIDServicePar import PIDServicePar
 from pisa.resources.resources import find_resource
 
 
-def get_pid_maps(reco_events,muon_bool,pid_service,**kwargs):
+def get_pid_maps(reco_events,pid_service,**kwargs):
     '''
     Takes the templates of reco_events in form of:
       'nue_cc': map
@@ -52,10 +52,7 @@ def get_pid_maps(reco_events,muon_bool,pid_service,**kwargs):
                       }
 
     pid_dict = pid_service.get_maps()
-    if(muon_bool):
-      flavours = ['nue_cc','numu_cc','nutau_cc','muons_cc','nuall_nc']
-    else:
-      flavours = ['nue_cc','numu_cc','nutau_cc','nuall_nc']
+    flavours = ['nue_cc','numu_cc','nutau_cc','muons_any','nuall_nc']
     for flav in flavours:
         event_map = reco_events[flav]['map']
 
@@ -84,9 +81,6 @@ if __name__ == '__main__':
     parser.add_argument('--settings',metavar='SETTINGS',type=from_json,
                         default=from_json(find_resource('pid/V15_pid.json')),
                         help='''json file containing parameterizations of the particle ID for each event type.''')
-    parser.add_argument('--muon_bkg',type=bool,default=True,
-                        help='''Include or exclude cosmic ray muons.''')
-
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
                         action='store',default="pid.json",
                         help='''file to store the output''')
@@ -104,7 +98,7 @@ if __name__ == '__main__':
     pid_service = PIDServicePar(ebins,czbins,args.settings)
 
     #Galculate event rates after PID
-    event_rate_pid = get_pid_maps(args.reco_event_maps,args.muon_bkg,pid_service)
+    event_rate_pid = get_pid_maps(args.reco_event_maps,pid_service)
     
     logging.info("Saving output to: %s"%args.outfile)
     to_json(event_rate_pid,args.outfile)

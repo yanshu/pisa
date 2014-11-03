@@ -24,7 +24,7 @@ class RecoServiceMC:
     From these histograms, and the true event rate maps, calculates
     the reconstructed even rate templates.
     '''
-    def __init__(self,ebins,czbins,reco_weight_file=None):
+    def __init__(self,ebins,czbins,reco_weight_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         
