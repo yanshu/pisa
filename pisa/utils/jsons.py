@@ -71,9 +71,15 @@ class NumpyDecoder(json.JSONDecoder):
                  parse_int=None, parse_constant=None, strict=True,
                  object_pairs_hook=None):
         
-        super(NumpyDecoder,self).__init__(encoding, object_hook, parse_float,
+        #JSONDecoder interface changed from python2.6 to python2.7
+        if sys.version_info[0:2] >= (2,7):
+           super(NumpyDecoder,self).__init__(encoding, object_hook, parse_float,
                                               parse_int, parse_constant, strict,
                                               object_pairs_hook)
+        else:
+           super(NumpyDecoder,self).__init__(encoding, object_hook, parse_float,
+                                              parse_int, parse_constant, strict)
+ 
         #only need to override the default array handler
         self.parse_array = self.json_array_numpy
         self.parse_string = self.json_python_string
