@@ -132,6 +132,20 @@ Expects the file format to be:
          },
          'nue_bar' {...},...
       } ''')
+    parser.add_argument('--weighted_aeff_muon_file',metavar='WEIGHTFILE',type=str,
+                        default='events/V15_weighted_aeff_muons.hdf5',
+                        help='''HDF5 File containing data from muons for instumental geometry. Expects:
+      {
+        'muons': {
+           'any': {
+               ...
+               'true_energy': np.array,
+               'true_coszen': np.array,
+               'reco_energy': np.array,
+               'reco_coszen': np.array
+            },
+          },        
+        }''')
     parser.add_argument('--e_reco_scale',type=float,default=1.0,
                         help='''Reconstructed energy scaling.''')
     parser.add_argument('--cz_reco_scale',type=float,default=1.0,
@@ -150,7 +164,7 @@ Expects the file format to be:
     ebins, czbins = check_binning(args.event_rate_maps)
 
     logging.info("Defining RecoService...")
-    reco_service = RecoServiceMC(ebins,czbins,reco_weight_file=args.weighted_aeff_file)
+    reco_service = RecoServiceMC(ebins,czbins,reco_weight_file=args.weighted_aeff_file,muon_weight_file=args.weighted_aeff_muon_file)
 
     event_rate_reco_maps = get_reco_maps(args.event_rate_maps,reco_service,args.e_reco_scale,
                                          args.cz_reco_scale)

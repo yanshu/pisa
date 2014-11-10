@@ -20,7 +20,7 @@ class AeffServiceMC:
     flavor (nue,nue_bar,numu,...) and interaction type (CC, NC)
     '''
 
-    def __init__(self,ebins,czbins,aeff_weight_file=None,**kwargs):
+    def __init__(self,ebins,czbins,aeff_weight_file=None,muon_weight_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing AeffServiceMC...')
@@ -33,6 +33,14 @@ class AeffServiceMC:
             logging.error(e)
             sys.exit(1)
 
+        logging.info('Opening file: %s'%(muon_weight_file))
+        try:
+            mh = h5py.File(find_resource(muon_weight_file),'r')
+        except IOError,e:
+            logging.error("Unable to open muon_weight_file %s"%muon_weight_file)
+            logging.error(e)
+            sys.exit(1)
+
         self.aeff_dict = {}
         logging.info("Creating effective area dict...")
         flavours = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
@@ -40,16 +48,17 @@ class AeffServiceMC:
         int_types = {flavour:['cc','nc'] for flavour in flavours}
         int_types['muons'] = ['any']
 
+        waeff_file = {flavour:fh for flavour in flavours}
+        waeff_file['muons'] = mh
+
         for flavor in flavours:
             flavor_dict = {}
             logging.debug("Working on %s effective areas"%flavor)
 
             for int_type in int_types[flavor]:
-                if(flavor=='muons'): int_type='cc' #Temporary TODO when I figure out what I am doing with the hd5 file
-                weighted_aeff = np.array(fh[flavor+'/'+int_type+'/weighted_aeff'])
-                true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
-                true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
-                if(flavor=='muons'): int_type='any' #Temporary TODO when I figure out what I am doing with the hd5 file
+                weighted_aeff = np.array(waeff_file[flavor][flavor+'/'+int_type+'/weighted_aeff'])
+                true_energy = np.array(waeff_file[flavor][flavor+'/'+int_type+'/true_energy'])
+                true_coszen = np.array(waeff_file[flavor][flavor+'/'+int_type+'/true_coszen'])
 
                 bins = (self.ebins,self.czbins)
                 aeff_hist,_,_ = np.histogram2d(true_energy,true_coszen,

@@ -24,7 +24,7 @@ class RecoServiceMC:
     From these histograms, and the true event rate maps, calculates
     the reconstructed even rate templates.
     '''
-    def __init__(self,ebins,czbins,reco_weight_file=None,**kwargs):
+    def __init__(self,ebins,czbins,reco_weight_file=None,muon_weight_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         
@@ -38,22 +38,30 @@ class RecoServiceMC:
             logging.error(e)
             sys.exit(1)
 
+        logging.info('Opening file: %s'%(muon_weight_file))
+        try:
+            mh = h5py.File(find_resource(muon_weight_file),'r')
+        except IOError,e:
+            logging.error("Unable to open event data file %s"%muon_weight_file)
+
         # Create the 4D distribution kernels...
         self.kernel_dict = {}
         logging.info("Creating kernel dict...")
         flavors = ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar','muons']
         int_types = {flavor:['cc','nc'] for flavor in flavors}
         int_types['muons'] = ['any']
+
+        waeff_file = {flavor:fh for flavor in flavors}
+        waeff_file['muons'] = mh 
+
         for flavor in flavors:
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
             for int_type in int_types[flavor]:
-                if(flavor=='muons'): int_type='cc' #Temporary TODO when I figure out what I am doing with the hd5 file
-                true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
-                true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
-                reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
-                reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
-                if(flavor=='muons'): int_type='any' #Temporary TODO when I figure out what I am doing with the hd5 file
+                true_energy = np.array(waeff_file[flavor][flavor+'/'+int_type+'/true_energy'])
+                true_coszen = np.array(waeff_file[flavor][flavor+'/'+int_type+'/true_coszen'])
+                reco_energy = np.array(waeff_file[flavor][flavor+'/'+int_type+'/reco_energy'])
+                reco_coszen = np.array(waeff_file[flavor][flavor+'/'+int_type+'/reco_coszen'])
 
                 # True binning, reco binning...
                 bins = (self.ebins,self.czbins,self.ebins,self.czbins)

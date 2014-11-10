@@ -95,6 +95,12 @@ if __name__ == '__main__':
                         a particular instrumental geometry. The effective area
                         is calculate from the event weights in this file.
                         Only applies in non-parametric mode.''')
+    parser.add_argument('--weighted_aeff_muon_file',metavar='WEIGHTFILE',type=str,
+                        default='events/V15_weighted_aeff_muons.hdf5',
+                        help='''HDF5 File containing event data for cosmic ray muons for
+                        a particular instrumental geometry. The effective area
+                        is calculate from the event weights in this file.
+                        Only applies in non-parametric mode.''')
     parser.add_argument('--settings_file',metavar='SETTINGS',type=str,
                         default='aeff/V15_aeff.json',
                         help='''json file containing parameterizations of the
@@ -133,7 +139,7 @@ if __name__ == '__main__':
         aeff_service = AeffServicePar(ebins,czbins,settings_file=args.settings_file)
     else:
         logging.info("  Using effective area from EVENT DATA...")
-        aeff_service = AeffServiceMC(ebins,czbins,aeff_weight_file=args.weighted_aeff_file)
+        aeff_service = AeffServiceMC(ebins,czbins,aeff_weight_file=args.weighted_aeff_file,muon_weight_file=args.weighted_aeff_muon_file)
 
     event_rate_maps = get_event_rates(args.osc_flux_maps,aeff_service,args.livetime,
                                       args.nu_xsec_scale,args.nubar_xsec_scale,
