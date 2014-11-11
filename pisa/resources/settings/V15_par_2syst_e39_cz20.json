@@ -57,8 +57,20 @@
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
+    "reco_mode": {
+      "value": "param",
+      "fixed": true
+    },
     "reco_weight_file": {
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "kdefile": {
+      "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "paramfile": {
+      "value": "reco_params/V15.json",
       "fixed": true
     },
     "parametric": {
