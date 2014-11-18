@@ -66,18 +66,23 @@
       "fixed": true
     },
     "reco_mode": {
-      "value": "param",
+      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "value": "kde",
       "fixed": true
     },
-    "reco_weight_file": {
+    "reco_mc_wt_file": {
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
-    "kdefile": {
+    "reco_kde_file": {
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
-    "paramfile": {
+    "reco_kernel_file": {
+      "value": null,
+      "fixed": true
+    },
+    "reco_param_file": {
       "value": "reco_params/V15.json",
       "fixed": true
     },
