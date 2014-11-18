@@ -92,11 +92,11 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate a flux model
-    flux_model = HondaFluxService(args.nu_flux_file)
+    nu_flux_model = HondaFluxService(args.nu_flux_file)
     muon_flux_model = MuonFluxService(args.muon_flux_file)
     
     #get the flux 
-    flux_maps = get_flux_maps(flux_model,muon_flux_model,args.ebins,args.czbins)
+    flux_maps = get_flux_maps(nu_flux_model,muon_flux_model,args.ebins,args.czbins)
 
     #write out to a file
     logging.info("Saving output to: %s"%args.outfile)
