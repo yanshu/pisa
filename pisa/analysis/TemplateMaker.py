@@ -132,8 +132,9 @@ if __name__ == '__main__':
     # parser
     parser = ArgumentParser(description='''Runs the template making process.''',
                          formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('settings',type=str,metavar='JSONFILE',
-                        help="settings file to use for making templates.")
+    parser.add_argument('-t','--template_settings',type=str,
+                        metavar='JSONFILE', required = True,
+                        help='''settings for the template generation''')
     hselect = parser.add_mutually_exclusive_group(required=False)
     hselect.add_argument('--normal', dest='normal', default=True,
                         action='store_true', help="select the normal hierarchy")
@@ -141,6 +142,9 @@ if __name__ == '__main__':
                         action='store_false', help="select the inverted hierarchy")
     parser.add_argument('-v','--verbose',action='count',default=None,
                         help='set verbosity level.')
+    parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
+                        action='store',default="template.json",
+                        help='file to store the output')
     args = parser.parse_args()
 
     set_verbosity(args.verbose)
@@ -148,7 +152,7 @@ if __name__ == '__main__':
     profile.info("start initializing")
 
     #Load all the settings
-    model_settings = from_json(args.settings)
+    model_settings = from_json(args.template_settings)
 
     #Select a hierarchy
     logging.info('Selected %s hierarchy'%
@@ -162,5 +166,9 @@ if __name__ == '__main__':
 
     #Now get the actual template
     profile.info("start template calculation")
-    template_maker.get_template(get_values(params))
+    template = template_maker.get_template(get_values(params))
     profile.info("stop template calculation")
+
+    #Write out
+    logging.info("Saving output to: %s",args.outfile)
+    to_json(template, args.outfile)
