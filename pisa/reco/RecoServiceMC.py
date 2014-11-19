@@ -15,7 +15,7 @@ from pisa.reco.RecoServiceBase import RecoServiceBase
 from pisa.utils.log import logging
 from pisa.resources.resources import find_resource
 
-class MCRecoService(RecoServiceBase):
+class RecoServiceMC(RecoServiceBase):
     """
     From the simulation file, creates 4D histograms of
     [true_energy][true_coszen][reco_energy][reco_coszen] which act as
@@ -25,17 +25,18 @@ class MCRecoService(RecoServiceBase):
     From these histograms, and the true event rate maps, calculates
     the reconstructed even rate templates.
     """
-    def __init__(self, ebins, czbins, **kwargs):
+    def __init__(self, ebins, czbins, reco_mc_wt_file=None, **kwargs):
         """
         Parameters needed to instantiate a MC-based reconstruction service:
         * ebins: Energy bin edges
         * czbins: cos(zenith) bin edges
-        * simfile: HDF5 containing the MC events to construct the kernels
+        * reco_weight_file: HDF5 containing the MC events to construct the kernels
         """
-        RecoServiceBase.__init__(self, ebins, czbins, **kwargs)
-    
-    
-    def get_reco_kernels(self, simfile=None, **kwargs):
+        self.simfile = reco_mc_wt_file
+        RecoServiceBase.__init__(self, ebins, czbins, simfile=self.simfile, **kwargs)
+
+
+    def kernel_from_simfile(self, simfile=None, **kwargs):
         logging.info('Opening file: %s'%(simfile))
         try:
             fh = h5py.File(find_resource(simfile),'r')
@@ -45,10 +46,10 @@ class MCRecoService(RecoServiceBase):
             sys.exit(1)
 
         # Create the 4D distribution kernels...
-        self.kernels = {}
+        kernels = {}
         logging.info("Creating kernel dict...")
-        self.kernels['ebins'] = self.ebins
-        self.kernels['czbins'] = self.czbins
+        kernels['ebins'] = self.ebins
+        kernels['czbins'] = self.czbins
         for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
@@ -64,6 +65,25 @@ class MCRecoService(RecoServiceBase):
                 kernel,_ = np.histogramdd(data,bins=bins)
 
                 flavor_dict[int_type] = kernel
-            self.kernels[flavor] = flavor_dict
-            
+            kernels[flavor] = flavor_dict
+
+        return kernels
+
+
+    def get_reco_kernels(self, simfile=None, **kwargs):
+
+        for reco_scale in ['e_reco_scale', 'cz_reco_scale']:
+            if reco_scale in kwargs:
+                if not kwargs[reco_scale]==1:
+                    raise ValueError('%s = %.2f not valid for RecoServiceMC!'
+                                     %(reco_scale, kwargs[reco_scale]))
+
+        if not simfile in [self.simfile, None]:
+            logging.info('Reconstruction from non-default MC file %s!'%simfile)
+            return kernel_from_simfile(simfile=simfile)
+
+        if not hasattr(self, 'kernels'):
+            logging.info('Using file %s for default reconstruction'%(simfile))
+            self.kernels = self.kernel_from_simfile(simfile=simfile)
+
         return self.kernels

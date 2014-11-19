@@ -31,6 +31,14 @@
       "value": "oscillations/PREM_4layer.dat",
       "fixed": true
     },
+    "detector_depth": {
+      "value": 2.0,
+      "fixed": true
+    },
+    "prop_height": {
+      "value": 20.0,
+      "fixed": true
+    },
     "aeff_egy_par": {
       "value": {
         "NC": "aeff/V15/cuts_V3/a_eff_nuall_nc.dat",
@@ -57,8 +65,25 @@
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
-    "reco_weight_file": {
+    "reco_mode": {
+      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "value": "kde",
+      "fixed": true
+    },
+    "reco_mc_wt_file": {
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_kde_file": {
+      "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_kernel_file": {
+      "value": null,
+      "fixed": true
+    },
+    "reco_param_file": {
+      "value": "reco_params/V15.json",
       "fixed": true
     },
     "parametric": {
