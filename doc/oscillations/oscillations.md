@@ -38,16 +38,15 @@ See below for a choice of services.
 
 ### Output
 
-This function returns maps of oscillated flux for each flavour and
-interaction type.
+This function returns maps of oscillated flux for each flavour.
 
 ```
-  { ‘nue’: { ‘cc’: map,  ‘nc’: map},
-     ‘nue_bar’: { ‘cc’: map,  ‘nc’: map},
-     ‘numu’: { ‘cc’: map,  ‘nc’: map},
-     ‘numu_bar’: { ‘cc’: map,  ‘nc’: map},
-     ‘nutau’: { ‘cc’: map,  ‘nc’: map},
-     ‘nutau_bar’: { ‘cc’: map,  ‘nc’: map},
+  { ‘nue’ : map,
+     ‘nue_bar’: map,
+     ‘numu’: map,
+     ‘numu_bar’: map,
+     ‘nutau’: map,
+     ‘nutau_bar’: map,
      ‘params’: params}
 ```
 
@@ -56,36 +55,33 @@ interaction type.
 Three oscillation services are provided, one for using the `Prob3`
 code to generate oscillation probabilities, a second for using the
 `NuCraft` code, and a third to use a pre-tabulated oscillation
-probability table. The methods common to all OscillationServices
-(which derive from `OscillationServiceBase`) are:
+probability table. All sercives derive from `OscillationServiceBase`.
 
-* `get_osc_prob_maps`: This method returns an oscillation probability
-  map dictionary calculated at a particular set of oscillation
-  parameters (deltam21, deltam31, theta12, etc.). The output
-  dictionary is formatted as
+### OscillationServiceBase
+The methods common to all OscillationServices are:
 
+* `get_osc_prob_maps`: This method is called by `get_osc_flux` and returns an oscillation probability map dictionary calculated at a particular set of oscillation parameters (deltam21, deltam31, theta12, etc.). The output dictionary is formatted as
 ```
 {'nue_maps': {'nue':map,'numu':map,'nutau':map},
  'numu_maps': {...},
- 'nue\_bar\_maps': {...},
- 'numu\_bar\_maps': {...}
+ 'nue(bar)_maps': {...},
+ 'numu(bar)_maps': {...}
  }
 ```
-
-(and if _nutau_ and _nutau\_bar_ exist in the input flux, then they
+   (and if `nutau` and `nutau_bar` exist in the input flux, then they
 will appear here as well).
+The oscillation probabilites in each bin are obtained by calculating the probabilites for several points within each bin by calling `get_osc_probLT_dict` to obtain finer binned lookup tables (LT) and then and _smoothing/downsampling_ the map to the required resolution (see below). 
 
-* `get_osc_probLT_dict`: Creates the oscillation probability lookup
-  tables (LT) corresponding to atmospheric neturinos oscillating
-  through the earth, and will return a dictionary of oscillation
-  probability maps. This function is called by `get_osc_prob_maps` and
-  it is here that the oversampling of energy/coszen is configured.
+* `get_osc_probLT_dict(ebins,czbins,oversample_e,oversample_cz)`: Creates the oscillation probability lookup tables (LT) corresponding to atmospheric neturinos oscillating through the earth, and will return a (higher resolution) dictionary of oscillation probability maps. The resolution of map controlled by the `oversample_e/cz` parameters, that are multiplied with the old number to obtain the new number of bins in each dimension. Non-integer values for the oversampling factors are supported for linear and logarithmic binning, but not for irregular bins. Finally, this method calls `fill_osc_prob` to calculate the oscillation probabilities in the center of each of the new bins.
 
 * `fill_osc_prob`: Method that does the heavy lifting of actually
-  calculating the oscillaiton probabilities, oversampling them in each
-  bin, then averaging them and storing them in the final oscillation
-  probability map binning. This method is implemented separately in
-  each derived Service.
+  calculating the oscillaiton probabilities. This method is implemented separately in
+  each derived service.
+  
+__Smoothing/Downsampling__
+Since in particular for low energies and small values of cos(zenith) the oscillation probabilites may vary much more rapidly than the size of a bin, a _smoothing_ or _downsampling_ technique is employed. For now the new value in each bin is calculated as the average of all values that fall within this bin.
+__NOTE__: _This implementation is susceptible to binning artefacts._
+
 
 ### Prob3OscillationService
 
@@ -157,5 +153,5 @@ This service is initialized with the following parameters:
 * `datadir`: directory where oscillation probability tables are stored.
 
 This service has not been fully implemented yet for arbirary
-oscillation parameter values as inputs and should not be used at the
+oscillation parameter values as inputs and __should not be used__ at the
 time of the writing of this document.
