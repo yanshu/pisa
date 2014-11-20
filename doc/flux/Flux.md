@@ -49,7 +49,7 @@ This class loads a differential neutrino flux from Honda-styles flux tables in u
 
 The flux _F_ in the bin _i_ is obtained from the differential flux by multiplying the flux at the center of each bin with the bin size in energy and cos(zenith)
 
-![Flux](Flux.png)
+![Flux](flux.png)
 
 where
 
