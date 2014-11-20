@@ -34,8 +34,7 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
 * `theta23`: Value of theta_{23} parameter, units of [rad]
 * `deltacp`: Value of cp-violating phase, \delta_{cp}, units of [rad]
 
-  areas as a function of energy and cos(zenith) and interaction
-  type. See below for a choice of services.
+See below for a choice of services.
 
 ### Output
 
@@ -111,11 +110,7 @@ solution to the neutrino oscillation propagation over constant matter
 density. For a realistic earth model, small enough constant density
 layers are chosen to accuratly describe the matter density through the
 earth. The `Prob3` code, initially written by the Super-Kamiokande
-collaboration in C/C++, is publicly available here:
-
-http://www.phy.duke.edu/~raw22/public/Prob3++/
-
-and has been given PyBindings as well as a few additional
+collaboration in C/C++, is publicly available [here](http://www.phy.duke.edu/~raw22/public/Prob3++), and has been given PyBindings as well as a few additional
 modifications to be optimized for the IceCube detector, and for use in
 PISA.
 
@@ -141,9 +136,7 @@ This service is initialized with the following parameters:
 
 This service uses the `NuCraft` oscillation code to calculate the
 oscillation probabilities. `NuCraft` is used in the IceCube
-collaboration and is publicly available from:
-
-http://nucraft.hepforge.org
+collaboration and is publicly available from [the NuCraft web-page](http://nucraft.hepforge.org).
 
 Because it was written to handle the general case of an arbitrary
 number of flavors (>3) of neutrinos propagating through non-constant
