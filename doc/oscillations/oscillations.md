@@ -61,16 +61,14 @@ probability table. All sercives derive from `OscillationServiceBase`.
 The methods common to all OscillationServices are:
 
 * `get_osc_prob_maps`: This method is called by `get_osc_flux` and returns an oscillation probability map dictionary calculated at a particular set of oscillation parameters (deltam21, deltam31, theta12, etc.). The output dictionary is formatted as
-```
-{'nue_maps': {'nue':map,'numu':map,'nutau':map},
- 'numu_maps': {...},
- 'nue(bar)_maps': {...},
- 'numu(bar)_maps': {...}
- }
-```
-   (and if `nutau` and `nutau_bar` exist in the input flux, then they
-will appear here as well).
-The oscillation probabilites in each bin are obtained by calculating the probabilites for several points within each bin by calling `get_osc_probLT_dict` to obtain finer binned lookup tables (LT) and then and _smoothing/downsampling_ the map to the required resolution (see below). 
+  ```
+  {'nue_maps': {'nue':map,'numu':map,'nutau':map},
+   'numu_maps': {...},
+   'nue(bar)_maps': {...},
+   'numu(bar)_maps': {...}
+  }
+  ```
+  (and if `nutau` and `nutau_bar` exist in the input flux, then they will appear here as well). The oscillation probabilites in each bin are obtained by calculating the probabilites for several points within each bin by calling `get_osc_probLT_dict` to obtain finer binned lookup tables (LT) and then and _smoothing/downsampling_ the map to the required resolution (see below). 
 
 * `get_osc_probLT_dict(ebins,czbins,oversample_e,oversample_cz)`: Creates the oscillation probability lookup tables (LT) corresponding to atmospheric neturinos oscillating through the earth, and will return a (higher resolution) dictionary of oscillation probability maps. The resolution of map controlled by the `oversample_e/cz` parameters, that are multiplied with the old number to obtain the new number of bins in each dimension. Non-integer values for the oversampling factors are supported for linear and logarithmic binning, but not for irregular bins. Finally, this method calls `fill_osc_prob` to calculate the oscillation probabilities in the center of each of the new bins.
 
