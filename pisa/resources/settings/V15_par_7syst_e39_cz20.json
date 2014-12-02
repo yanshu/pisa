@@ -67,7 +67,7 @@
     },
     "reco_mode": {
       "#comment": "Must be one of ['MC','kde','param','stored']",
-      "value": "kde",
+      "value": "MC",
       "fixed": true
     },
     "reco_mc_wt_file": {
