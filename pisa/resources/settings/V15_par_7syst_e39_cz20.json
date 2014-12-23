@@ -28,7 +28,7 @@
       "fixed": true
     },
     "earth_model": {
-      "value": "oscillations/PREM_4layer.dat",
+      "value": "oscillations/PREM_60layer.dat",
       "fixed": true
     },
     "detector_depth": {
@@ -67,7 +67,7 @@
     },
     "reco_mode": {
       "#comment": "Must be one of ['MC','kde','param','stored']",
-      "value": "MC",
+      "value": "kde",
       "fixed": true
     },
     "reco_mc_wt_file": {
