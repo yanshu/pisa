@@ -28,7 +28,7 @@
       "fixed": true
     },
     "earth_model": {
-      "value": "oscillations/PREM_60layer.dat",
+      "value": "oscillations/PREM_4layer.dat",
       "fixed": true
     },
     "detector_depth": {
@@ -65,8 +65,25 @@
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
-    "reco_weight_file": {
+    "reco_mode": {
+      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "value": "kde",
+      "fixed": true
+    },
+    "reco_mc_wt_file": {
       "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_kde_file": {
+      "value": "events/V15_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_kernel_file": {
+      "value": null,
+      "fixed": true
+    },
+    "reco_param_file": {
+      "value": "reco_params/V15.json",
       "fixed": true
     },
     "parametric": {
@@ -144,7 +161,7 @@
       "range": [0.9,1.1],
       "fixed": false,
       "scale": 1.0,
-      "prior": 0.05
+      "prior": 0.02
     },
     "aeff_scale": {
       "value": 1.0,

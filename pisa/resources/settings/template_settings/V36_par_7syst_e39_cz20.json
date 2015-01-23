@@ -28,7 +28,7 @@
       "fixed": true
     },
     "earth_model": {
-      "value": "oscillations/PREM_60layer.dat",
+      "value": "oscillations/PREM_4layer.dat",
       "fixed": true
     },
     "detector_depth": {
