@@ -86,8 +86,9 @@
       "value": "reco_params/V36_reco.json",
       "fixed": true
     },
-    "parametric": {
-      "value": true,
+    "aeff_mode": {
+      "#comment": "Must be one of ['param','MC']",
+      "value": "param",
       "fixed": true
     },
     "particle_ID": {
@@ -110,6 +111,11 @@
     },
     "livetime": {
       "value": 1.0,
+      "fixed": true
+    },
+    "channel": {
+      "#comment": "Must be one of ['trck','cscd','all']",
+      "value": "all",
       "fixed": true
     },
     "deltam31_nh": {
