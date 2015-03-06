@@ -114,7 +114,7 @@
       "fixed": true
     },
     "channel": {
-      "#comment": "Must be one of ['trck','cscd','all']",
+      "#comment": "Must be one of ['trck','cscd','all','combined']",
       "value": "all",
       "fixed": true
     },
