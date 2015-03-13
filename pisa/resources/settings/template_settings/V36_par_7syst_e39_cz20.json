@@ -39,6 +39,11 @@
       "value": 20.0,
       "fixed": true
     },
+    "aeff_mode": {
+      "#comment": "Must be one of ['param','MC']",
+      "value": "param",
+      "fixed": true
+    },
     "aeff_egy_par": {
       "value": {
         "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
@@ -84,11 +89,6 @@
     },
     "reco_param_file": {
       "value": "reco_params/V36_reco.json",
-      "fixed": true
-    },
-    "aeff_mode": {
-      "#comment": "Must be one of ['param','MC']",
-      "value": "param",
       "fixed": true
     },
     "particle_ID": {
@@ -186,7 +186,14 @@
       "range": [0.7,1.3],
       "fixed": false,
       "scale": 1.0,
-      "prior": 0.15
+      "prior": 0.05
+    },
+    "nue_numu_ratio": {
+      "value": 1.0,
+      "range": [0.7,1.3],
+      "fixed": false,
+      "scale": 1.0,
+      "prior": 0.1
     }
   }
 }
