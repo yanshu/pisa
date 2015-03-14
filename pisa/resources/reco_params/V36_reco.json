@@ -1,0 +1,206 @@
+{
+  "nue": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.4*np.ones_like(E)",
+        "loc1": "lambda E: 0.01*np.ones_like(E)",
+        "loc2": "lambda E: np.array([0.748 * np.exp(-e / 5.38) + 0.0682 for e in E])",
+        "width1": "lambda E: np.array([0.228 * np.exp(-e / 7.07) + 0.0685 for e in E])",
+        "width2": "lambda E: np.max([ -0.00587*E + 0.405, 0.1*np.ones_like(E)], axis=0)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([0.0 if e<11 else 1.0 if e<21 else 0.073*e-0.668 for e in E])",
+        "loc2": "lambda E: np.array([0.0776*(e-7.52)**2 - 1.46 if e < 11 else -0.0693*e-1.44 if e<21 else 0.1 for e in E])",
+        "width1": "lambda E: np.array([ max(0.5, -5.49*np.exp(-e/1.92) + 2.6) if e<11 else 0.0844*e+1.76 if e<21 else 0.112*e+2.61 for e in E])",
+        "width2": "lambda E: np.array([ 0.0826*(e - 4.42)**2 + 1.08  if e < 11 else 0.368*e - 1.08 if e < 21 else 0.1*e+2.6 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  },
+  "nue_bar": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.4*np.ones_like(E)",
+        "loc1": "lambda E: 0.01*np.ones_like(E)",
+        "loc2": "lambda E: np.array([0.748 * np.exp(-e / 5.38) + 0.0682 for e in E])",
+        "width1": "lambda E: np.array([0.228 * np.exp(-e / 7.07) + 0.0685 for e in E])",
+        "width2": "lambda E: np.max([ -0.00587*E + 0.405, 0.1*np.ones_like(E)], axis=0)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([0.0 if e<11 else 1.0 if e<21 else 0.073*e-0.668 for e in E])",
+        "loc2": "lambda E: np.array([0.0776*(e-7.52)**2 - 1.46 if e < 11 else -0.0693*e-1.44 if e<21 else 0.1 for e in E])",
+        "width1": "lambda E: np.array([max(0.5,-5.49*np.exp(-e/1.92) + 2.6) if e<11 else 0.0844*e+1.76 if e<21 else 0.112*e+2.61 for e in E])",
+        "width2": "lambda E: np.array([ 0.0826*(e - 4.42)**2 + 1.08  if e < 11 else 0.368*e - 1.08 if e < 21 else 0.1*e+2.6 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  },
+  "numu": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.45*np.ones_like(E)",
+        "loc1": "lambda E: 0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.703*np.exp(-E/6.03) + 0.0380",
+        "width1": "lambda E: 0.293 * np.exp(-E/5.19) + 0.0547",
+        "width2": "lambda E: np.max([ -0.00507*E + 0.354, 0.1*np.ones_like(E)], axis=0)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.0988*e - 0.0277 if e < 21 else -0.0901*e - 0.386 for e in E])",
+        "loc2": "lambda E: np.array([ 5.21*np.exp(-e/16.9) - 3.41 if e < 21 else -0.214*e + 2.29 for e in E])",
+        "width1": "lambda E: np.array([ -3.60*np.exp(-e/16.5) + 3.88 if e < 21 else 0.219*e - 0.276 for e in E])",
+        "width2": "lambda E: np.array([ 0.346*e + 0.78 if e < 21 else 0.202*e + 2.35 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  },
+  "numu_bar": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.45*np.ones_like(E)",
+        "loc1": "lambda E: 0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.703*np.exp(-E/6.03) + 0.0380",
+        "width1": "lambda E: 0.293 * np.exp(-E/5.19) + 0.0547",
+        "width2": "lambda E: np.max([ -0.00507*E + 0.354, 0.1*np.ones_like(E)], axis=0)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.0988*e - 0.0277 if e < 21 else -0.0901*e - 0.386 for e in E])",
+        "loc2": "lambda E: np.array([ 5.21*np.exp(-e/16.9) - 3.41 if e < 21 else -0.214*e + 2.29 for e in E])",
+        "width1": "lambda E: np.array([ -3.60*np.exp(-e/16.5) + 3.88 if e < 21 else 0.219*e - 0.276 for e in E])",
+        "width2": "lambda E: np.array([ 0.346*e + 0.78 if e < 21 else 0.202*e + 2.35 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  },
+  "nutau": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.4*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: np.array([-0.017*e + 0.554 if e < 40 else 0.0 for e in E])",
+        "width1": "lambda E: np.array([-0.00560*e + 0.224 if e < 40 else 0.03 for e in E])",
+        "width2": "lambda E: np.array([-0.00274*e + 0.312 if e < 40 else 0.2 for e in E])"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([-0.638*e + 0.195 if e < 21 else -0.305*e - 3.15 for e in E])",
+        "loc2": "lambda E: np.array([ -0.245*e + 0.332 if e < 21 else -0.348*e - 2.44 for e in E])",
+        "width1": "lambda E: np.array([0.158*e + 0.276 if e < 21 else 0.254*e + 0.849 for e in E])",
+        "width2": "lambda E: np.array([ 0.150*e + 0.867 if e < 21 else 0.273*e + 0.19 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  },
+  "nutau_bar": {
+    "cc": {
+      "coszen": {
+        "fraction": "lambda E: 0.4*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: np.array([-0.017*e + 0.554 if e < 40 else 0.0 for e in E])",
+        "width1": "lambda E: np.array([-0.00560*e + 0.224 if e < 40 else 0.03 for e in E])",
+        "width2": "lambda E: np.array([-0.00274*e + 0.312 if e < 40 else 0.2 for e in E])"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([-0.638*e + 0.195 if e < 21 else -0.305*e - 3.15 for e in E])",
+        "loc2": "lambda E: np.array([ -0.245*e + 0.332 if e < 21 else -0.348*e - 2.44 for e in E])",
+        "width1": "lambda E: np.array([0.158*e + 0.276 if e < 21 else 0.254*e + 0.849 for e in E])",
+        "width2": "lambda E: np.array([ 0.150*e + 0.867 if e < 21 else 0.273*e + 0.19 for e in E])"
+      }
+    },
+    "nc": {
+      "coszen": {
+        "fraction": "lambda E: 0.3*np.ones_like(E)",
+        "loc1": "lambda E: -0.01*np.ones_like(E)",
+        "loc2": "lambda E: 0.34*np.exp(-E/7.26) + 0.435",
+        "width1": "lambda E: np.array([-0.00684*e + 0.302 if e < 40 else 0.0284 for e in E])",
+        "width2": "lambda E: 0.26*np.ones_like(E)"
+      },
+      "energy": {
+        "fraction": "lambda E: np.array([ 0.4 if e < 21 else 0.01 for e in E])",
+        "loc1": "lambda E: np.array([ -0.833*e + 1.11 if e < 21 else -0.664*e - 0.256 for e in E])",
+        "loc2": "lambda E: np.array([ -0.567*e + 1.63 if e < 21 else -0.702*e + 0.112 for e in E])",
+        "width1": "lambda E: np.array([ 0.0828*e + 0.534 if e < 21 else 0.332*e - 1.96 for e in E])",
+        "width2": "lambda E: np.array([ 0.0951*e + 1.14 if e < 21 else 0.302*e - 0.41 for e in E])"
+      }
+    }
+  }
+}
