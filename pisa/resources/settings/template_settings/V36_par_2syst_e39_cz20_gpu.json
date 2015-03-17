@@ -71,15 +71,11 @@
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "#comment": "Must be one of ['MC','param','stored']",
       "value": "param",
       "fixed": true
     },
     "reco_mc_wt_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
-      "fixed": true
-    },
-    "reco_kde_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
@@ -91,22 +87,17 @@
       "value": "reco_params/V36_reco.json",
       "fixed": true
     },
-    "particle_ID": {
-      "value": {
-        "numu_cc": {
-          "trck": "lambda E: 7.57e-01/(np.exp((6.58e-01-np.log10(E))/1.59e-01)+1.) + 4.18e-02",
-          "cscd": "lambda E: 1.-(7.57e-01/(np.exp((6.58e-01-np.log10(E))/1.59e-01)+1.)+4.18e-02)"},
-        "nuall_nc": {
-          "trck": "lambda E: 1.14e-01*scipy.stats.norm(loc=1.32e+00,scale=4.75e-01).pdf(np.log10(E)) + 3.63e-02",
-          "cscd": "lambda E: 1.-(1.14e-01*scipy.stats.norm(loc=1.32e+00,scale=4.75e-01).pdf(np.log10(E)) + 3.63e-02)"},
-        "nue_cc": {
-          "trck": "lambda E: 1.58e+00*scipy.stats.norm(loc=1.02e+01,scale=5.52e+00).pdf(E)+4.83e-02",
-          "cscd": "lambda E: 1.-(1.58e+00*scipy.stats.norm(loc=1.02e+01,scale=5.52e+00).pdf(E)+4.83e-02)"},
-        "nutau_cc": {
-          "trck": "lambda E: 9.86e+00*scipy.stats.norm(loc=1.37e+00,scale=2.12e+00).pdf(np.log10(E)) -1.66e+00",
-          "cscd": "lambda E: 1.-(9.86e+00*scipy.stats.norm(loc=1.37e+00,scale=2.12e+00).pdf(np.log10(E)) -1.66e+00)"
-        }
-      },
+    "pid_mode": {
+      "#comment": "Must be one of ['param','stored']",
+      "value": "param",
+      "fixed": true
+    },
+    "pid_paramfile": {
+      "value": "pid/V36_pid.json",
+      "fixed": true
+    },
+    "pid_kernelfile": {
+      "value": null,
       "fixed": true
     },
     "livetime": {
