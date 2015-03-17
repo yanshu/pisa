@@ -39,6 +39,11 @@
       "value": 20.0,
       "fixed": true
     },
+    "aeff_mode": {
+      "#comment": "Must be one of ['param','MC']",
+      "value": "param",
+      "fixed": true
+    },
     "aeff_egy_par": {
       "value": {
         "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
@@ -62,19 +67,15 @@
       "fixed": true
     },
     "aeff_weight_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "value": null,
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "#comment": "Must be one of ['MC','param','stored']",
       "value": "param",
       "fixed": true
     },
     "reco_mc_wt_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
-      "fixed": true
-    },
-    "reco_kde_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
@@ -84,10 +85,6 @@
     },
     "reco_param_file": {
       "value": "reco_params/V36_reco.json",
-      "fixed": true
-    },
-    "parametric": {
-      "value": true,
       "fixed": true
     },
     "pid_mode": {
@@ -105,6 +102,11 @@
     },
     "livetime": {
       "value": 1.0,
+      "fixed": true
+    },
+    "channel": {
+      "#comment": "Must be one of ['trck','cscd','all','no_pid']",
+      "value": "all",
       "fixed": true
     },
     "deltam31_nh": {
@@ -131,7 +133,7 @@
     "theta13": {
       "value": 0.15587216,
       "range": [0.1394,0.1771],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": 0.008162
     },
@@ -159,23 +161,30 @@
     "energy_scale": {
       "value": 1.0,
       "range": [0.9,1.1],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": 0.05
     },
     "aeff_scale": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": null
     },
     "nu_nubar_ratio": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
-      "prior": 0.15
+      "prior": 0.05
+    },
+    "nue_numu_ratio": {
+      "value": 1.0,
+      "range": [0.7,1.3],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.1
     }
   }
 }
