@@ -130,7 +130,7 @@ def show_map(pmap, title=None, cbar = True,
 def delta_map(amap, bmap):
     '''
     Calculate the differerence between the two maps (amap - bmap), and return as
-    a map dictionary.
+    a map dictionary. ### NOTE: these take as input the ['trck'] or ['cscd'] portions of the data files. NOT the maps themselves. 
     '''
     if not np.allclose(amap['ebins'],bmap['ebins']) or \
        not np.allclose(amap['czbins'],bmap['czbins']):
@@ -139,3 +139,30 @@ def delta_map(amap, bmap):
     return { 'ebins': amap['ebins'],
              'czbins': amap['czbins'],
              'map' : amap['map'] - bmap['map'] }
+
+def ratio_map(amap, bmap):
+    '''
+    Calculate the ratio between the two maps (amap / bmap), and return as
+    a map dictionary. ### NOTE: these take as input the ['trck'] or ['cscd'] portions of the data files. NOT the maps themselves. 
+    '''
+    if not np.allclose(amap['ebins'],bmap['ebins']) or \
+       not np.allclose(amap['czbins'],bmap['czbins']):
+       raise ValueError('Map range does not match!')
+
+    return { 'ebins': amap['ebins'],
+             'czbins': amap['czbins'],
+             'map' : amap['map'] / bmap['map'] }
+
+
+def diff_ratio_map(amap, bmap):
+    '''
+    Calculate the diffece ratio between the two maps (amap - bmap)/bmap, and return as
+    a map dictionary. ### NOTE: these take as input the ['trck'] or ['cscd'] portions of the data files. NOT the maps themselves. 
+    '''
+    if not np.allclose(amap['ebins'],bmap['ebins']) or \
+       not np.allclose(amap['czbins'],bmap['czbins']):
+       raise ValueError('Map range does not match!')
+
+    return { 'ebins': amap['ebins'],
+             'czbins': amap['czbins'],
+             'map' : (amap['map'] - bmap['map'])/bmap['map'] }
