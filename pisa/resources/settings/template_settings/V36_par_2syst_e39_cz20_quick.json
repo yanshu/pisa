@@ -39,6 +39,11 @@
       "value": 20.0,
       "fixed": true
     },
+    "aeff_mode": {
+      "#comment": "Must be one of ['param','MC']",
+      "value": "param",
+      "fixed": true
+    },
     "aeff_egy_par": {
       "value": {
         "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
@@ -62,19 +67,15 @@
       "fixed": true
     },
     "aeff_weight_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "value": null,
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','kde','param','stored']",
+      "#comment": "Must be one of ['MC','param','stored']",
       "value": "param",
       "fixed": true
     },
     "reco_mc_wt_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
-      "fixed": true
-    },
-    "reco_kde_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
@@ -86,30 +87,26 @@
       "value": "reco_params/V36_reco.json",
       "fixed": true
     },
-    "parametric": {
-      "value": true,
+    "pid_mode": {
+      "#comment": "Must be one of ['param','stored']",
+      "value": "param",
       "fixed": true
     },
-    "particle_ID": {
-      "value": {
-        "numu_cc": {
-          "trck": "lambda E: 7.57e-01/(np.exp((6.58e-01-np.log10(E))/1.59e-01)+1.) + 4.18e-02",
-          "cscd": "lambda E: 1.-(7.57e-01/(np.exp((6.58e-01-np.log10(E))/1.59e-01)+1.)+4.18e-02)"},
-        "nuall_nc": {
-          "trck": "lambda E: 1.14e-01*scipy.stats.norm(loc=1.32e+00,scale=4.75e-01).pdf(np.log10(E)) + 3.63e-02",
-          "cscd": "lambda E: 1.-(1.14e-01*scipy.stats.norm(loc=1.32e+00,scale=4.75e-01).pdf(np.log10(E)) + 3.63e-02)"},
-        "nue_cc": {
-          "trck": "lambda E: 1.58e+00*scipy.stats.norm(loc=1.02e+01,scale=5.52e+00).pdf(E)+4.83e-02",
-          "cscd": "lambda E: 1.-(1.58e+00*scipy.stats.norm(loc=1.02e+01,scale=5.52e+00).pdf(E)+4.83e-02)"},
-        "nutau_cc": {
-          "trck": "lambda E: 9.86e+00*scipy.stats.norm(loc=1.37e+00,scale=2.12e+00).pdf(np.log10(E)) -1.66e+00",
-          "cscd": "lambda E: 1.-(9.86e+00*scipy.stats.norm(loc=1.37e+00,scale=2.12e+00).pdf(np.log10(E)) -1.66e+00)"
-        }
-      },
+    "pid_paramfile": {
+      "value": "pid/V36_pid.json",
+      "fixed": true
+    },
+    "pid_kernelfile": {
+      "value": null,
       "fixed": true
     },
     "livetime": {
       "value": 1.0,
+      "fixed": true
+    },
+    "channel": {
+      "#comment": "Must be one of ['trck','cscd','all','no_pid']",
+      "value": "all",
       "fixed": true
     },
     "deltam31_nh": {
@@ -136,7 +133,7 @@
     "theta13": {
       "value": 0.15587216,
       "range": [0.1394,0.1771],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": 0.008162
     },
@@ -164,23 +161,44 @@
     "energy_scale": {
       "value": 1.0,
       "range": [0.9,1.1],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": 0.05
     },
     "aeff_scale": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
       "prior": null
     },
     "nu_nubar_ratio": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": false,
+      "fixed": true,
       "scale": 1.0,
-      "prior": 0.15
+      "prior": 0.05
+    },
+    "nue_numu_ratio": {
+      "value": 1.0,
+      "range": [0.7,1.3],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.1
+    },
+    "e_reco_scale": {
+      "value": 1.0,
+      "range": [0.9,1.1],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.02
+    },
+    "cz_reco_scale": {
+      "value": 1.0,
+      "range": [0.9,1.1],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.02
     }
   }
 }
