@@ -185,6 +185,20 @@
       "fixed": false,
       "scale": 1.0,
       "prior": 0.1
+    },
+    "e_reco_scale": {
+      "value": 1.0,
+      "range": [0.9,1.1],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.02
+    },
+    "cz_reco_scale": {
+      "value": 1.0,
+      "range": [0.9,1.1],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": 0.02
     }
   }
 }
