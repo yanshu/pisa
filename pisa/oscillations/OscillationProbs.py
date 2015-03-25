@@ -2,8 +2,8 @@
 #
 # OscillationProbs.py
 #
-# This module calculates the bare neutrino oscillation probabilities 
-# for all neutrino flavours and writes them to disk. 
+# This module calculates the bare neutrino oscillation probabilities
+# for all neutrino flavours and writes them to disk.
 # It is not part of the main pisa simulation chain!
 #
 # author: Lukas Schulte
@@ -25,19 +25,19 @@ from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
 from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
 
 # Until python2.6, default json is very slow.
-try: 
+try:
     import simplejson as json
 except ImportError, e:
     import json
 
 
 def to_hdf5(oscprob_dict, filename, param_dict):
-    
+
     fh = h5py.File(filename,'w')
-    
+
     edata = fh.create_dataset('ebins',data=oscprob_dict['ebins'],dtype=np.float32)
     czdata = fh.create_dataset('czbins',data=oscprob_dict['czbins'],dtype=np.float32)
-    
+
     for key in oscprob_dict.keys():
         if 'maps' in key:
             logging.debug("  key %s",key)
@@ -47,25 +47,25 @@ def to_hdf5(oscprob_dict, filename, param_dict):
                 dset = group_base.create_dataset(subkey,data=oscprob_dict[key][subkey],dtype=np.float32)
                 dset.attrs['ebins'] = edata.ref
                 dset.attrs['czbins'] = czdata.ref
-        
+
     param_group = fh.create_group("params")
     logging.debug("  saving param dict...")
     for key in param_dict.keys():
         param_group.create_dataset(key,data=param_dict[key])
-        
+
     fh.close()
     return
 
 
 if __name__ == '__main__':
-    
+
     # parser
     parser = ArgumentParser(description='Takes the oscillation parameters '
                             'as input and writes out a set of osc flux maps')
     parser.add_argument('--ebins', metavar='[1.0,2.0,...]', type=json_string,
         help= '''Edges of the energy bins in units of GeV, default is '''
               '''80 edges (79 bins) from 1.0 to 80 GeV in logarithmic spacing.''',
-        default = np.logspace(np.log10(1.),np.log10(80),80))
+        default = np.logspace(np.log10(1.),np.log10(80),40))
     parser.add_argument('--czbins', metavar='[-1.0,-0.8.,...]', type=json_string,
         help= '''Edges of the cos(zenith) bins, default is '''
               '''21 edges (20 bins) from -1. (upward) to 0. horizontal in linear spacing.''',
@@ -82,30 +82,42 @@ if __name__ == '__main__':
                         help='''theta23 value [rad]''')
     parser.add_argument('--deltacp',type=float,default=np.pi,
                         help='''deltaCP value to use [rad]''')
-    parser.add_argument('--code',type=str,choices = ['prob3','table','nuCraft'], 
-                        default='prob3', help='''Oscillation code to use, one of 
-                        [table, prob3, nuCraft], (default=prob3)''')
-    parser.add_argument('--detector_depth', type=float, default=2.0,
-                        help='''Depth of detector [km]''')
-    parser.add_argument('--prop_height', type=float, default=20.0,
-                        help='''Neutrino production height [km]. If negative, 
-                        and code==nuCraft, sample from realistic distribution''')
-    parser.add_argument('--earth_model', dest='earth_model', metavar='FILE', 
-                        type=str, action='store',default="oscillations/PREM_60layer.dat",
-                        help='''File holding the Earth density model 
-                        (default: 60 layer PREM)''')
-    parser.add_argument('--oversample', dest='oversample', metavar='N', 
-                        type=int, action='store',default=2,
-                        help='''Oversampling factor for oscillation codes''')
-    parser.add_argument('--datadir', dest='datadir', metavar='DIR', 
+    parser.add_argument('--earth-model',type=str,default='oscillations/PREM_60layer.dat',
+                        dest='earth_model',
+                        help='''Earth model data (density as function of radius)''')
+    parser.add_argument('--energy-scale',type=float,default=1.0,
+                        dest='energy_scale',
+                        help='''Energy off scaling due to mis-calibration.''')
+    parser.add_argument('--code',type=str,choices = ['prob3','table','nucraft'],
+                        default='prob3',
+                        help='''Oscillation code to use, one of
+                        [table, prob3, nucraft]''')
+    parser.add_argument('--oversample_e', type=int, default=13,
+			help='''oversampling factor for energy;
+			i.e. every energy bin will be oversampled by this factor''')
+    parser.add_argument('--oversample_cz', type=int, default=12,
+			help='''oversampling factor for cos(zen);
+			i.e. every energy bin will be oversampled by this factor''')
+    parser.add_argument('--detector-depth', type=float, default=2.0,
+                        dest='detector_depth',
+                        help='''Detector depth in km''')
+    parser.add_argument('--propagation-height', type=float, default=None,
+                        dest='prop_height',
+                        help='''Height in the atmosphere to begin propagation in km.
+                        Prob3 default: 20.0 km
+                        NuCraft default: 'sample' from a distribution''')
+    parser.add_argument('--precision', type=float, default=5e-4,
+                        dest='osc_precision',
+                        help='''Requested precision for unitarity (NuCraft only)''')
+    parser.add_argument('--datadir', dest='datadir', metavar='DIR',
                         type=str, action='store',default="oscillations",
-                        help='''Directory holding the pre-calculated oscillation 
-                        probabilities in hdf5 format (default: oscillations, only 
+                        help='''Directory holding the pre-calculated oscillation
+                        probabilities in hdf5 format (default: oscillations, only
                         needed if code==table)''')
-    parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', 
+    parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE',
                         type=str, action='store',default="osc_probs.json",
-                        help='''File to store the output. Format is guessed 
-                        from filename extension: either JSON (.json/.js) or 
+                        help='''File to store the output. Format is guessed
+                        from filename extension: either JSON (.json/.js) or
                         HDF5 (.hdf/.hd5/.hdf5). Default: osc_probs.json''')
     parser.add_argument('-v', '--verbose', action='count', default=None,
                         help='set verbosity level')
@@ -126,24 +138,34 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError('Unknown file format: %s'%fmt)
     logging.info('Will store in %s format'%fmt)
-    
+
     #Initialize an oscillation service
+    iniargs = {'earth_model': args.earth_model,
+               'detector_depth': args.detector_depth,
+               'prop_height': args.prop_height,
+               'osc_precision': args.osc_precision,
+               'datadir': args.datadir}
+    
     logging.info('Using %s oscillation code'%args.code)
     if args.code=='prob3':
-      osc_service = Prob3OscillationService(**settings)
+      if iniargs['prop_height'] is None: iniargs['prop_height'] = 20.0
+      osc_service = Prob3OscillationService(args.ebins,args.czbins,**iniargs)
+    elif args.code=='nucraft':
+      if iniargs['prop_height'] is None: iniargs['prop_height'] = 'sample'
+      osc_service = NucraftOscillationService(args.ebins,args.czbins,**iniargs)
     elif args.code=='table':
-      osc_service = TableOscillationService(**settings)
-    elif args.code=='nuCraft':
-      osc_service = NucraftOscillationService(**settings)
+      osc_service = TableOscillationService(args.ebins,args.czbins,**iniargs)
     else:
       raise NotImplementedError('Unknown oscillation service: %s'%args.code)
     
     #Do calculation
     logging.info("Calculating oscillation probabilities")
-    osc_prob_maps = osc_service.get_osc_prob_maps(**vars(args))
+    settings.pop('ebins')
+    settings.pop('czbins')
+    osc_prob_maps = osc_service.get_osc_prob_maps(**settings)
     
     #Remove irrelevant parameters from settings
-    for par in ['verbose', 'outfile', 'ebins', 'czbins']:
+    for par in ['verbose', 'outfile']:#, 'ebins', 'czbins']:
         settings.pop(par)
     
     #Write out
