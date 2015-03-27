@@ -32,7 +32,7 @@ except:
 
 def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
                  energy_scale=None, theta12=None,theta13=None,theta23=None,
-                 deltacp=None,**kwargs):
+                 deltacp=None,nutau_norm=None,**kwargs):
     '''
     Obtain a map in energy and cos(zenith) of the oscillation probabilities from
 
@@ -63,8 +63,8 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
 
     ebins, czbins = get_binning(flux_maps)
 
-    for to_flav in ['nue','numu','nutau']:
-        for mID in ['','_bar']: # 'matter' ID
+    for to_flav in ['nue','numu']:
+	for mID in ['','_bar']: # 'matter' ID
             nue_flux = flux_maps['nue'+mID]['map']
             numu_flux = flux_maps['numu'+mID]['map']
             oscflux = {'ebins':ebins,
@@ -73,6 +73,16 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
                               numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
                        }
             osc_flux_maps[to_flav+mID] = oscflux
+
+    for mID in ['','_bar']: # 'matter' ID
+        nue_flux = flux_maps['nue'+mID]['map']
+        numu_flux = flux_maps['numu'+mID]['map']
+        oscflux = {'ebins':ebins,
+                   'czbins':czbins,
+                   'map':(nutau_norm*nue_flux*osc_prob_maps['nue'+mID+'_maps']['nutau'+mID] +
+                          nutau_norm*numu_flux*osc_prob_maps['numu'+mID+'_maps']['nutau'+mID])
+                   }
+        osc_flux_maps['nutau'+mID] = oscflux
 
     return osc_flux_maps
 
@@ -101,6 +111,8 @@ if __name__ == '__main__':
                         help='''theta23 value [rad]''')
     parser.add_argument('--deltacp',type=float,default=0.0,
                         help='''deltaCP value to use [rad]''')
+    parser.add_argument('--nutau_norm',type=float,default=1.0,
+                        help='''nutau normalization factor''')
     parser.add_argument('--earth-model',type=str,default='oscillations/PREM_60layer.dat',
                         dest='earth_model',
                         help='''Earth model data (density as function of radius)''')
@@ -169,6 +181,7 @@ if __name__ == '__main__':
                                  deltam21 = args.deltam21,
                                  deltam31 = args.deltam31,
                                  deltacp = args.deltacp,
+				 nutau_norm = args.nutau_norm,
                                  theta12 = args.theta12,
                                  theta13 = args.theta13,
                                  theta23 = args.theta23,
