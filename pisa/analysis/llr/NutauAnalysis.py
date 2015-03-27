@@ -124,7 +124,8 @@ for itrial in xrange(1,args.ntrials+1):
 
     results['data_tau'] = {}
     # 0) get a random seed and store with the data
-    results['data_tau']['seed'] = get_seed()
+    #results['data_tau']['seed'] = get_seed()
+    results['data_tau']['seed'] = 100
     logging.info("  RNG seed: %ld"%results['data_tau']['seed'])
     # 1) get a pseudo data fmap (f=1) from fiducial model (best fit vals of params).
     fmap_tau = get_pseudo_data_fmap(pseudo_data_tau_template_maker,
@@ -133,7 +134,8 @@ for itrial in xrange(1,args.ntrials+1):
                                 seed=results['data_tau']['seed'],chan=channel)
     results['data_notau'] = {}
     # 0') get a random seed and store with the data
-    results['data_notau']['seed'] = get_seed()
+    #results['data_notau']['seed'] = get_seed()
+    results['data_notau']['seed'] = 100
     logging.info("  RNG seed: %ld"%results['data_notau']['seed'])
     # 1') get a pseudo data fmap (f=0) from fiducial model (best fit vals of params).
     fmap_notau = get_pseudo_data_fmap(pseudo_data_notau_template_maker,
@@ -143,17 +145,20 @@ for itrial in xrange(1,args.ntrials+1):
 
     # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
-    #physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
     profile.info("start optimizer")
+    physics.info("Finding best fit for data_tau(f=1) under template(f floating) ")
     llh_data_1 = find_max_llh_bfgs(fmap_tau,template_maker_f_floating,template_settings_f_floating['params'],
                                     minimizer_settings,args.save_steps,
                                     normal_hierarchy=hypo_normal)
+    physics.info("Finding best fit for data_notau (f=0) under template(f floating) ")
     llh_data_2 = find_max_llh_bfgs(fmap_notau,template_maker_f_floating,template_settings_f_floating['params'],
                                     minimizer_settings,args.save_steps,
                                     normal_hierarchy=hypo_normal)
+    physics.info("Finding best fit for data_tau (f=1) under template(f=0,fixed) ")
     llh_data_3 = find_max_llh_bfgs(fmap_tau,template_maker_f_fixed_0,template_settings_f_fixed_0['params'],
                                     minimizer_settings,args.save_steps,
                                     normal_hierarchy=hypo_normal)
+    physics.info("Finding best fit for data_notau (f=0) under template(f=0,fixed) ")
     llh_data_4 = find_max_llh_bfgs(fmap_notau,template_maker_f_fixed_0,template_settings_f_fixed_0['params'],
                                     minimizer_settings,args.save_steps,
                                     normal_hierarchy=hypo_normal)
