@@ -125,7 +125,7 @@ for itrial in xrange(1,args.ntrials+1):
     results['data_tau'] = {}
     # 0) get a random seed and store with the data
     #results['data_tau']['seed'] = get_seed()
-    results['data_tau']['seed'] = 100
+    results['data_tau']['seed'] = 200
     logging.info("  RNG seed: %ld"%results['data_tau']['seed'])
     # 1) get a pseudo data fmap (f=1) from fiducial model (best fit vals of params).
     fmap_tau = get_pseudo_data_fmap(pseudo_data_tau_template_maker,
@@ -135,7 +135,7 @@ for itrial in xrange(1,args.ntrials+1):
     results['data_notau'] = {}
     # 0') get a random seed and store with the data
     #results['data_notau']['seed'] = get_seed()
-    results['data_notau']['seed'] = 100
+    results['data_notau']['seed'] = 200
     logging.info("  RNG seed: %ld"%results['data_notau']['seed'])
     # 1') get a pseudo data fmap (f=0) from fiducial model (best fit vals of params).
     fmap_notau = get_pseudo_data_fmap(pseudo_data_notau_template_maker,

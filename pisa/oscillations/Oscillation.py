@@ -44,6 +44,7 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     '''
 
     #Be verbose on input
+    logging.debug("JUST TESTING>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     params = get_params()
 
     report_params(params, units = ['rad','eV^2','eV^2','','rad','rad','rad'])
@@ -77,6 +78,8 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     for mID in ['','_bar']: # 'matter' ID
         nue_flux = flux_maps['nue'+mID]['map']
         numu_flux = flux_maps['numu'+mID]['map']
+        logging.debug("in oscillation step, the numu_flux = %f", numu_flux)
+        logging.debug("in oscillation step, the nue_flux = %f", nue_flux)
         oscflux = {'ebins':ebins,
                    'czbins':czbins,
                    'map':(nutau_norm*nue_flux*osc_prob_maps['nue'+mID+'_maps']['nutau'+mID] +
