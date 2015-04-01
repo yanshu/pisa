@@ -2,8 +2,8 @@
   "binning": {
     "ebins": [1.0,5.0,10.0,15.0,20.0,25.0,30.0,35.0,45.0,55.0,65.0,80.0],
     "czbins": [-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.0],
-    "oversample_cz": 20,
-    "oversample_e": 40
+    "oversample_cz": 12,
+    "oversample_e": 13
   },
   "params": {
     "flux_file": {
@@ -28,7 +28,7 @@
     },
     "aeff_mode": {
       "#comment": "Must be one of ['param','MC']",
-      "value": "MC",
+      "value": "param",
       "fixed": true
     },
     "aeff_egy_par": {
@@ -54,12 +54,12 @@
       "fixed": true
     },
     "aeff_weight_file": {
-      "value": "aeff/V36/V36_aeff_mc_cutsV5.hdf5",
+      "value": null,
       "fixed": true
     },
     "reco_mode": {
       "#comment": "Must be one of ['MC','param','stored']",
-      "value": "MC",
+      "value": "param",
       "fixed": true
     },
     "reco_mc_wt_file": {
@@ -97,11 +97,11 @@
       "fixed": true
     },
     "deltam31_nh": {
-      "value": 0.00246,
-      "range": [0.0023,0.0026],
+      "value": 0.00242,
+      "range": [0.0021,0.0027],
       "fixed": false,
       "scale": 1.0e2,
-      "prior": null
+      "prior": 0.0001
     },
     "deltam31_ih": {
       "value": -0.00238,
@@ -111,11 +111,11 @@
       "prior": null
     },
     "theta23": {
-      "value": 0.6745,
-      "range": [0.6331,0.785398],
+      "value": 0.7754,
+      "range": [0.6539,0.9377],
       "fixed": false,
       "scale": 1.0,
-      "prior": null
+      "prior": 0.055 
     },
     "theta13": {
       "value": 0.15587216,
@@ -189,8 +189,8 @@
     },
     "nutau_norm": {
       "value": 1.0,
-      "range": [-0.8,3.0],
-      "fixed": true,
+      "range": [-0.7,3.0],
+      "fixed": false,
       "scale": 1.0,
       "prior": null
     }

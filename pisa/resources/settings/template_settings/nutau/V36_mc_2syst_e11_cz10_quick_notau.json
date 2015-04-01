@@ -2,8 +2,8 @@
   "binning": {
     "ebins": [1.0,5.0,10.0,15.0,20.0,25.0,30.0,35.0,45.0,55.0,65.0,80.0],
     "czbins": [-1,-0.9,-0.8,-0.7,-0.6,-0.5,-0.4,-0.3,-0.2,-0.1,0.0],
-    "oversample_cz": 20,
-    "oversample_e": 40
+    "oversample_cz": 12,
+    "oversample_e": 13
   },
   "params": {
     "flux_file": {
@@ -97,9 +97,9 @@
       "fixed": true
     },
     "deltam31_nh": {
-      "value": 0.00246,
-      "range": [0.0023,0.0026],
-      "fixed": false,
+      "value": 0.00242,
+      "range": [0.0021,0.0027],
+      "fixed": true,
       "scale": 1.0e2,
       "prior": null
     },
@@ -111,9 +111,9 @@
       "prior": null
     },
     "theta23": {
-      "value": 0.6745,
-      "range": [0.6331,0.785398],
-      "fixed": false,
+      "value": 0.7754,
+      "range": [0.6539,0.9377],
+      "fixed": true,
       "scale": 1.0,
       "prior": null
     },
@@ -188,8 +188,8 @@
       "prior": 0.02
     },
     "nutau_norm": {
-      "value": 1.0,
-      "range": [-0.8,3.0],
+      "value": 0.0,
+      "range": [-0.7,3.0],
       "fixed": true,
       "scale": 1.0,
       "prior": null
