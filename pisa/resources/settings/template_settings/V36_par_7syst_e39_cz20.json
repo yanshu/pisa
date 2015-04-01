@@ -46,14 +46,14 @@
     },
     "aeff_egy_par": {
       "value": {
-        "NC": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
-        "NC_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuallbar_nc.dat",
-        "nue": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nue.dat",
-        "nue_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuebar.dat",
-        "numu": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_numu.dat",
-        "numu_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_numubar.dat",
-        "nutau": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nutau.dat",
-        "nutau_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nutaubar.dat"
+        "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
+        "NC_bar": "aeff/V36/cuts_V5/a_eff_nuallbar_nc.dat",
+        "nue": "aeff/V36/cuts_V5/a_eff_nue.dat",
+        "nue_bar": "aeff/V36/cuts_V5/a_eff_nuebar.dat",
+        "numu": "aeff/V36/cuts_V5/a_eff_numu.dat",
+        "numu_bar": "aeff/V36/cuts_V5/a_eff_numubar.dat",
+        "nutau": "aeff/V36/cuts_V5/a_eff_nutau.dat",
+        "nutau_bar": "aeff/V36/cuts_V5/a_eff_nutaubar.dat"
       },
       "fixed": true
     },
