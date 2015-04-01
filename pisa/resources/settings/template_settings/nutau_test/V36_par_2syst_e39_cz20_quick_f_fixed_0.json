@@ -202,7 +202,7 @@
     },
     "nutau_norm": {
       "value": 0.0,
-      "range": [-0.8,3.0],
+      "range": [-0.7,3.0],
       "fixed": true,
       "scale": 1.0,
       "prior": null

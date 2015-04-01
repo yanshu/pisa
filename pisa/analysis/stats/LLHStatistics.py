@@ -19,10 +19,25 @@ def get_binwise_llh(pseudo_data,template):
 
     if not np.alltrue(template >= 0.0):
         raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
-
     totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
 
     return totalLLH
+
+    #totalLLH = 0
+    #if not len(template)==len(pseudo_data):
+    #    raise ValueError("Template and pseudo_data should have equal lengths, len(template)=%i, len(pseudo_data) = %i"%(len(template),len(pseudo_data)))
+    #for i in range(0,len(pseudo_data)):
+    #    value_d = pseudo_data[i]
+    #    value_t = template[i]
+    #    if value_t<0:
+    #        return -1e10
+    #    if value_d==0 and value_t==0:
+    #        continue
+    #    if value_d!=0 and value_t==0:
+    #        return -1e10
+    #    #totalLLH += value_d*np.log(value_t) - value_t - (value_d*np.log(value_d)-value_d)
+    #    totalLLH += value_d*np.log(value_t) - value_t
+    #return totalLLH
 
 def get_random_map(template, seed=None):
     '''
