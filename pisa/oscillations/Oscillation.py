@@ -46,7 +46,7 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     #Be verbose on input
     params = get_params()
 
-    report_params(params, units = ['rad','eV^2','eV^2','','rad','rad','rad'])
+    report_params(params, units = ['rad','eV^2','eV^2','','','rad','rad','rad'])
 
     #Initialize return dict
     osc_flux_maps = {'params': add_params(params,flux_maps['params'])}
@@ -63,26 +63,19 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
 
     ebins, czbins = get_binning(flux_maps)
 
-    for to_flav in ['nue','numu']:
+    for to_flav in ['nue','numu','nutau']:
 	for mID in ['','_bar']: # 'matter' ID
             nue_flux = flux_maps['nue'+mID]['map']
             numu_flux = flux_maps['numu'+mID]['map']
+            scale = 1
+            if(to_flav=='nutau'):
+                scale = nutau_norm
             oscflux = {'ebins':ebins,
                        'czbins':czbins,
-                       'map':(nue_flux*osc_prob_maps['nue'+mID+'_maps'][to_flav+mID] +
-                              numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
+                       'map':(scale*nue_flux*osc_prob_maps['nue'+mID+'_maps'][to_flav+mID] +
+                              scale*numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
                        }
             osc_flux_maps[to_flav+mID] = oscflux
-
-    for mID in ['','_bar']: # 'matter' ID
-        nue_flux = flux_maps['nue'+mID]['map']
-        numu_flux = flux_maps['numu'+mID]['map']
-        oscflux = {'ebins':ebins,
-                   'czbins':czbins,
-                   'map':(nutau_norm*nue_flux*osc_prob_maps['nue'+mID+'_maps']['nutau'+mID] +
-                          nutau_norm*numu_flux*osc_prob_maps['numu'+mID+'_maps']['nutau'+mID])
-                   }
-        osc_flux_maps['nutau'+mID] = oscflux
 
     return osc_flux_maps
 
@@ -181,7 +174,7 @@ if __name__ == '__main__':
                                  deltam21 = args.deltam21,
                                  deltam31 = args.deltam31,
                                  deltacp = args.deltacp,
-				 nutau_norm = args.nutau_norm,
+                                 nutau_norm = args.nutau_norm,
                                  theta12 = args.theta12,
                                  theta13 = args.theta13,
                                  theta23 = args.theta23,
