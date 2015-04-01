@@ -46,14 +46,14 @@
     },
     "aeff_egy_par": {
       "value": {
-        "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
-        "NC_bar": "aeff/V36/cuts_V5/a_eff_nuallbar_nc.dat",
-        "nue": "aeff/V36/cuts_V5/a_eff_nue.dat",
-        "nue_bar": "aeff/V36/cuts_V5/a_eff_nuebar.dat",
-        "numu": "aeff/V36/cuts_V5/a_eff_numu.dat",
-        "numu_bar": "aeff/V36/cuts_V5/a_eff_numubar.dat",
-        "nutau": "aeff/V36/cuts_V5/a_eff_nutau.dat",
-        "nutau_bar": "aeff/V36/cuts_V5/a_eff_nutaubar.dat"
+        "NC": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
+        "NC_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuallbar_nc.dat",
+        "nue": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nue.dat",
+        "nue_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nuebar.dat",
+        "numu": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_numu.dat",
+        "numu_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_numubar.dat",
+        "nutau": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nutau.dat",
+        "nutau_bar": "/home/justin/cowen/code/pisa/pisa/resources/aeff/V36/cuts_V5/a_eff_nutaubar.dat"
       },
       "fixed": true
     },
@@ -71,12 +71,16 @@
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','param','stored']",
-      "value": "param",
+      "#comment": "Must be one of ['MC','param','stored','vbwkde']",
+      "value": "vbwkde",
       "fixed": true
     },
     "reco_mc_wt_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_events_file": {
+      "value": null,
       "fixed": true
     },
     "reco_kernel_file": {
