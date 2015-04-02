@@ -71,11 +71,15 @@
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','param','stored']",
-      "value": "param",
+      "#comment": "Must be one of ['MC','param','stored','vbwkde']",
+      "value": "vbwkde",
       "fixed": true
     },
     "reco_mc_wt_file": {
+      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_vbwkde_evts_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
