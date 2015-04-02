@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 #
-# LLROptimizerAnalysis.py
+# NutauAnalysis.py
 #
-# Runs the LLR optimizer-based LLR analysis
+# Runs the LLR optimizer-based analysis for a nutau appearance search
 #
-# author: Tim Arlen - tca3@psu.edu
-#         Sebatian Boeser - sboeser@uni-mainz.de
+# author: Feifei Huang - fxh140@psu.edu
+#         Tim Arlen - tca3@psu.edu
 #
-# date:   02-July-2014
+# date:   31-March-2015
 #
 
 import numpy as np
@@ -117,6 +117,7 @@ for itrial in xrange(1,args.ntrials+1):
                                          hypo_nutau_norm,nutau_norm_fix),
                                          minimizer_settings,args.save_steps,
                                          normal_hierarchy=hypo_normal)
+            print "injected initial nutau_norm: ",init_nutau_norm
             profile.info("stop optimizer")
 
             #Store the LLH data
