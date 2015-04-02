@@ -72,7 +72,7 @@
     },
     "reco_mode": {
       "#comment": "Must be one of ['MC','param','stored','vbwkde']",
-      "value": "vbwkde",
+      "value": "param",
       "fixed": true
     },
     "reco_mc_wt_file": {
