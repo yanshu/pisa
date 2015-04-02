@@ -88,7 +88,7 @@
       "fixed": true
     },
     "reco_param_file": {
-      "value": "reco_params/V36_reco.json",
+      "value": "reco/V36.json",
       "fixed": true
     },
     "pid_mode": {
