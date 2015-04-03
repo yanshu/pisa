@@ -41,6 +41,10 @@ def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
     done by apply_ratio_scale.
     '''
     flavours = event_rate_maps.keys()
+    if('nutau_norm' in event_rate_maps['params']):
+        if(event_rate_maps['params']['nutau_norm'] == 0.0):
+            flavours.remove('nutau')
+            flavours.remove('nutau_bar')
     if 'params' in flavours: flavours.remove('params')
 
     for flavour in flavours:
