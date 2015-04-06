@@ -105,7 +105,7 @@
       "fixed": true
     },
     "channel": {
-      "#comment": "Must be one of ['trck','cscd','all']",
+      "#comment": "Must be one of ['trck','cscd','all','no_pid']",
       "value": "all",
       "fixed": true
     },
