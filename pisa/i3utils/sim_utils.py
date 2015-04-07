@@ -32,13 +32,13 @@ def get_arb_cuts(data, cut_list, mcnu='MCNeutrino', nuIDList=None,
     try:
         conditions = [data.root.__getattr__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
     except:
-        conditions = [data.root.__getattribute__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
+        conditions = [data.root.__getattr__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
 
     if nuIDList is not None:
-        conditions.append([True if val in nuIDList else False for val in data.root.MCNeutrino.col('type')])
+        conditions.append([True if val in nuIDList else False for val in data.root.__getattr__(mcnu).col('type')])
     if cut_sim_down:
         logging.debug("  >>Removing simulated downgoing events!")
-        conditions.append(np.cos(data.root.MCNeutrino.col('zenith'))<0.)
+        conditions.append(np.cos(data.root.__getattr__(mcnu).col('zenith'))<0.)
 
     return np.alltrue(np.array(conditions),axis=0)
 
@@ -74,7 +74,7 @@ def get_aeff1D(data,cuts_list,ebins,files_per_run,mcnu='MCNeutrino',
     # NOTE: solid_angle should be coordinated with get_arb_cuts(cut_sim_down=bool)
     sim_wt_array = (data.root.I3MCWeightDict.col('OneWeight')[cuts_list]/
                     total_events/solid_angle)
-    egy_array = data.root.__getattribute__(mcnu).col('energy')[cuts_list]
+    egy_array = data.root.__getattr__(mcnu).col('energy')[cuts_list]
     aeff,xedges = np.histogram(egy_array,weights=sim_wt_array,bins=ebins)
 
     egy_bin_widths = get_bin_sizes(ebins)
