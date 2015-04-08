@@ -32,7 +32,7 @@ def get_arb_cuts(data, cut_list, mcnu='MCNeutrino', nuIDList=None,
     try:
         conditions = [data.root.__getattr__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
     except:
-        conditions = [data.root.__getattr__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
+        conditions = [data.root.__getattribute__(cut[0]).col(cut[1]) == cut[2] for cut in cut_list]
 
     if nuIDList is not None:
         conditions.append([True if val in nuIDList else False for val in data.root.__getattr__(mcnu).col('type')])
@@ -86,6 +86,7 @@ def get_aeff1D(data,cuts_list,ebins,files_per_run,mcnu='MCNeutrino',
 
     # So that the error calculation comes out right without divide by zeros...
     unweighted_events = [1. if val < 1.0 else val for val in unweighted_events]
+    print unweighted_events
 
     aeff_error = np.divide(aeff,np.sqrt(unweighted_events))
 

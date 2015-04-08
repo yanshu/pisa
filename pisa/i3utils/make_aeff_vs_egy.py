@@ -205,11 +205,13 @@ for flav,val in nuDict.items():
 logging.info("Processing NC all...")
 
 data_nc = LoadData(args.data_dir,args.geom_str,'NC')
+print "data_nc = ", data_nc
 
 nc_cut_list = list(s1_s2_cuts)
 nc_cut_list.append(("I3MCWeightDict","InteractionType",2))
 
 nc_list = [66,68,133] if args.old_pid else [12,14,16]
+print args.mcnu
 cuts_nc = get_arb_cuts(data_nc,nc_cut_list,mcnu=args.mcnu,nuIDList=nc_list,
                        cut_sim_down=cut_sim_down)
 
