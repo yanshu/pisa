@@ -223,10 +223,12 @@ logging.info("  NC NEvents: %d"%np.sum(cuts_nc))
 logging.info("  NCBar NEvents: %d"%np.sum(cuts_nc_bar))
 
 nfiles_per_run = (args.ne + args.nmu + args.ntau)/3.0
-aeff_nc_nu,aeff_nc_nu_err,xedges = get_aeff1D(data_nc,cuts_nc,ebins,
-                                              nfiles_per_run,nc=True,solid_angle=solid_angle)
-aeff_nc_nubar,aeff_nc_nubar_err,xedges = get_aeff1D(data_nc,cuts_nc_bar,ebins,
-                                                    nfiles_per_run,nc=True,solid_angle=solid_angle)
+aeff_nc_nu,aeff_nc_nu_err,xedges = get_aeff1D(
+    data_nc,cuts_nc,ebins,nfiles_per_run,mcnu=args.mcnu,nc=True,
+    solid_angle=solid_angle)
+aeff_nc_nubar,aeff_nc_nubar_err,xedges = get_aeff1D(
+    data_nc,cuts_nc_bar,ebins,nfiles_per_run,mcnu=args.mcnu,nc=True,
+    solid_angle=solid_angle)
 
 aeff_list.append(aeff_nc_nu)
 aeff_err_list.append(aeff_nc_nu_err)
@@ -240,4 +242,4 @@ for i,flavor in enumerate(flavor_list):
     logging.info("Saving: %s to %s"%(flavor,args.outdir))
     SaveAeff(aeff_list[i],aeff_err_list[i],ebins,flavor,args.outdir)
 
-print "\nFINISHED..."
+print "\nFINISHED...\n"
