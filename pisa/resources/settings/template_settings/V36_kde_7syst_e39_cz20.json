@@ -84,6 +84,10 @@
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
       "fixed": true
     },
+    "reco_vbwkde_make_plots": {
+      "value": false,
+      "fixed": true
+    },
     "reco_kernel_file": {
       "value": null,
       "fixed": true
