@@ -15,8 +15,8 @@
 	-1.0,  -0.95, -0.9, -0.85, -0.8, -0.75, -0.7, -0.65, -0.6,
     	-0.55, -0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15,
      	-0.1,  -0.05, 0.0],
-    "oversample_cz": 12,
-    "oversample_e": 13
+    "oversample_cz": 10,
+    "oversample_e": 10
   },
   "params": {
     "flux_file": {
@@ -25,7 +25,7 @@
     },
     "osc_code": {
       "#comment": "Must be one of ['prob3','nucraft',or 'gpu']",
-      "value": "prob3",
+      "value": "gpu",
       "fixed": true
     },
     "earth_model": {
@@ -59,12 +59,7 @@
       "fixed": true
     },
     "aeff_coszen_par": {
-      "value": {
-        "nue": "lambda cz: 0.078*np.abs(cz)**1.190 + 0.964",
-        "numu": "lambda cz: -0.114 * np.abs(cz)**2.811 + 1.029",
-        "nutau": "lambda cz: 0.048 * np.abs(cz)**4.523 + 0.990",
-        "NC": "lambda cz: 0.101 * np.abs(cz)**1.817 + 0.963"
-      },
+      "value": "aeff/V36/V36_aeff_cz.json",
       "fixed": true
     },
     "aeff_weight_file": {
@@ -72,12 +67,20 @@
       "fixed": true
     },
     "reco_mode": {
-      "#comment": "Must be one of ['MC','param','stored']",
-      "value": "param",
+      "#comment": "Must be one of ['MC','param','stored','vbwkde']",
+      "value": "vbwkde",
       "fixed": true
     },
     "reco_mc_wt_file": {
       "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_vbwkde_evts_file": {
+      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "fixed": true
+    },
+    "reco_vbwkde_make_plots": {
+      "value": false,
       "fixed": true
     },
     "reco_kernel_file": {
@@ -85,7 +88,7 @@
       "fixed": true
     },
     "reco_param_file": {
-      "value": "reco_params/V36_reco.json",
+      "value": "reco/V36.json",
       "fixed": true
     },
     "pid_mode": {
@@ -134,7 +137,7 @@
     "theta13": {
       "value": 0.15587216,
       "range": [0.1394,0.1771],
-      "fixed": true,
+      "fixed": false,
       "scale": 1.0,
       "prior": 0.008162
     },
@@ -162,28 +165,28 @@
     "energy_scale": {
       "value": 1.0,
       "range": [0.9,1.1],
-      "fixed": true,
+      "fixed": false,
       "scale": 1.0,
-      "prior": 0.05
+      "prior": 0.1
     },
     "aeff_scale": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": true,
+      "fixed": false,
       "scale": 1.0,
       "prior": null
     },
     "nu_nubar_ratio": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": true,
+      "fixed": false,
       "scale": 1.0,
       "prior": 0.10
     },
     "nue_numu_ratio": {
       "value": 1.0,
       "range": [0.7,1.3],
-      "fixed": true,
+      "fixed": false,
       "scale": 1.0,
       "prior": 0.03
     },
