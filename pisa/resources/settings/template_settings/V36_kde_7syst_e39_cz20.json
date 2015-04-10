@@ -168,7 +168,7 @@
       "range": [0.9,1.1],
       "fixed": false,
       "scale": 1.0,
-      "prior": 0.05
+      "prior": 0.1
     },
     "aeff_scale": {
       "value": 1.0,
