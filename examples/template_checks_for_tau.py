@@ -15,6 +15,7 @@
 
 import numpy as np
 import os
+import copy
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -317,11 +318,16 @@ settings file. ''')
     profile.info("==> elapsed time to initialize templates: %s sec"%t.secs)
 
     # Make nutau template:
-    nutau_params = change_nutau_norm_settings(template_settings['params'],1.0,True)
+    no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(template_settings['params'],True,0.0))
+    print "no nutau_params: ",  no_nutau_params['nutau_norm']
+
+    nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(template_settings['params'],True,1.0))
     print "nutau_params : " ,nutau_params['nutau_norm']
 
-    no_nutau_params = change_nutau_norm_settings(template_settings['params'],0.0,True)
-    print "no nutau_params: ",  no_nutau_params['nutau_norm']
+    get_nutau_params = get_values(nutau_params)
+    get_no_nutau_params = get_values(no_nutau_params)
+    print "get_nutau_params['nutau_norm'] = " , get_nutau_params['nutau_norm']
+    print "get_no_nutau_params['nutau_norm'] = " , get_no_nutau_params['nutau_norm']
     with Timer(verbose=False) as t:
         nutau = template_maker.get_template(get_values(nutau_params),return_stages=args.all)
     profile.info("==> elapsed time to get NUTAU template: %s sec"%t.secs)
