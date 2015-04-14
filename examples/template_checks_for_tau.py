@@ -25,6 +25,7 @@ from pisa.utils.log import set_verbosity,logging,profile
 from pisa.utils.utils import Timer
 from pisa.utils.jsons import from_json
 from pisa.utils.plot import show_map
+from pisa.utils.utils import get_bin_centers
 
 def get_asymmetry(nutau,no_nutau,flavs,iType=None):
     if iType is None:
@@ -42,6 +43,100 @@ def get_asymmetry(nutau,no_nutau,flavs,iType=None):
             'czbins': nutau[flav][iType]['czbins'] }
                 for flav in flavs}
 
+def get_residual(map_1,map_2,flavs,iType=None):
+    if iType is None:
+        return {flav:{
+            'map': np.nan_to_num((map_2[flav]['map']-map_1[flav]['map'])),
+            'ebins':map_1[flav]['ebins'],
+            'czbins': map_1[flav]['czbins'] }
+                for flav in flavs}
+    else:
+        return {flav:{
+            'map': np.nan_to_num((map_2[flav][iType]['map']-map_1[flav][iType]['map'])),
+            'ebins':map_1[flav][iType]['ebins'],
+            'czbins': map_1[flav][iType]['czbins'] }
+                for flav in flavs}
+
+def get_ratio_2D(nutau,no_nutau,flavs,iType=None):
+    ''' Gets 2D ratio.'''
+    if iType is None:
+        return {flav:{
+            'map': np.nan_to_num(nutau[flav]['map']/no_nutau[flav]['map']),
+            'ebins':nutau[flav]['ebins'],
+            'czbins': nutau[flav]['czbins'] }
+                for flav in flavs}
+    else:
+        return {flav:{
+            'map': np.nan_to_num(nutau[flav][iType]['map']/no_nutau[flav][iType]['map']),
+            'ebins':nutau[flav][iType]['ebins'],
+            'czbins': nutau[flav][iType]['czbins'] }
+                for flav in flavs}
+
+def get_ratio_1D(nutau,no_nutau,flavs,iType=None):
+    ''' Gets 1D ratio.'''
+    if iType is None:
+        return {flav:{
+            'map': np.nan_to_num(np.sum(nutau[flav]['map'],axis=1)/np.sum(no_nutau[flav]['map'],axis=1)),
+            'ebins':nutau[flav]['ebins']}
+            #'czbins': nutau[flav]['czbins'] }
+                for flav in flavs}
+    else:
+        return {flav:{
+            'map': np.nan_to_num(np.sum(nutau[flav][iType]['map'],axis=1)/np.sum(no_nutau[flav][iType]['map'],axis=1)),
+            'ebins':nutau[flav][iType]['ebins']}
+                for flav in flavs}
+
+def plot_ratio(nutau,no_nutau,title='',save=False,dpi=150,outdir=""):
+    '''
+    Plots the 1D ratio plot between two plots.
+    '''
+    nutau_pid_map = nutau[4]
+    no_nutau_pid_map = no_nutau[4]
+    h_ratio = get_ratio_1D(nutau_pid_map,no_nutau_pid_map,['trck','cscd'])
+    e_bin_edges = h_ratio['trck']['ebins']
+    e_bin_centers = get_bin_centers(e_bin_edges)
+
+    plt.figure(figsize=(5,8))
+    plt.subplot(2,1,1)
+    plt.plot(e_bin_centers,h_ratio['trck']['map'],color='green', linestyle='solid', marker='o',
+                 markerfacecolor='blue', markersize=3)
+    plt.title(title+' trck'+r' ratio', fontsize='large')
+    plt.xscale('log')
+    plt.subplot(2,1,2)
+    plt.plot(e_bin_centers,h_ratio['cscd']['map'],color='green', linestyle='solid', marker='o',
+                 markerfacecolor='blue', markersize=3)
+    plt.xscale('log')
+    plt.title(title+' cscd'+r' ratio', fontsize='large')
+    filename = os.path.join(outdir,title+'_ratio'+'.png')
+    plt.savefig(filename,dpi=dpi)
+    return
+
+def plot_residual(map_1,map_2,map_1_title='',map_2_title='',save=False,dpi=150,outdir=""):
+    '''
+    Plots the residual plot.
+    '''
+    flavors = ['trck','cscd']
+    map_1_pid_map = map_1[4]
+    map_2_pid_map = map_2[4]
+    h_resd = get_residual(map_1_pid_map,map_2_pid_map,flavors)
+    for chan in ['trck','cscd']:
+        plt.figure(figsize=(5,8))
+        plt.subplot(3,1,1)
+        show_map(map_1_pid_map[chan])
+        plt.title(map_1_title+' '+chan+' counts',fontsize='large')
+
+        plt.subplot(3,1,2)
+        show_map(map_2_pid_map[chan])
+        plt.title(map_2_title+' '+chan+' counts',fontsize='large')
+
+        plt.subplot(3,1,3)
+        show_map(h_resd[chan])
+        plt.title(map_1_title +' '+map_2_title+' residual, '+chan+' counts',fontsize='large')
+
+        if save:
+            print "Saving %s chan..."%chan
+            filename = os.path.join(outdir,map_1_title+'_'+map_2_title+'_residual_'+chan+'.png')
+            plt.savefig(filename,dpi=dpi)
 
 def plot_pid_stage(nutau,no_nutau,title='',save=False,dpi=150,outdir=""):
     '''
@@ -141,7 +236,7 @@ def plot_osc_flux_stage(osc_flux_nutau,osc_flux_no_nutau,save=False,title='',
         plt.subplot(2,3,3)
         show_map(h_asym[flav],cmap='RdBu_r')
         sigma = np.sqrt(np.sum(h_asym[flav]['map']**2))
-        plt.title(r'Hierarchy Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
+        plt.title(r'Nutau Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
                   fontsize='large')
 
         flav_bar = flav+'_bar'
@@ -154,7 +249,7 @@ def plot_osc_flux_stage(osc_flux_nutau,osc_flux_no_nutau,save=False,title='',
         plt.subplot(2,3,6)
         show_map(h_asym[flav_bar],cmap='RdBu_r')
         sigma = np.sqrt(np.sum(h_asym[flav_bar]['map']**2))
-        plt.title(r'Hierarchy Asymmetry: '+flav_title[flav_bar]+
+        plt.title(r'Nutau Asymmetry: '+flav_title[flav_bar]+
                   ', $\sigma$ = %.3f'%sigma,fontsize='large')
 
         plt.tight_layout()
@@ -191,7 +286,7 @@ def plot_true_event_rate(event_rate_nutau,event_rate_no_nutau,title='',save=Fals
         plt.subplot(2,3,3)
         show_map(h_asym[flav],cmap='RdBu_r')
         sigma = np.sqrt(np.sum(h_asym[flav]['map']**2))
-        plt.title(r'Hierarchy Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
+        plt.title(r'Nutau Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
                   fontsize='large')
 
         flav_bar = flav+'_bar'
@@ -204,7 +299,7 @@ def plot_true_event_rate(event_rate_nutau,event_rate_no_nutau,title='',save=Fals
         plt.subplot(2,3,6)
         show_map(h_asym[flav_bar],cmap='RdBu_r')
         sigma = np.sqrt(np.sum(h_asym[flav_bar]['map']**2))
-        plt.title(r'Hierarchy Asymmetry: '+flav_title[flav_bar]+
+        plt.title(r'Nutau Asymmetry: '+flav_title[flav_bar]+
                   ', $\sigma$ = %.3f'%sigma,fontsize='large')
 
         plt.tight_layout()
@@ -240,7 +335,7 @@ def plot_reco_event_rate(reco_rate_nutau,reco_rate_no_nutau,save=False,title='',
         plt.subplot(1,3,3)
         show_map(h_asym[flav],cmap='RdBu_r')
         sigma = np.sqrt(np.sum(h_asym[flav]['map']**2))
-        plt.title(r'Hierarchy Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
+        plt.title(r'Nutau Asymmetry: '+flav_title[flav]+', $\sigma$ = %.3f'%sigma,
                   fontsize='large')
 
         plt.tight_layout()
@@ -295,8 +390,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description='''Quick check if all components are working reasonably well, by
 making the final level hierarchy asymmetry plots from the input
 settings file. ''')
-    parser.add_argument('template_settings',metavar='JSON',
-                        help='Settings file to use for template generation')
+    parser.add_argument('mc_template_settings',metavar='JSON',
+                        help='Settings file to use for MC template generation')
+    parser.add_argument('para_template_settings',metavar='JSON',
+                        help='Settings file to use for parametrized template generation')
     parser.add_argument('-a','--all',action='store_true',default=False,
                         help="Plot all stages 1-5 of templates and Asymmetry")
     parser.add_argument('--title',metavar="str",default='',
@@ -310,35 +407,52 @@ settings file. ''')
     args = parser.parse_args()
     set_verbosity(args.verbose)
 
-    template_settings = from_json(args.template_settings)
+    mc_template_settings = from_json(args.mc_template_settings)
+    para_template_settings = from_json(args.para_template_settings)
 
     with Timer() as t:
-        template_maker = TemplateMaker(get_values(template_settings['params']),
-                                       **template_settings['binning'])
+        mc_template_maker = TemplateMaker(get_values(mc_template_settings['params']),
+                                       **mc_template_settings['binning'])
+        para_template_maker = TemplateMaker(get_values(para_template_settings['params']),
+                                       **para_template_settings['binning'])
     profile.info("==> elapsed time to initialize templates: %s sec"%t.secs)
 
     # Make nutau template:
-    no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(template_settings['params'],True,0.0))
-    print "no nutau_params: ",  no_nutau_params['nutau_norm']
+    mc_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(mc_template_settings['params'],True,0.0))
 
-    nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(template_settings['params'],True,1.0))
-    print "nutau_params : " ,nutau_params['nutau_norm']
+    mc_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(mc_template_settings['params'],True,1.0))
 
-    get_nutau_params = get_values(nutau_params)
-    get_no_nutau_params = get_values(no_nutau_params)
-    print "get_nutau_params['nutau_norm'] = " , get_nutau_params['nutau_norm']
-    print "get_no_nutau_params['nutau_norm'] = " , get_no_nutau_params['nutau_norm']
+    para_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(para_template_settings['params'],True,0.0))
+
+    para_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(para_template_settings['params'],True,1.0))
+
     with Timer(verbose=False) as t:
-        nutau = template_maker.get_template(get_values(nutau_params),return_stages=args.all)
+        mc_nutau = mc_template_maker.get_template(get_values(mc_nutau_params),return_stages=args.all)
+        para_nutau = para_template_maker.get_template(get_values(para_nutau_params),return_stages=args.all)
     profile.info("==> elapsed time to get NUTAU template: %s sec"%t.secs)
     with Timer(verbose=False) as t:
-        no_nutau = template_maker.get_template(get_values(no_nutau_params),return_stages=args.all)
+        mc_no_nutau = mc_template_maker.get_template(get_values(mc_no_nutau_params),return_stages=args.all)
+        para_no_nutau = para_template_maker.get_template(get_values(para_no_nutau_params),return_stages=args.all)
     profile.info("==> elapsed time to get NO_NUTAU template: %s sec"%t.secs)
 
     # Or equivalently, if args.all:
-    if type(nutau) is tuple:
-        plot_stages(nutau,no_nutau,title=args.title,save=args.save,outdir=args.outdir)
-    else: plot_pid_stage(nutau,no_nutau,title=args.title,save=args.save,outdir=args.outdir)
+
+    plot_residual(mc_nutau,para_nutau,map_1_title='mc_nutau',map_2_title='para_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_tau/')
+    plot_residual(mc_no_nutau,para_no_nutau,map_1_title='mc_no_nutau',map_2_title='para_no_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_notau/')
+
+    plot_ratio(mc_nutau,para_nutau,title='mc_to_para_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_tau/')
+    plot_ratio(mc_no_nutau,para_no_nutau,title='mc_to_para_no_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_notau/')
+
+    #if type(mc_nutau) is tuple:
+    #    #plot_stages(mc_nutau,mc_no_nutau,title=args.title,save=args.save,outdir=args.outdir+'mc/')
+    #    #plot_stages(para_nutau,para_no_nutau,title=args.title,save=args.save,outdir=args.outdir+'para/')
+    #    plot_stages(mc_nutau,para_nutau,title=args.title,save=args.save,outdir=args.outdir+'mc_vs_para_tau/')
+    #    plot_stages(mc_no_nutau,para_no_nutau,title=args.title,save=args.save,outdir=args.outdir+'mc_vs_para_notau/')
+    #else:
+    #    #plot_pid_stage(mc_nutau,mc_no_nutau,title=args.title,save=args.save,outdir=args.outdir+'mc/')
+    #    #plot_pid_stage(para_nutau,para_no_nutau,title=args.title,save=args.save,outdir=args.outdir+'para/')
+    #    plot_residual(mc_nutau,para_nutau,map_1_title='mc_nutau',map_2_title='para_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_tau/')
+    #    plot_residual(mc_no_nutau,para_no_nutau,map_1_title='mc_no_nutau',map_2_title='para_no_nutau',save=args.save,outdir=args.outdir+'mc_vs_para_notau/')
 
     if not args.save: plt.show()
     else: print "\n-->>Saved all files to: ",args.outdir
