@@ -75,6 +75,8 @@ def processDatabase(dbfile,free_params):
                 print "  Leaving parameter free: ",key
         print "  ...all others fixed!"
 
+    params['nutau_norm']={ "value": 1.0, "range": [-0.7,3.0], "fixed": True, "scale": 1.0, "prior": None}
+
     return params
 
 parser = ArgumentParser('''Creates a .json file for the template_settings used in a PISA analysis.''',
