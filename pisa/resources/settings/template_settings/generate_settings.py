@@ -26,7 +26,7 @@ try:
 except:
     pass
 
-def processDatabase(dbfile,free_params):
+def processDatabase(dbfile,free_params,nutau):
 
     con = sqlite3.connect(dbfile)
     cur = con.cursor()
@@ -74,8 +74,9 @@ def processDatabase(dbfile,free_params):
             if not params[key]['fixed']:
                 print "  Leaving parameter free: ",key
         print "  ...all others fixed!"
-
-    params['nutau_norm']={ "value": 1.0, "range": [-0.7,3.0], "fixed": True, "scale": 1.0, "prior": None}
+    if nutau:
+        params['nutau_norm']={ "value": 1.0, "range": [-0.7,3.0], "fixed": True, "scale": 1.0, "prior": None}
+        params['residual_up_down']= {"value": True, "fixed": True}
 
     return params
 
@@ -161,6 +162,8 @@ parser.add_argument('--channel',metavar='STR', type=str,
 parser.add_argument('--free_params',metavar='LIST',default=None,nargs='*',
                     help='''List of parameters to leave as free from systematics database.
                     If not set, will use fixed as set in database.''')
+parser.add_argument('--nutau',action='store_true',default=False,
+                    help="For nutau analysis, add 'nutau_norm' and 'residual_up_down' to params)
 
 
 args = parser.parse_args()
@@ -178,7 +181,7 @@ template_settings['binning']['oversample_e'] = args.oversample_e
 template_settings['binning']['oversample_cz'] = args.oversample_cz
 
 # Now process the (possibly not fixed) systematic parameters of the database:
-dbparams = processDatabase(args.dbfile,args.free_params)
+dbparams = processDatabase(args.dbfile,args.free_params,args.nutau)
 outfile = args.outfile
 
 # Get all other parameters as cmd line arguments:
