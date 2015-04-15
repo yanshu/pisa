@@ -163,7 +163,7 @@ parser.add_argument('--free_params',metavar='LIST',default=None,nargs='*',
                     help='''List of parameters to leave as free from systematics database.
                     If not set, will use fixed as set in database.''')
 parser.add_argument('--nutau',action='store_true',default=False,
-                    help="For nutau analysis, add 'nutau_norm' and 'residual_up_down' to params)
+                    help="For nutau analysis, add 'nutau_norm' and 'residual_up_down' to params")
 
 
 args = parser.parse_args()
