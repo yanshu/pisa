@@ -156,7 +156,11 @@ class TemplateMaker:
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
-        output from each stage as a simple tuple.
+        output from each stage as a simple tuple. 
+        If params['residual_up_down'] is True, template is a combined map 
+        of up-going and down-going neutrinos, the last stage returns
+        a residual map: up-going map minus the reflected down-going map
+        (reflect about cos_zen=0).
         '''
 
         logging.info("STAGE 1: Getting Atm Flux maps...")
@@ -191,6 +195,17 @@ class TemplateMaker:
             final_event_rate = get_pid_maps(event_rate_reco_maps,
                                             self.pid_service)
         profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+
+        if params["residual_up_down"]:
+            czbin_edges = len(final_event_rate['cscd']['czbins'])
+            czbin_mid_idx = (czbin_edges-1)/2
+            residual_event_rate = {flav:{
+                'map': np.nan_to_num(np.abs(final_event_rate[flav]['map'][:,0:czbin_mid_idx-2]      #-2 means: remove bins in horizontal direction,
+                          - np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx+2:]))),         #          e.g. cosz in [-0.2, 0.]
+                'ebins':final_event_rate[flav]['ebins'],
+                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx-1] }
+                           for flav in ['cscd','trck']}
+            final_event_rate = residual_event_rate
 
         if not return_stages:
             return final_event_rate
