@@ -41,10 +41,9 @@ def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
     done by apply_ratio_scale.
     '''
     flavours = event_rate_maps.keys()
-    if('nutau_norm' in event_rate_maps['params']):
-        if(event_rate_maps['params']['nutau_norm'] == 0.0):
-            flavours.remove('nutau')
-            flavours.remove('nutau_bar')
+    if(event_rate_maps['params']['nutau_norm'] == 0.0):
+       flavours.remove('nutau')
+       flavours.remove('nutau_bar')
     if 'params' in flavours: flavours.remove('params')
 
     for flavour in flavours:
@@ -107,6 +106,7 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,nu_nubar_ratio=None
         int_type_dict = {}
         for int_type in ['cc','nc']:
             event_rate = osc_flux_map*aeff_dict[flavour][int_type]*aeff_scale
+            #event_rate[event_rate==0] = 0.0000000000001    ???
 
             event_rate *= (livetime*Julian_year)
             int_type_dict[int_type] = {'map':event_rate,

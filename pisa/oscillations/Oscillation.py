@@ -51,6 +51,9 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     #Initialize return dict
     osc_flux_maps = {'params': add_params(params,flux_maps['params'])}
 
+    #add 'nutau_norm' parameter to params
+    osc_flux_maps = {'params': add_params(params,{'nutau_norm':nutau_norm})}
+
     #Get oscillation probability map from service
     osc_prob_maps = osc_service.get_osc_prob_maps(deltam21=deltam21,
                                                   deltam31=deltam31,
