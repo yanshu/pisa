@@ -9,6 +9,7 @@
 
 import h5py
 import numpy as np
+import sys
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import find_resource
