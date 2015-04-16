@@ -196,14 +196,16 @@ class TemplateMaker:
                                             self.pid_service)
         profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
 
+        # if "residual_up_down" is true, then the final event rate map is
+        # upgoing - flipped downgoing map.
         if params["residual_up_down"]:
             czbin_edges = len(final_event_rate['cscd']['czbins'])
             czbin_mid_idx = (czbin_edges-1)/2
             residual_event_rate = {flav:{
-                'map': np.nan_to_num(np.abs(final_event_rate[flav]['map'][:,0:czbin_mid_idx-2]      #-2 means: remove bins in horizontal direction,
-                          - np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx+2:]))),         #          e.g. cosz in [-0.2, 0.]
+                'map': np.nan_to_num((final_event_rate[flav]['map'][:,0:czbin_mid_idx]   
+                          - np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx:]))),
                 'ebins':final_event_rate[flav]['ebins'],
-                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx-1] }
+                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx+1] }
                            for flav in ['cscd','trck']}
             final_event_rate = residual_event_rate
 

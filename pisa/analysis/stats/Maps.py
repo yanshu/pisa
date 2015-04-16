@@ -7,6 +7,7 @@
 #
 
 import os
+import copy
 import numpy as np
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
@@ -57,12 +58,25 @@ def get_pseudo_data_fmap(template_maker,fiducial_params,seed=None,chan=None):
       * chan = channel of flattened fmap to use.
         if 'all': returns a single flattened map of trck/cscd combined.
         if 'cscd' or 'trck' only returns the channel requested.
-    '''
-
-    true_template = template_maker.get_template(fiducial_params)
-    true_fmap = flatten_map(true_template,chan=chan)
-    fmap = get_random_map(true_fmap, seed=seed)
-
+    ''' 
+    if fiducial_params['residual_up_down']:
+        # get a up and down-going combined template first, change 'residual_up_down' to false
+        combined_fiducial_params = copy.deepcopy(fiducial_params)
+        combined_fiducial_params['residual_up_down']=False
+        true_template = template_maker.get_template(combined_fiducial_params)  
+        # get two separate templates: up-going and downgoing
+        true_template_up = get_up_map(true_template,chan=fiducial_params['channel']) 
+        true_template_down = get_flipped_down_map(true_template,fiducial_params['channel']) 
+        true_fmap_up = flatten_map(true_template_up,chan=fiducial_params['channel'])
+        true_fmap_down = flatten_map(true_template_down,chan=fiducial_params['channel'])
+        fmap_up = get_random_map(true_fmap_up, seed=seed)
+        fmap_down = get_random_map(true_fmap_down, seed=seed)
+        # return a 2D array consists of these two arrays 
+        fmap = fmap_up-fmap_down
+    else:
+        true_template = template_maker.get_template(fiducial_params)  
+        true_fmap = flatten_map(true_template,chan=chan)
+        fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
 def get_asimov_fmap(template_maker,fiducial_params,chan=None):
@@ -115,4 +129,49 @@ def get_seed():
     state, e.g. for the poisson random variates.
     '''
     return int(os.urandom(4).encode('hex'),16)
+
+def get_up_map(map,chan):
+    if chan=='all':
+        flavs=['trck','cscd']
+    elif chan=='trck':
+        flavs=['trck']
+    elif chan=='cscd':
+        flavs=['cscd']
+    elif chan == 'no_pid':
+        return {'no_pid':{
+            'map': map['trck']['map'][:,0:czbin_mid_idx]+map['cscd']['map'][:,0:czbin_mid_idx],
+            'ebins':map['trck']['ebins'],
+            'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
+    else:
+        raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
+    czbin_edges = len(map['cscd']['czbins'])
+    czbin_mid_idx = (czbin_edges-1)/2
+    return {flav:{
+        'map': map[flav]['map'][:,0:czbin_mid_idx],
+        'ebins':map[flav]['ebins'],
+        'czbins': map[flav]['czbins'][0:czbin_mid_idx+1] }
+            for flav in flavs}
+
+def get_flipped_down_map(map,chan):
+    ''' Gets the downgoing map and flip it.'''
+    if chan=='all':
+        flavs=['trck','cscd']
+    elif chan=='trck':
+        flavs=['trck']
+    elif chan=='cscd':
+        flavs=['cscd']
+    elif chan == 'no_pid':
+        return {'no_pid':{
+            'map': map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:],
+            'ebins':map['trck']['ebins'],
+            'czbins': map['trck']['czbins'][czbin_mid_idx:] }}
+    else:
+        raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
+    czbin_edges = len(map['cscd']['czbins'])
+    czbin_mid_idx = (czbin_edges-1)/2
+    return {flav:{
+        'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
+        'ebins':map[flav]['ebins'],
+        'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
+            for flav in flavs}
 

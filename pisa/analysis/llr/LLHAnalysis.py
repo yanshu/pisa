@@ -10,6 +10,7 @@
 #
 
 import sys
+import copy
 import numpy as np
 import scipy.optimize as opt
 
@@ -18,7 +19,7 @@ from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_prior_llh, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
-from pisa.analysis.stats.Maps import flatten_map
+from pisa.analysis.stats.Maps import flatten_map, get_up_map,get_flipped_down_map
 
 
 def find_max_llh_bfgs(fmap,template_maker,params,bfgs_settings,save_steps=False,
@@ -146,15 +147,29 @@ def llh_bfgs(opt_vals,*args):
         if template_params['theta23'] == 0.0:
             logging.info("Zero theta23, so generating no oscillations template...")
             true_template = template_maker.get_template_no_osc(template_params)
+            true_fmap = flatten_map(true_template,chan=template_params['channel'])
         else:
-            true_template = template_maker.get_template(template_params)
+            if template_params['residual_up_down']:
+                # get a up and down-going combined template first, change 'residual_up_down' to false
+                combined_template_params = copy.deepcopy(template_params)
+                combined_template_params['residual_up_down']=False
+                true_template = template_maker.get_template(combined_template_params)  
+                # get two separate templates: up-going and downgoing
+                true_template_up = get_up_map(true_template,chan=template_params['channel']) 
+                true_template_down = get_flipped_down_map(true_template,template_params['channel']) 
+                true_fmap_up = flatten_map(true_template_up,chan=template_params['channel'])
+                true_fmap_down = flatten_map(true_template_down,chan=template_params['channel'])
+                # return a 2D array consists of these two arrays 
+                true_fmap = np.array([true_fmap_up,true_fmap_down])
+            else:
+                true_template = template_maker.get_template(template_params)  
+                true_fmap = flatten_map(true_template,chan=template_params['channel'])
     profile.info("==> elapsed time for template maker: %s sec"%t.secs)
-    true_fmap = flatten_map(true_template,chan=template_params['channel'])
 
     # NOTE: The minus sign is present on both of these next two lines
     # to reflect the fact that the optimizer finds a minimum rather
     # than maximum.
-    llh = -get_binwise_llh(fmap,true_fmap)
+    llh = -get_binwise_llh(fmap,true_fmap,template_params)
     llh -= sum([ get_prior_llh(opt_val,sigma,value)
                  for (opt_val,(sigma,value)) in zip(unscaled_opt_vals,priors)])
 

@@ -9,35 +9,23 @@
 
 from pisa.utils.jsons import from_json
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import poisson,skellam
 
-def get_binwise_llh(pseudo_data,template):
+def get_binwise_llh(pseudo_data,template,template_params):
     '''
     computes the log-likelihood (llh) of the pseudo_data from the
     template, where each input is expected to be a 2d numpy array
     '''
-
-    if not np.alltrue(template >= 0.0):
-        raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
-    totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
+    if template_params['residual_up_down']:
+        if len(template)!=2:
+            raise ValueError("Under current template settings, template must be an array of two arrays(i.e. up-going and down-going array)!")
+        totalLLH = np.sum(skellam.logpmf(pseudo_data,np.float64(template[0]),np.float64(template[1])))
+    else:
+        if not np.alltrue(template >= 0.0):
+            raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
+        totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
 
     return totalLLH
-
-    #totalLLH = 0
-    #if not len(template)==len(pseudo_data):
-    #    raise ValueError("Template and pseudo_data should have equal lengths, len(template)=%i, len(pseudo_data) = %i"%(len(template),len(pseudo_data)))
-    #for i in range(0,len(pseudo_data)):
-    #    value_d = pseudo_data[i]
-    #    value_t = template[i]
-    #    if value_t<0:
-    #        return -1e10
-    #    if value_d==0 and value_t==0:
-    #        continue
-    #    if value_d!=0 and value_t==0:
-    #        return -1e10
-    #    #totalLLH += value_d*np.log(value_t) - value_t - (value_d*np.log(value_d)-value_d)
-    #    totalLLH += value_d*np.log(value_t) - value_t
-    #return totalLLH
 
 def get_random_map(template, seed=None):
     '''
