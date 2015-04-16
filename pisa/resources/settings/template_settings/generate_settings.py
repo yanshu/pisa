@@ -165,8 +165,7 @@ parser.add_argument('--free_params',metavar='LIST',default=None,nargs='*',
                     help='''List of parameters to leave as free from systematics database.
                     If not set, will use fixed as set in database.''')
 parser.add_argument('--up_down_rsdl',action='store_true',default=False,
-                    help="For nutau analysis using residual of the upgoing and
-                    downgoing map, set 'residual_up_down' to true")
+                    help="For nutau analysis using residual of the upgoing and downgoing map, set 'residual_up_down' to true")
 
 args = parser.parse_args()
 
