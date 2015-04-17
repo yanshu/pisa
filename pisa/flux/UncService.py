@@ -12,8 +12,9 @@
 
 import os
 import numpy as np
+import math
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from scipy.interpolate import bisplrep, bisplev, UnivariateSpline
+from scipy.interpolate import *
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.utils.jsons import from_json, to_json, json_string
@@ -30,13 +31,23 @@ class UncService():
     print 'test'
 
     def data_spliner(self, filename): #take filename, return spline
-        inTable = np.loadtxt(open_resource(filename)).T
-        Ret_Spline = UnivariateSpline(inTable[0], inTable[1])
+        en, dat = np.loadtxt(open_resource(filename)).T
+        en2 = np.concatenate([en, args.ebins])
+        dat2 = np.concatenate([dat, dum])
+        up = len(en) -1
+        endat = sorted(zip(en2,dat2))
+        for entry in endat:
+            if (entry[0] > en[0] and entry[0] < en[up] and entry[1]==0.0):
+                endat.remove(entry)
+        en2,dat2 = zip(*endat)
+        Ret_Spline = InterpolatedUnivariateSpline(en2, dat2, k=1)
         return Ret_Spline
     
     def __init__(self, smooth=0.05, **params):
         global spline_dict
         spline_dict = {}
+        global dum
+        dum = [0] * len(args.ebins)
 
         
     def get_unc(self, ebins, scale, gettype):
@@ -58,8 +69,11 @@ class UncService():
         spline = unc_model.data_spliner("~/UncData/UNC_A.txt")
         
         for i, v in enumerate(spline_dict):
-            print 'testing ', v, ". ", spline_dict[v]
-            spline_dict[v].__call__(evals)
+#            print 'testing ', v, ". ", spline_dict[v]
+ #           print 'evals: ', evals
+            datatable = spline_dict[v].__call__(evals)
+            #            datatable = np.power(spline_dict[v].__call__(evals), 2)
+            print args.ebins, datatable
             
         
         return_table = evals, scale * spline.__call__(evals)
