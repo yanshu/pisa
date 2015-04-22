@@ -63,7 +63,7 @@ class UncService():
         #print 'lenth evals: ', len(evals)
 
         print 'start the splining procedure'
-        spline_dict["A"] = unc_model.data_spliner("resources/flux/UNC_SUM.txt")
+        spline_dict["A"] = unc_model.data_spliner("pisa/resources/flux/UNC_SUM.txt")
         #spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
         #spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
         #spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
