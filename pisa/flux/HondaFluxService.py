@@ -19,6 +19,8 @@ import numpy as np
 from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
+from pisa.utils.plot import product_map
+from pisa.flux.UncService import *
 from pisa.resources.resources import open_resource
 
 #Global definition of primaries for which there is a neutrino flux
@@ -72,6 +74,7 @@ class HondaFluxService():
         
         #Evaluate the flux at the bin centers
         evals = get_bin_centers(ebins)
+        #print 'honda ebins: ', len(evals)
         czvals = get_bin_centers(czbins)
     
         # Get the spline interpolation, which is in
@@ -87,6 +90,24 @@ class HondaFluxService():
         bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
     
         return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
-    
+        unc_model = UncService()
+        unc_map = unc_model.get_unc(args.ebins, 'flux_unc')
+        
+#        return_table[i] =
+        #print 'return table type: ', type(return_table)
+        print 'return table length: ', len(return_table)
+        print 'return table entry length: ', len(return_table[0])
+        #print 'return table: ', return_table
+
+        print '\n uncmap length: ', len(unc_map)
+        print 'uncmap entry len: ', len(unc_map[0])
+        #print 'uncmap: ', unc_map
+
+        print 'er det her skidtet fejler??'
+        return_table = return_table - return_table * unc_map
+        print 'eller her?'
+
+        
+        
         return return_table.T
 
