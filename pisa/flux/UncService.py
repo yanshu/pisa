@@ -30,9 +30,9 @@ class UncService():
     '''overall class to read in modification maps'''
     print 'testing dat shit'
 
-    def data_spliner(self, filename): #take filename, return spline
+    def data_spliner(self, filename, ebins): #take filename, return spline
         en, dat = np.loadtxt(open_resource(filename)).T
-        en2 = np.concatenate([en, args.ebins])
+        en2 = np.concatenate([en, ebins])
         dat2 = np.concatenate([dat, dum])
         up = len(en) -1
         endat = sorted(zip(en2,dat2))
@@ -43,27 +43,27 @@ class UncService():
         Ret_Spline = InterpolatedUnivariateSpline(en2, dat2, k=1)
         return Ret_Spline
     
-    def __init__(self, smooth=0.05, **params):
+    def __init__(self, ebins, smooth=0.05, **params):
         global spline_dict
         spline_dict = {}
         global dum
         #print 'args.ebins: ', len(args.ebins)
-        dum = [0] * len(args.ebins)
+        dum = [0] * len(ebins)
         
-    def get_unc(self, ebins, gettype):
+    def get_unc(self, unc_model, ebins, czbins, gettype):
         '''Get the uncertainty for the given
            bin edges in energy and the primary.'''
         datatable = []
         #Evaluate the flux at the bin centers
         global evals
         evals = get_bin_centers(ebins)
-        zbins = [1] * len(args.czbins)
+        zbins = [1] * len(czbins)
         czvals = get_bin_centers(zbins)
         #print 'len zbins: ', len(czvals)
         #print 'lenth evals: ', len(evals)
 
         print 'start the splining procedure'
-        spline_dict["A"] = unc_model.data_spliner("pisa/resources/flux/UNC_SUM.txt")
+        spline_dict["A"] = unc_model.data_spliner("pisa/resources/flux/UNC_SUM.txt", ebins)
         #spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
         #spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
         #spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
@@ -71,7 +71,7 @@ class UncService():
         #        spline_dict["B"] = unc_model.data_spliner(UNC_files["B"])
         #        spline_dict["C"] = unc_model.data_spliner(UNC_files["C"])
 
-        spline = unc_model.data_spliner("~/UncData/UNC_A.txt")
+#        spline = unc_model.data_spliner("~/UncData/UNC_A.txt")
 
 
         ########## ADD ALL SPLINES TOGETHER #######################
@@ -104,25 +104,25 @@ class UncService():
         return return_table
 
 
-parser = ArgumentParser(description='Take a settings file '
-        'as input and write out a set of flux maps',
-        formatter_class=ArgumentDefaultsHelpFormatter)
+#parser2 = ArgumentParser(description='Take a settings file '
+ #       'as input and write out a set of flux maps',
+  #      formatter_class=ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('--ebins', metavar='[1.0,2.0,...]', type=json_string,
-                        help= '''Edges of the energy bins in units of GeV. ''',
-                        default=np.logspace(np.log10(1.0),np.log10(80.0),40) )
+#parser2.add_argument('--ebins', metavar='[1.0,2.0,...]', type=json_string,
+ #                       help= '''Edges of the energy bins in units of GeV. ''',
+  #                      default=np.logspace(np.log10(1.0),np.log10(80.0),40) )
 
-parser.add_argument('--czbins', metavar='[-1.0,-0.8.,...]', type=json_string,
-                        help= '''Edges of the cos(zenith) bins.''',
-                        default = np.linspace(-1.,0.,21))
+#parser2.add_argument('--czbins', metavar='[-1.0,-0.8.,...]', type=json_string,
+ #                    help= '''Edges of the cos(zenith) bins.''',
+  #                   default = np.linspace(-1.,0.,21))
 
-args = parser.parse_args()
+#args = parser2.parse_args()
 
 #print '# energy bins: ', len(args.ebins)
-global unc_model
-unc_model = UncService()
-unc_map = unc_model.get_unc(args.ebins, 'flux_unc')
-to_json(unc_map, 'unc_sum_out.json')
+#global unc_model
+#unc_model = UncService()
+#unc_map = unc_model.get_unc(ebins, 'flux_unc')
+#to_json(unc_map, 'unc_sum_out.json')
 
 
 
