@@ -21,6 +21,7 @@ from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
+from pisa.flux.UncService import UncService
 
 def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio=None, **kwargs):
     '''
@@ -89,6 +90,9 @@ if __name__ == '__main__':
     logging.debug("Using %u bins in cos(zenith) from %.2f to %.2f"%
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
+    #Instantiate an uncertainty
+    unc_model = UncService()
+    
     #Instantiate a flux model
     flux_model = HondaFluxService(args.flux_file)
 
