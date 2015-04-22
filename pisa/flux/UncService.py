@@ -47,36 +47,60 @@ class UncService():
         global spline_dict
         spline_dict = {}
         global dum
+        #print 'args.ebins: ', len(args.ebins)
         dum = [0] * len(args.ebins)
-
         
-    def get_unc(self, ebins, scale, gettype):
+    def get_unc(self, ebins, gettype):
         '''Get the uncertainty for the given
            bin edges in energy and the primary.'''
-        
+        datatable = []
         #Evaluate the flux at the bin centers
         global evals
         evals = get_bin_centers(ebins)
+        zbins = [1] * len(args.czbins)
+        czvals = get_bin_centers(zbins)
+        #print 'len zbins: ', len(czvals)
+        #print 'lenth evals: ', len(evals)
 
         print 'start the splining procedure'
-        spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
-        spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
-        spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
+        spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_SUM.txt")
+        #spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
+        #spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
+        #spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
         #        spline_dict["A"] = unc_model.data_spliner(UNC_files["A"])
         #        spline_dict["B"] = unc_model.data_spliner(UNC_files["B"])
         #        spline_dict["C"] = unc_model.data_spliner(UNC_files["C"])
 
         spline = unc_model.data_spliner("~/UncData/UNC_A.txt")
-        
+
+
+        ########## ADD ALL SPLINES TOGETHER #######################
         for i, v in enumerate(spline_dict):
-#            print 'testing ', v, ". ", spline_dict[v]
- #           print 'evals: ', evals
-            datatable = spline_dict[v].__call__(evals)
-            #            datatable = np.power(spline_dict[v].__call__(evals), 2)
-            print args.ebins, datatable
+            #            print 'testing ', v, ". ", spline_dict[v]
+            #           print 'evals: ', evals
+            if (v == 'A'):
+                datatable = 0.02*spline_dict[v].__call__(evals)
+            else:
+                datatable += 0.01*spline_dict[v].__call__(evals) #CONTAINS SUM OF SPLINES
             
+            #print 'V is: ', v
+            #datatable = np.power(spline_dict[v].__call__(evals), 2)
+            #print args.ebins, datatable
         
-        return_table = evals, scale * spline.__call__(evals)
+        #return_table = evals, spline.__call__(evals)
+        #return_table = zip(czvals, datatable)
+        return_table = []
+        for i,v in enumerate(czvals):
+            #print 'i, v: ', i, v
+            return_table.append(0)
+            return_table[i]= datatable
+            #print 'return_table: ', return_table
+            #print 'filling return_table: ', return_table[i]
+        #print 'length of datatable: ', len(datatable)
+        #print 'lenth of datatable[0]: ', len(datatable[0])
+        
+        #print 'length of return_table: ', len(return_table)
+        #print 'lenth of datatalbe[0]: ', return_table[0]
         return return_table
 
 
@@ -88,14 +112,30 @@ parser.add_argument('--ebins', metavar='[1.0,2.0,...]', type=json_string,
                         help= '''Edges of the energy bins in units of GeV. ''',
                         default=np.logspace(np.log10(1.0),np.log10(80.0),40) )
 
+parser.add_argument('--czbins', metavar='[-1.0,-0.8.,...]', type=json_string,
+                        help= '''Edges of the cos(zenith) bins.''',
+                        default = np.linspace(-1.,0.,21))
+
 args = parser.parse_args()
 
+#print '# energy bins: ', len(args.ebins)
 global unc_model
 unc_model = UncService()
-unc_map = unc_model.get_unc(args.ebins, 1, 'flux_unc')
+unc_map = unc_model.get_unc(args.ebins, 'flux_unc')
+to_json(unc_map, 'unc_sum_out.json')
 
 
 
+####
+# test dat shit out
+####
+
+#from pisa.flux.HondaFluxService import HondaFluxService, primaries
+#flux_model = HondaFluxService(args.flux_file)
+
+#print type(flux_model)
+#print dir(flux_model)
+#print flux_model.keys()
 #########################################
 ## old code has been parked here for now
 #########################################
