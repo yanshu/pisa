@@ -59,7 +59,7 @@ def get_pseudo_data_fmap(template_maker,fiducial_params,seed=None,chan=None):
         if 'all': returns a single flattened map of trck/cscd combined.
         if 'cscd' or 'trck' only returns the channel requested.
     ''' 
-    if fiducial_params['residual_up_down']:
+    if 'residual_up_down' in fiducial_params and fiducial_params['residual_up_down']:
         # get a up and down-going combined template first, change 'residual_up_down' to false
         combined_fiducial_params = copy.deepcopy(fiducial_params)
         combined_fiducial_params['residual_up_down']=False
@@ -71,11 +71,14 @@ def get_pseudo_data_fmap(template_maker,fiducial_params,seed=None,chan=None):
         true_fmap_down = flatten_map(true_template_down,chan=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=seed)
         fmap_down = get_random_map(true_fmap_down, seed=seed)
-        # return a 2D array consists of these two arrays 
+        # return the residual of the two arrays 
         fmap = fmap_up-fmap_down
     else:
         true_template = template_maker.get_template(fiducial_params)  
-        true_fmap = flatten_map(true_template,chan=chan)
+        if 'ratio_up_down' in fiducial_params:
+            true_fmap = flatten_map(true_template,chan=chan,ratio_up_down=fiducial_params['ratio_up_down'])
+        else:
+            true_fmap = flatten_map(true_template,chan=chan)
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
@@ -92,7 +95,7 @@ def get_asimov_fmap(template_maker,fiducial_params,chan=None):
 
     return fmap
 
-def flatten_map(template,chan='all'):
+def flatten_map(template,chan='all',ratio_up_down=False):
     '''
     Takes a final level true (expected) template of trck/cscd, and returns a
     single flattened map of trck appended to cscd, with all zero bins
@@ -100,6 +103,38 @@ def flatten_map(template,chan='all'):
     '''
 
     logging.trace("Getting flattened map of chan: %s"%chan)
+    # if ratio_up_down is true, return an array of two arrays (one upgoing, one downgoing map).
+    if ratio_up_down:
+        if chan == 'all':
+            cscd_0 = template['cscd']['map'][0].flatten()
+            trck_0 = template['trck']['map'][0].flatten()
+            fmap_0 = np.append(cscd_0,trck_0)
+            cscd_1 = template['cscd']['map'][1].flatten()
+            trck_1 = template['trck']['map'][1].flatten()
+            fmap_1 = np.append(cscd_1,trck_1)
+        elif chan == 'trck':
+            trck_0 = template[chan]['map'][0].flatten()
+            fmap_0 = np.array(trck_0)
+            trck_1 = template[chan]['map'][1].flatten()
+            fmap_1 = np.array(trck_1)
+        elif chan == 'cscd':
+            cscd_0 = template[chan]['map'][0].flatten()
+            fmap_0 = np.array(cscd_0)
+            cscd_1 = template[chan]['map'][1].flatten()
+            fmap_1 = np.array(cscd_1)
+        elif chan == 'no_pid':
+            cscd_0 = template['cscd']['map'][0].flatten()
+            trck_0 = template['trck']['map'][0].flatten()
+            fmap_0 = cscd_0 + trck_0
+            cscd_1 = template['cscd']['map'][1].flatten()
+            trck_1 = template['trck']['map'][1].flatten()
+            fmap_1 = cscd_1 + trck_1
+        else:
+            raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
+
+        fmap = np.array([fmap_0,fmap_1])
+        return fmap
+
     if chan == 'all':
         cscd = template['cscd']['map'].flatten()
         trck = template['trck']['map'].flatten()

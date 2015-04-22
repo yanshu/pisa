@@ -107,10 +107,13 @@ def find_max_grid(fmap,template_maker,params,grid_settings,save_steps=True,
         profile.info('start template calculation')
         true_template = template_maker.get_template(template_params)
         profile.info('stop template calculation')
-        true_fmap = flatten_map(true_template,chan=template_params['channel'])
+        if 'ratio_up_down' in template_params:
+            true_fmap = flatten_map(true_template,chan=template_params['channel'],ratio_up_down=template_params['ratio_up_down'])
+        else:
+            true_fmap = flatten_map(true_template,chan=template_params['channel'])
 
         #and calculate the likelihood
-        llh = -get_binwise_llh(fmap,true_fmap)
+        llh = -get_binwise_llh(fmap,true_fmap,template_params)
 
         #get sorted vals to match with priors
         vals = [ v for k,v in sorted(pos) ]

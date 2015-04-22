@@ -19,15 +19,28 @@ def get_binwise_llh(pseudo_data,template,template_params):
     '''
     if not np.alltrue(template >= 0.0):
         raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
-    if template_params['residual_up_down']:
-        mu1 = np.float64(template[0])
-        mu2 = np.float64(template[1])
+    if 'residual_up_down' in template_params and template_params['residual_up_down']:
         if len(template)!=2:
             raise ValueError("Under current template settings, template must be an array of two arrays(i.e. up-going and down-going array)!")
+        mu1 = np.float64(template[0])
+        mu2 = np.float64(template[1])
         #totalLLH = np.sum(skellam.logpmf(pseudo_data,np.float64(template[0]),np.float64(template[1])))    
                                               # causes overflow when mu1,mu2 gets too big, it calculates pmf first, then take the log.
         totalLLH = np.sum(-mu1-mu2+0.5*pseudo_data*np.log(mu1/mu2)+np.log(iv(pseudo_data,2*np.sqrt(mu1*mu2)))) 
                                               # better, but could also end up inf if (mu1*mu2) is too large, e.g. iv(0,2*np.sqrt(127444)) ~ 1.7961e+308
+    elif 'ratio_up_down' in template_params and template_params['ratio_up_down']:
+        if len(template)!=2 or len(pseudo_data)!=2:
+            raise ValueError("Under current template settings, template and pseudo_data must be an array of two arrays(i.e. up-going and down-going array)!")
+        t_N_up = np.float64(template[0])
+        t_N_down = np.float64(template[1])
+        d_N_up = np.float64(pseudo_data[0])
+        d_N_down = np.float64(pseudo_data[1])
+        t_R = np.nan_to_num(t_N_up/t_N_down)
+        d_R = np.nan_to_num(d_N_up/d_N_down)
+        t_R_err_sqr = np.nan_to_num(t_N_up*(t_N_up+t_N_down)/(t_N_down**3))
+        d_R_err_sqr = np.nan_to_num(d_N_up*(d_N_up+d_N_down)/(d_N_down**3))
+        totalLLH = -np.nan_to_num(np.sqrt(np.sum(np.square(t_R-d_R)/(t_R_err_sqr+d_R_err_sqr))))        # this definition is the new test statistic for ratio_analysis, it's not a likelihood function, its value should increase when two maps get more different, that's why the negative sign
+
     else:
         totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
 

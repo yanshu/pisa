@@ -106,8 +106,6 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,nu_nubar_ratio=None
         int_type_dict = {}
         for int_type in ['cc','nc']:
             event_rate = osc_flux_map*aeff_dict[flavour][int_type]*aeff_scale
-            #event_rate[event_rate==0] = 0.0000000000001    ???
-
             event_rate *= (livetime*Julian_year)
             int_type_dict[int_type] = {'map':event_rate,
                                        'ebins':ebins,

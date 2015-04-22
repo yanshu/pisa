@@ -209,6 +209,19 @@ class TemplateMaker:
                            for flav in ['cscd','trck']}
             final_event_rate = residual_event_rate
 
+        # if "ratio_up_down" is true, then the final event rate map is
+        # an array: [upgoing map,flipped downgoing map].
+        if "ratio_up_down" in params and params["ratio_up_down"]:
+            czbin_edges = len(final_event_rate['cscd']['czbins'])
+            czbin_mid_idx = (czbin_edges-1)/2
+            ratio_event_rate = {flav:{
+                'map': np.array([final_event_rate[flav]['map'][:,0:czbin_mid_idx],
+                          np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx:])]),
+                'ebins':final_event_rate[flav]['ebins'],
+                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx+1] }
+                           for flav in ['cscd','trck']}
+            final_event_rate = ratio_event_rate
+
         if not return_stages:
             return final_event_rate
 

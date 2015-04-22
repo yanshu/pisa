@@ -163,7 +163,11 @@ def llh_bfgs(opt_vals,*args):
                 true_fmap = np.array([true_fmap_up,true_fmap_down])
             else:
                 true_template = template_maker.get_template(template_params)  
-                true_fmap = flatten_map(true_template,chan=template_params['channel'])
+                if 'ratio_up_down' in template_params:
+                    true_fmap = flatten_map(true_template,chan=template_params['channel'],ratio_up_down=template_params['ratio_up_down'])
+                else:
+                    true_fmap = flatten_map(true_template,chan=template_params['channel'])
+
     profile.info("==> elapsed time for template maker: %s sec"%t.secs)
 
     # NOTE: The minus sign is present on both of these next two lines
