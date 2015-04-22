@@ -1,4 +1,4 @@
-#
+1#
 # plots.py
 #
 # Utility function for plotting maps
@@ -143,17 +143,25 @@ def delta_map(amap, bmap):
              'czbins': amap['czbins'],
              'map' : amap['map'] - bmap['map'] }
 
-<<<<<<< HEAD
 def ratio_map(amap, bmap):
     '''
     Calculate the ratio between the two maps (amap / bmap), and return as
-    a map dictionary. ### NOTE: these take as input the ['trck'] or ['cscd'] portions of the data files. NOT the maps themselves. 
-=======
+    a map dictionary. ### NOTE: these take as input the ['trck'] or ['cscd'] portions of the data files. NOT the maps themselves. '''
+
+def product_map(amap, bmap):
+    '''calculate the product of two maps and return as a map dictionary'''
+    if not np.allclose(amap['ebins'],bmap['ebins']) or \
+       not np.allclose(amap['czbins'],bmap['czbins']):
+       raise ValueError('Map range does not match!')
+
+    return { 'ebins': amap['ebins'],
+             'czbins': amap['czbins'],
+             'map' : amap['map'] * bmap['map'] }
+    
 def sum_map(amap, bmap):
     '''
     Calculate the sum of two maps (amap + bmap), and return as
     a map dictionary.
->>>>>>> fe8dd8c3136b4b9cfaf6c425e6364ba3b4922a6b
     '''
     if not np.allclose(amap['ebins'],bmap['ebins']) or \
        not np.allclose(amap['czbins'],bmap['czbins']):
@@ -161,8 +169,7 @@ def sum_map(amap, bmap):
 
     return { 'ebins': amap['ebins'],
              'czbins': amap['czbins'],
-<<<<<<< HEAD
-             'map' : amap['map'] / bmap['map'] }
+             'map' : amap['map'] + bmap['map'] }
 
 
 def diff_ratio_map(amap, bmap):
@@ -177,6 +184,14 @@ def diff_ratio_map(amap, bmap):
     return { 'ebins': amap['ebins'],
              'czbins': amap['czbins'],
              'map' : (amap['map'] - bmap['map'])/bmap['map'] }
-=======
-             'map' : amap['map'] + bmap['map'] }
->>>>>>> fe8dd8c3136b4b9cfaf6c425e6364ba3b4922a6b
+
+def distinguishability_map(map_IH, map_NH):
+
+#check that the bin edges line up
+    if not np.allclose(map_IH['ebins'],map_NH['ebins']) or \
+       not np.allclose(map_IH['czbins'],map_NH['czbins']):
+       raise ValueError('Map range does not match!')
+
+    return {'map':     (map_IH['map'] - map_NH['map'])/np.sqrt(map_NH['map']),
+             'ebins':  map_NH['ebins'],
+             'czbins':  map_NH['czbins']}
