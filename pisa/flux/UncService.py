@@ -28,7 +28,7 @@ primaries = ['numu', 'numu_bar', 'nue', 'nue_bar']
 
 class UncService():
     '''overall class to read in modification maps'''
-    print 'test'
+    print 'testing dat shit'
 
     def data_spliner(self, filename): #take filename, return spline
         en, dat = np.loadtxt(open_resource(filename)).T
@@ -63,7 +63,7 @@ class UncService():
         #print 'lenth evals: ', len(evals)
 
         print 'start the splining procedure'
-        spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_SUM.txt")
+        spline_dict["A"] = unc_model.data_spliner("resources/flux/UNC_SUM.txt")
         #spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
         #spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
         #spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
@@ -79,7 +79,7 @@ class UncService():
             #            print 'testing ', v, ". ", spline_dict[v]
             #           print 'evals: ', evals
             if (v == 'A'):
-                datatable = 0.02*spline_dict[v].__call__(evals)
+                datatable = 0.01*spline_dict[v].__call__(evals)
             else:
                 datatable += 0.01*spline_dict[v].__call__(evals) #CONTAINS SUM OF SPLINES
             
