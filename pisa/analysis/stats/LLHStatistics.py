@@ -39,11 +39,22 @@ def get_binwise_llh(pseudo_data,template,template_params):
         d_R = np.nan_to_num(d_N_up/d_N_down)
         #t_R_err_sqr = np.nan_to_num(t_N_up*(t_N_up+t_N_down)/(t_N_down**3))
         #d_R_err_sqr = np.nan_to_num(d_N_up*(d_N_up+d_N_down)/(d_N_down**3))
-        t_R_err_sqrt = np.nan_to_num(np.sqrt(t_N_up*(t_N_up+t_N_down)/t_N_down)/t_N_down)
-        d_R_err_sqrt = np.nan_to_num(np.sqrt(d_N_up*(d_N_up+d_N_down)/d_N_down)/d_N_down)
-        totalLLH = -np.nan_to_num(np.sum(np.abs(t_R-d_R)/d_R_err_sqrt))        # this definition is the new test statistic for ratio_analysis, it's not a likelihood function, its value should increase when two maps get more different, that's why the negative sign
-        #totalLLH = -np.nan_to_num(np.sqrt(np.sum(np.square(t_R-d_R)/(t_R_err_sqr+d_R_err_sqr))))   # has overflow problems 
-
+        #t_R_err_sqrt_inv = np.nan_to_num(t_N_down*np.sqrt(t_N_down)/np.sqrt(t_N_up*(t_N_up+t_N_down)))
+        d_R_err_sqrt_inv = np.nan_to_num(d_N_down*np.sqrt(d_N_down)/np.sqrt(d_N_up*(d_N_up+d_N_down)))
+        totalLLH = -np.nan_to_num(np.sum(np.square((t_R-d_R)*d_R_err_sqrt_inv)))        # this definition is the new test statistic for ratio_analysis, it's not a likelihood function, its value should increase when two maps get more different, that's why the negative sign
+        if 0 in d_N_down:
+            print "d_N_down has 0"
+            print "d_N_down = ", d_N_down
+            print "d_N_up = ", d_N_up
+            print "d_R = ", d_R
+            print "d_R_err_sqrt_inv = ", d_R_err_sqrt_inv
+            print "totalLLH = ", totalLLH
+        if 0 in t_N_down:
+            print "t_N_down has 0"
+            print "t_N_down = ", t_N_down
+            print "t_R = ", t_R
+            print "t_R_err_sqrt_inv = ", t_R_err_sqrt_inv
+            print "totalLLH = ", totalLLH
     else:
         totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
 
