@@ -30,6 +30,13 @@ class UncService():
     '''overall class to read in modification maps'''
     print 'testing dat shit'
 
+    def __init__(self, ebins, smooth=0.05, **params):
+        global spline_dict
+        spline_dict = {}
+        global dum
+        #print 'args.ebins: ', len(args.ebins)
+        dum = [0] * len(ebins)
+
     def data_spliner(self, filename, ebins): #take filename, return spline
         en, dat = np.loadtxt(open_resource(filename)).T
         en2 = np.concatenate([en, ebins])
@@ -42,17 +49,13 @@ class UncService():
         en2,dat2 = zip(*endat)
         Ret_Spline = InterpolatedUnivariateSpline(en2, dat2, k=1)
         return Ret_Spline
-    
-    def __init__(self, ebins, smooth=0.05, **params):
-        global spline_dict
-        spline_dict = {}
-        global dum
-        #print 'args.ebins: ', len(args.ebins)
-        dum = [0] * len(ebins)
         
-    def get_unc(self, unc_model, ebins, czbins, gettype):
+    def get_unc(self, unc_model, ebins, czbins, gettype, **params):
         '''Get the uncertainty for the given
            bin edges in energy and the primary.'''
+
+#        print 'get unc params: ', params
+        
         datatable = []
         #Evaluate the flux at the bin centers
         global evals
@@ -62,8 +65,8 @@ class UncService():
         #print 'len zbins: ', len(czvals)
         #print 'lenth evals: ', len(evals)
 
-        print 'start the splining procedure'
-        spline_dict["A"] = unc_model.data_spliner("pisa/resources/flux/UNC_SUM.txt", ebins)
+#        print 'start the splining procedure'
+        spline_dict["A"] = unc_model.data_spliner("~/jsandroo/pisa/pisa/resources/flux/UNC_SUM.txt", ebins)
         #spline_dict["A"] = unc_model.data_spliner("~/UncData/UNC_A.txt")
         #spline_dict["B"] = unc_model.data_spliner("~/UncData/UNC_B.txt")
         #spline_dict["C"] = unc_model.data_spliner("~/UncData/UNC_C.txt")
