@@ -20,7 +20,7 @@
   },
   "params": {
     "flux_file": {
-      "value": "flux/frj-solmin-mountain-aa.d",
+      "value": "/fs02/ma11/homes/jsandroo/UncData/honda-2012-spl-20-01.flx",
       "fixed": true
     },
     "osc_code": {
