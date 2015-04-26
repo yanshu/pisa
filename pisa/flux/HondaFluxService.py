@@ -68,7 +68,7 @@ class HondaFluxService():
             #and store
             self.spline_dict[nutype] = spline
 
-    def get_flux(self, ebins, czbins, prim):
+    def get_flux(self, ebins, czbins, prim, UNC_A, **params):
         '''Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary.'''
         
@@ -90,22 +90,26 @@ class HondaFluxService():
         bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
     
         return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
-        unc_model = UncService()
-        unc_map = unc_model.get_unc(args.ebins, 'flux_unc')
+        unc_model = UncService(ebins)
+        unc_map = unc_model.get_unc(unc_model, ebins, czbins, 'flux_unc')
         
 #        return_table[i] =
         #print 'return table type: ', type(return_table)
-        print 'return table length: ', len(return_table)
-        print 'return table entry length: ', len(return_table[0])
+#        print 'return table length: ', len(return_table)
+ #       print 'return table entry length: ', len(return_table[0])
         #print 'return table: ', return_table
 
-        print '\n uncmap length: ', len(unc_map)
-        print 'uncmap entry len: ', len(unc_map[0])
+  #      print '\n uncmap length: ', len(unc_map)
+   #     print 'uncmap entry len: ', len(unc_map[0])
         #print 'uncmap: ', unc_map
 
-        print 'er det her skidtet fejler??'
-        return_table = return_table - return_table * unc_map
-        print 'eller her?'
+#        print 'er det her skidtet fejler??'
+ #       print 'lidt om UNCA: \n type: ', type(UNC_A)
+        print 'UNC_A, value: ', UNC_A
+#        print 'keys: ', UNC_A.keys()
+#        print 'length: ', len(UNC_A)
+        return_table = return_table + UNC_A*return_table * unc_map
+#        print 'eller her?'
 
         
         
