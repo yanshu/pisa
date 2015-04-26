@@ -40,6 +40,13 @@
       "value": 20.0,
       "fixed": true
     },
+    "UNC_A": {
+      "value": 0.0,
+      "range": [-3.0,3.0],
+      "fixed": false,
+      "scale": 1.0,
+      "prior": 1.0
+    },      
     "aeff_mode": {
       "#comment": "Must be one of ['param','MC']",
       "value": "param",
