@@ -20,7 +20,7 @@
   },
   "params": {
     "flux_file": {
-      "value": "flux/frj-solmin-mountain-aa.d",
+      "value": "pisa/resources/flux/spl-solmin-aa.d",
       "fixed": true
     },
     "osc_code": {
