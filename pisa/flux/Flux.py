@@ -23,7 +23,7 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
 from pisa.flux.UncService import UncService
 
-def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio=None, **kwargs):
+def get_flux_maps(flux_service, ebins, czbins, UNC_A, nue_numu_ratio=None, **kwargs):
     '''
     Get a set of flux maps for the different primaries.
 
@@ -38,6 +38,7 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio=None, **kwargs):
     #Be verbose on input
     params = get_params()
     report_params(params, units = [''])
+#    print 'All parameters used in Flux: ', params
 
     #Initialize return dict
     maps = {'params': params}
@@ -49,7 +50,7 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio=None, **kwargs):
         #Get the flux for this primary
         maps[prim] = {'ebins': ebins,
                       'czbins': czbins,
-                      'map': flux_scale*flux_service.get_flux(ebins,czbins,prim)}
+                      'map': flux_scale*flux_service.get_flux(ebins,czbins,prim, UNC_A)}
 
         #be a bit verbose
         logging.trace("Total flux of %s is %u [s^-1 m^-2]"%
@@ -91,13 +92,13 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate an uncertainty
-    unc_model = UncService()
+    unc_model = UncService(args.ebins)
     
     #Instantiate a flux model
     flux_model = HondaFluxService(args.flux_file)
 
     #get the flux
-    flux_maps = get_flux_maps(flux_model,args.ebins,args.czbins,
+    flux_maps = get_flux_maps(flux_model,args.ebins,args.czbins, UNC_A,
                               nue_numu_ratio=args.nue_numu_ratio)
 
     #write out to a file
