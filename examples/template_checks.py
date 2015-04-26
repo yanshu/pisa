@@ -9,9 +9,9 @@
 # reasonable hierarchy asymmetry in the final result. Only input this
 # script is required to take is the template settings file, and
 # produces plots of the templates at each level of the analysis and
-# also the hierarchy asymmetry (IMH - NMH)/sqrt(NMH) in each bin, if
-# appropriate.
+# also the hierarchy asymmetry (IMH_i - NMH_i)/sqrt(NMH_i) in each bin i.
 #
+
 
 import numpy as np
 import os
@@ -20,12 +20,12 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy
-from pisa.utils.log import set_verbosity,logging,profile
+from pisa.utils.log import set_verbosity, logging, profile
 from pisa.utils.utils import Timer
 from pisa.utils.jsons import from_json
 from pisa.utils.plot import show_map
 
-def get_asymmetry(nmh,imh,flavs,iType=None):
+def get_asymmetry(nmh, imh, flavs, iType=None):
     if iType is None:
         return {flav:{
             'map': np.nan_to_num((imh[flav]['map']-nmh[flav]['map'])/
@@ -42,12 +42,12 @@ def get_asymmetry(nmh,imh,flavs,iType=None):
                 for flav in flavs}
 
 
-def plot_pid_stage(nmh,imh,title='',save=False,dpi=150,outdir=""):
+def plot_pid_stage(nmh, imh, title='', save=False, dpi=150, outdir=""):
     '''
     Plots templates and asymmetry for only the final level stage
     '''
 
-    h_asym = get_asymmetry(nmh,imh,['trck','cscd'])
+    h_asym = get_asymmetry(nmh, imh, ['trck','cscd'])
 
     logging.info("  Total trck events (NMH): %d"%np.sum(nmh['trck']['map']))
     logging.info("  Total trck events (IMH): %d"%np.sum(imh['trck']['map']))
@@ -59,11 +59,11 @@ def plot_pid_stage(nmh,imh,title='',save=False,dpi=150,outdir=""):
 
         plt.subplot(1,3,1)
         show_map(nmh[chan])
-        plt.title(title+' NMH, '+chan,fontsize='large')
+        plt.title(title+' NMH, '+chan+' counts',fontsize='large')
 
         plt.subplot(1,3,2)
         show_map(imh[chan])
-        plt.title(title+' IMH, '+chan,fontsize='large')
+        plt.title(title+' IMH, '+chan +' counts',fontsize='large')
 
         plt.subplot(1,3,3)
         sigma = np.sqrt(np.sum(h_asym[chan]['map']**2))
@@ -87,7 +87,7 @@ def plot_flux_stage(flux_nmh,flux_imh,save=False,title='',dpi=150,outdir=""):
                   'nue_bar':r'$\overline{\nu}_e$',
                   'numu':r'$\nu_\mu$',
                   'numu_bar':r'$\overline{\nu}_\mu$'}
-    description = ' Flux'
+    description = ' Flux [m$^{-2}$ s$^{-1}$]'
     for flav in ['nue','numu']:
         plt.figure(figsize=(8,8))
 
@@ -127,7 +127,7 @@ def plot_osc_flux_stage(osc_flux_nmh,osc_flux_imh,save=False,title='',
                   'nutau_bar':r'$\overline{\nu}_\tau$'}
     all_flavs = list(flav_title.keys())
     h_asym = get_asymmetry(osc_flux_nmh,osc_flux_imh,all_flavs)
-    description = ' Oscillated Flux'
+    description = r' Oscillated Flux [m$^{-2}$ s$^{-1}$]'
     for flav in ['nue','numu','nutau']:
         plt.figure(figsize=(16,8))
 
@@ -177,7 +177,7 @@ def plot_true_event_rate(event_rate_nmh,event_rate_imh,title='',save=False,
                   'nutau_bar':r'$\overline{\nu}_\tau^{cc}$'}
     all_flavs = list(flav_title.keys())
     h_asym = get_asymmetry(event_rate_nmh,event_rate_imh,all_flavs,iType='cc')
-    description=' True Event Rate'
+    description=' True Event Rate [#/yr]'
     for flav in ['nue','numu','nutau']:
         plt.figure(figsize=(16,8))
 
@@ -226,7 +226,7 @@ def plot_reco_event_rate(reco_rate_nmh,reco_rate_imh,save=False,title='',dpi=150
                   'nuall_nc':r'$\nu$ all NC'}
     all_flavs = list(flav_title.keys())
     h_asym = get_asymmetry(reco_rate_nmh,reco_rate_imh,all_flavs)
-    description=' Reco Event Rate'
+    description=' Reco Event Rate [#/yr]'
     for flav in all_flavs:
         plt.figure(figsize=(16,5))
 
@@ -311,8 +311,10 @@ settings file. ''')
 
     template_settings = from_json(args.template_settings)
 
-    template_maker = TemplateMaker(get_values(template_settings['params']),
-                                   **template_settings['binning'])
+    with Timer() as t:
+        template_maker = TemplateMaker(get_values(template_settings['params']),
+                                       **template_settings['binning'])
+    profile.info("==> elapsed time to initialize templates: %s sec"%t.secs)
 
     # Make nmh template:
     nmh_params = select_hierarchy(template_settings['params'],
@@ -320,16 +322,16 @@ settings file. ''')
     imh_params = select_hierarchy(template_settings['params'],
                                   normal_hierarchy=False)
     with Timer(verbose=False) as t:
-        nmh = template_maker.get_template(get_values(nmh_params),return_stages=args.all)
+        nmh = template_maker.get_template(get_values(nmh_params), return_stages=args.all)
     profile.info("==> elapsed time to get NMH template: %s sec"%t.secs)
     with Timer(verbose=False) as t:
-        imh = template_maker.get_template(get_values(imh_params),return_stages=args.all)
+        imh = template_maker.get_template(get_values(imh_params), return_stages=args.all)
     profile.info("==> elapsed time to get IMH template: %s sec"%t.secs)
 
     # Or equivalently, if args.all:
     if type(nmh) is tuple:
-        plot_stages(nmh,imh,title=args.title,save=args.save,outdir=args.outdir)
-    else: plot_pid_stage(nmh,imh,title=args.title,save=args.save,outdir=args.outdir)
+        plot_stages(nmh, imh, title=args.title, save=args.save, outdir=args.outdir)
+    else: plot_pid_stage(nmh, imh, title=args.title, save=args.save, outdir=args.outdir)
 
     if not args.save: plt.show()
-    else: print "\n-->>Saved all files to: ",args.outdir
+    else: print "\n-->>Saved all files to: ", args.outdir

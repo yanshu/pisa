@@ -28,9 +28,11 @@ from pisa.flux.Flux import get_flux_maps
 from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
 from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
 try:
+    #print "Trying to import Prob3GPUOscillationService..."
     from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
 except:
-    logging.info("CAN NOT import Prob3GPUOscillationService...")
+    pass
+    #print "CAN NOT import Prob3GPUOscillationService..."
 from pisa.oscillations.Oscillation import get_osc_flux
 
 from pisa.aeff.AeffServiceMC import AeffServiceMC
@@ -40,7 +42,7 @@ from pisa.aeff.Aeff import get_event_rates
 from pisa.reco.RecoServiceMC import RecoServiceMC
 from pisa.reco.RecoServiceParam import RecoServiceParam
 from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
-#from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
+from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 from pisa.reco.Reco import get_reco_maps
 
 from pisa.pid.PIDServiceParam import PIDServiceParam
@@ -68,6 +70,7 @@ class TemplateMaker:
         * czbins - coszen bin edges
         '''
 
+        
         self.ebins = ebins
         self.czbins = czbins
         self.oversample_e = oversample_e
