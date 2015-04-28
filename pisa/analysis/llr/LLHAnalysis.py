@@ -148,7 +148,7 @@ def llh_bfgs(opt_vals,*args):
             logging.info("Zero theta23, so generating no oscillations template...")
             true_template = template_maker.get_template_no_osc(template_params)
             true_fmap = flatten_map(true_template,chan=template_params['channel'])
-        elif len(template_maker)==2:
+        elif type(template_maker)==list and len(template_maker)==2:
             template_maker_up = template_maker[0]
             template_maker_down = template_maker[1]
             template_up = template_maker_up.get_template(template_params)  
@@ -162,7 +162,7 @@ def llh_bfgs(opt_vals,*args):
                 true_fmap = np.append(true_fmap_up,true_fmap_down)
         else:
             true_template = template_maker.get_template(template_params)  
-            true_fmap = flatten_map(true_template,chan=chan)
+            true_fmap = flatten_map(true_template,chan=template_params['channel'])
 
     profile.info("==> elapsed time for template maker: %s sec"%t.secs)
 
