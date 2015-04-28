@@ -59,11 +59,47 @@ def get_pseudo_data_fmap(template_maker,fiducial_params,seed=None,chan=None):
         if 'all': returns a single flattened map of trck/cscd combined.
         if 'cscd' or 'trck' only returns the channel requested.
     ''' 
+
+    if fiducial_params['residual_up_down'] or fiducial_params['simp_up_down'] or fiducial_params['ratio_up_down']:
+        template_maker_up = template_maker[0]
+        template_maker_down = template_maker[1]
+        template_up = template_maker_up.get_template(fiducial_params)  
+        template_down = template_maker_down.get_template(fiducial_params)  
+        reflected_template_down = get_flipped_map(template_down,chan=fiducial_params['channel'])
+        true_fmap_up = flatten_map(template_up,chan=fiducial_params['channel'])
+        true_fmap_down = flatten_map(reflected_template_down,chan=fiducial_params['channel'])
+        fmap_up = get_random_map(true_fmap_up, seed=get_seed())
+        fmap_down = get_random_map(true_fmap_down, seed=get_seed())
+        if fiducial_params['residual_up_down']:
+            fmap = fmap_up-fmap_down
+        elif fiducial_params['ratio_up_down']:
+            fmap = np.array([fmap_up,fmap_down])
+        else:
+            fmap = np.append(fmap_up,fmap_down)
+    else:
+        true_template = template_maker.get_template(fiducial_params)  
+        true_fmap = flatten_map(true_template,chan=chan)
+        fmap = get_random_map(true_fmap, seed=seed)
+    return fmap
+
+def get_pseudo_tau_fmap(template_maker,fiducial_params,seed=None,chan=None):
+    '''
+    Creates a true template from fiducial_params, then uses Poisson statistics
+    to vary the expected counts per bin to create a pseudo data set.
+    If seed is provided, the random state is seeded with seed before the map is
+    created.
+
+    IMPORTANT: returns a SINGLE flattened map of trck/cscd combined
+    \params:
+      * chan = channel of flattened fmap to use.
+        if 'all': returns a single flattened map of trck/cscd combined.
+        if 'cscd' or 'trck' only returns the channel requested.
+    ''' 
     if 'residual_up_down' in fiducial_params and fiducial_params['residual_up_down']:
         # get a up and down-going combined template first, change 'residual_up_down' to false
         combined_fiducial_params = copy.deepcopy(fiducial_params)
         combined_fiducial_params['residual_up_down']=False
-        true_template = template_maker.get_template(combined_fiducial_params)  
+        true_template = template_maker.get_tau_template(combined_fiducial_params)  
         # get two separate templates: up-going and downgoing
         true_template_up = get_up_map(true_template,chan=fiducial_params['channel']) 
         true_template_down = get_flipped_down_map(true_template,fiducial_params['channel']) 
@@ -74,11 +110,8 @@ def get_pseudo_data_fmap(template_maker,fiducial_params,seed=None,chan=None):
         # return the residual of the two arrays 
         fmap = fmap_up-fmap_down
     else:
-        true_template = template_maker.get_template(fiducial_params)  
-        if 'ratio_up_down' in fiducial_params:
-            true_fmap = flatten_map(true_template,chan=chan,ratio_up_down=fiducial_params['ratio_up_down'])
-        else:
-            true_fmap = flatten_map(true_template,chan=chan)
+        true_template = template_maker.get_tau_template(fiducial_params)  
+        true_fmap = flatten_map(true_template,chan=chan,ratio_up_down=fiducial_params['ratio_up_down'])
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
@@ -103,7 +136,6 @@ def flatten_map(template,chan='all',ratio_up_down=False):
     '''
 
     logging.trace("Getting flattened map of chan: %s"%chan)
-    # if ratio_up_down is true, return an array of two arrays (one upgoing, one downgoing map).
     if ratio_up_down:
         if chan == 'all':
             cscd_0 = template['cscd']['map'][0].flatten()
@@ -131,8 +163,7 @@ def flatten_map(template,chan='all',ratio_up_down=False):
             fmap_1 = cscd_1 + trck_1
         else:
             raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
-
-        fmap = np.array([fmap_0,fmap_1])
+        map = np.array([fmap_0,fmap_1])
         return fmap
 
     if chan == 'all':
@@ -166,6 +197,7 @@ def get_seed():
     return int(os.urandom(4).encode('hex'),16)
 
 def get_up_map(map,chan):
+    ''' Gets the upgoing map from a full sky map and flip it.'''
     if chan=='all':
         flavs=['trck','cscd']
     elif chan=='trck':
@@ -188,7 +220,9 @@ def get_up_map(map,chan):
             for flav in flavs}
 
 def get_flipped_down_map(map,chan):
-    ''' Gets the downgoing map and flip it.'''
+    ''' Gets the downgoing map from a full sky map and flip it.'''
+    czbin_edges = len(map['cscd']['czbins'])
+    czbin_mid_idx = (czbin_edges-1)/2
     if chan=='all':
         flavs=['trck','cscd']
     elif chan=='trck':
@@ -197,16 +231,38 @@ def get_flipped_down_map(map,chan):
         flavs=['cscd']
     elif chan == 'no_pid':
         return {'no_pid':{
-            'map': map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:],
+            'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
             'ebins':map['trck']['ebins'],
-            'czbins': map['trck']['czbins'][czbin_mid_idx:] }}
+            'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }}
     else:
         raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
-    czbin_edges = len(map['cscd']['czbins'])
-    czbin_mid_idx = (czbin_edges-1)/2
     return {flav:{
         'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
         'ebins':map[flav]['ebins'],
         'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
+            for flav in flavs}
+
+def get_flipped_map(map,chan):
+    ''' Flip a map.'''
+    if not np.alltrue(map['cscd']['czbins']>=0):
+        print map['cscd']['czbins']
+        raise ValueError("This map has to be down-going neutrinos!")
+    if chan=='all':
+        flavs=['trck','cscd']
+    elif chan=='trck':
+        flavs=['trck']
+    elif chan=='cscd':
+        flavs=['cscd']
+    elif chan == 'no_pid':
+        return {'no_pid':{
+            'map': np.fliplr(map['trck']['map']+map['cscd']['map']),
+            'ebins':map['trck']['ebins'],
+            'czbins': np.sort(-map['trck']['czbins']) }}
+    else:
+        raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
+    return {flav:{
+        'map': np.fliplr(map[flav]['map']),
+        'ebins':map[flav]['ebins'],
+        'czbins': np.sort(-map['trck']['czbins']) }
             for flav in flavs}
 

@@ -151,7 +151,6 @@ class TemplateMaker:
 
         return
 
-
     def get_template(self, params, return_stages=False):
         '''
         Runs entire template-making chain, using parameters found in
@@ -196,8 +195,59 @@ class TemplateMaker:
                                             self.pid_service)
         profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
 
+        if not return_stages:
+            return final_event_rate
+
+        # Otherwise, return all stages as a simple tuple
+        return (flux_maps, osc_flux_maps, event_rate_maps,
+                event_rate_reco_maps, final_event_rate)
+
+    def get_tau_template(self, params, return_stages=False):
+        '''
+        Runs template making chain, only return tau neutrinos map.
+        '''
+
+        logging.info("STAGE 1: Getting Atm Flux maps...")
+        with Timer() as t:
+            flux_maps = get_flux_maps(self.flux_service, self.ebins,
+                                      self.czbins, **params)
+        profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
+
+        logging.info("STAGE 2: Getting osc prob maps...")
+        with Timer() as t:
+            osc_flux_maps = get_osc_flux(flux_maps, self.osc_service,
+                                         oversample_e=self.oversample_e,
+                                         oversample_cz=self.oversample_cz,
+                                         **params)
+        flavours = ['numu', 'numu_bar','nue','nue_bar']
+        test_map = flux_maps['nue']
+        for flav in flavours:
+            osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
+                               'ebins': np.zeros_like(test_map['ebins']),
+                               'czbins': np.zeros_like(test_map['czbins'])}
+        profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+
+        logging.info("STAGE 3: Getting event rate true maps...")
+        with Timer() as t:
+            event_rate_maps = get_event_rates(osc_flux_maps,
+                                              self.aeff_service, **params)
+        profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+
+        logging.info("STAGE 4: Getting event rate reco maps...")
+        with Timer() as t:
+            event_rate_reco_maps = get_reco_maps(event_rate_maps,
+                                                 self.reco_service,
+                                                 **params)
+        profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
+
+        logging.info("STAGE 5: Getting pid maps...")
+        with Timer(verbose=False) as t:
+            final_event_rate = get_pid_maps(event_rate_reco_maps,
+                                            self.pid_service)
+        profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+
         # if "residual_up_down" is true, then the final event rate map is
-        # upgoing - flipped downgoing map.
+        # upgoing - reflected downgoing map.
         if params["residual_up_down"]:
             czbin_edges = len(final_event_rate['cscd']['czbins'])
             czbin_mid_idx = (czbin_edges-1)/2
@@ -210,8 +260,8 @@ class TemplateMaker:
             final_event_rate = residual_event_rate
 
         # if "ratio_up_down" is true, then the final event rate map is
-        # an array: [upgoing map,flipped downgoing map].
-        if "ratio_up_down" in params and params["ratio_up_down"]:
+        # an array: [upgoing map,reflected downgoing map].
+        if params["ratio_up_down"]:
             czbin_edges = len(final_event_rate['cscd']['czbins'])
             czbin_mid_idx = (czbin_edges-1)/2
             ratio_event_rate = {flav:{
