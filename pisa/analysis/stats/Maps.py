@@ -257,12 +257,12 @@ def get_flipped_map(map,chan):
         return {'no_pid':{
             'map': np.fliplr(map['trck']['map']+map['cscd']['map']),
             'ebins':map['trck']['ebins'],
-            'czbins': np.sort(-map['trck']['czbins']) }}
+            'czbins': np.sort(-map['cscd']['czbins']) }}
     else:
         raise ValueError("chan: '%s' not implemented! Allowed: ['all', 'trck', 'cscd','no_pid']")
     return {flav:{
         'map': np.fliplr(map[flav]['map']),
         'ebins':map[flav]['ebins'],
-        'czbins': np.sort(-map['trck']['czbins']) }
+        'czbins': np.sort(-map[flav]['czbins']) }
             for flav in flavs}
 
