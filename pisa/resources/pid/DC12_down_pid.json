@@ -1,0 +1,18 @@
+{
+    "numu_cc": {
+        "trck": "lambda E: 5.15e-01/(np.exp((1.22e+00 - np.log10(E))/1.36e-01) + 1.) + 1.22e-01",
+        "cscd": "lambda E: 1. - (5.15e-01/(np.exp((1.22e+00 - np.log10(E))/1.36e-01) + 1.) + 1.22e-01)"
+        },
+    "nuall_nc": {
+        "trck": "lambda E: -6.87e-02*np.exp(-E/5.76e+01) + 1.51e-01",
+        "cscd": "lambda E: 1. - (-6.87e-02*np.exp(-E/5.76e+01) + 1.51e-01)"
+        },
+    "nue_cc": {
+        "trck": "lambda E: -1.03e-01*np.exp(-E/2.52e+01) + 1.69e-01",
+        "cscd": "lambda E: 1. - (-1.03e-01*np.exp(-E/2.52e+01) + 1.69e-01)"
+        }, 
+    "nutau_cc": {
+        "trck": "lambda E: -1.44e-01*np.exp(-E/2.07e+01) + 1.91e-01",
+        "cscd": "lambda E: 1. - (-1.44e-01*np.exp(-E/2.07e+01) + 1.91e-01)"
+        }
+}
