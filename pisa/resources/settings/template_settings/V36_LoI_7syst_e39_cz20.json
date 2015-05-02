@@ -124,6 +124,13 @@
       "fixed": true,
       "value": null
     },
+    "atm_delta_index": {
+      "fixed": false,
+      "prior": 0.05,
+      "range": [-0.2,0.2],
+      "scale": 1.0,
+      "value": 0.0
+    },
     "channel": {
       "fixed": true,
       "value": "all"
