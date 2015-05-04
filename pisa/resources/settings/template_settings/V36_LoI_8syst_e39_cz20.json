@@ -155,8 +155,8 @@
       "value": null
     }, 
     "atm_delta_index": {
-      "fixed": true,
-      "prior": 0.05,
+      "fixed": false, 
+      "prior": 0.05, 
       "range": [
         -0.2, 
         0.2
@@ -276,7 +276,7 @@
     }, 
     "osc_code": {
       "fixed": true, 
-      "value": "prob3"
+      "value": "gpu"
     }, 
     "pid_kernelfile": {
       "fixed": true, 
