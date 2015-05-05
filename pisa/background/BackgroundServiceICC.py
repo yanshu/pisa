@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,icc_bg_file,**kwargs):
+    def __init__(self,ebins,czbins,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
