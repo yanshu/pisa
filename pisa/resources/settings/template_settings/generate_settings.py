@@ -75,7 +75,9 @@ def processDatabase(dbfile,free_params):
                 print "  Leaving parameter free: ",key
         print "  ...all others fixed!"
     params['nutau_norm']={ "value": 1.0, "range": [-0.7,3.0], "fixed": True, "scale": 1.0, "prior": None}
-    params['atmos_mu_scale']={ "value": 1.0, "range": [0.0,5.0], "fixed": False, "scale": 1.0, "prior": None}
+    # 0.37 is to scale the background to one year
+    params['atmos_mu_scale']={ "value": 0.37, "range": [0.0,5.0], "fixed": False, "scale": 1.0, "prior": None}   
+
 
     return params
 
