@@ -45,7 +45,7 @@ def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_typ
 
     return scaled_map1, scaled_map2
 
-def get_pseudo_data_fmap_up_down(template_maker,fiducial_params,chan=None):
+def get_asimov_data_fmap_up_down(template_maker,fiducial_params,chan=None):
     if fiducial_params['residual_up_down'] or fiducial_params['simp_up_down'] or fiducial_params['ratio_up_down']:
         template_maker_up = template_maker[0]
         template_maker_down = template_maker[1]
