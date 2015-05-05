@@ -114,12 +114,11 @@ for itrial in xrange(1,args.ntrials+1):
                                    normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
                                     seed=results[data_tag]['seed'],chan=channel)
 
-        print fmap
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
         rnd.seed(get_seed())
         init_nutau_norm = rnd.uniform(-0.7,3)
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
 
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start optimizer")
@@ -140,8 +139,8 @@ for itrial in xrange(1,args.ntrials+1):
 
 #Assemble output dict
 output = {'trials' : trials,
-          'template_settings_up' : template_settings,
-          'template_settings_down' : template_settings,
+          'template_settings_up' : up_template_settings,
+          'template_settings_down' : down_template_settings,
           'minimizer_settings' : minimizer_settings}
 if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings

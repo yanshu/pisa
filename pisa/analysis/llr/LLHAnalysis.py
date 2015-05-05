@@ -19,7 +19,7 @@ from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_prior_llh, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
-from pisa.analysis.stats.Maps import flatten_map, get_up_map,get_flipped_map
+from pisa.analysis.stats.Maps import flatten_map, get_up_map,get_flipped_map, get_true_template
 
 
 def find_max_llh_bfgs(fmap,template_maker,params,bfgs_settings,save_steps=False,
@@ -45,12 +45,20 @@ def find_max_llh_bfgs(fmap,template_maker,params,bfgs_settings,save_steps=False,
     # won't be (fixed_params) but are still needed for get_template()
     fixed_params = get_fixed_params(select_hierarchy(params,normal_hierarchy))
     free_params = get_free_params(select_hierarchy(params,normal_hierarchy))
+    template_params = dict(free_params.items() + get_values(fixed_params).items())
 
     init_vals = get_param_values(free_params)
     scales = get_param_scales(free_params)
     bounds = get_param_bounds(free_params)
     priors = get_param_priors(free_params)
     names  = sorted(free_params.keys())
+
+    if len(free_params)==0:
+        true_fmap = get_true_template(template_params,template_maker)
+        llh = -get_binwise_llh(fmap,true_fmap,template_params)
+        llh -= sum([ get_prior_llh(opt_val,sigma,value)
+                 for (opt_val,(sigma,value)) in zip(init_vals,priors)])
+        return llh
 
     # Scale init-vals and bounds to work with bfgs opt:
     init_vals = np.array(init_vals)*np.array(scales)
@@ -144,25 +152,7 @@ def llh_bfgs(opt_vals,*args):
 
     # Now get true template, and compute LLH
     with Timer() as t:
-        if template_params['theta23'] == 0.0:
-            logging.info("Zero theta23, so generating no oscillations template...")
-            true_template = template_maker.get_template_no_osc(template_params)
-            true_fmap = flatten_map(true_template,chan=template_params['channel'])
-        elif type(template_maker)==list and len(template_maker)==2:
-            template_maker_up = template_maker[0]
-            template_maker_down = template_maker[1]
-            template_up = template_maker_up.get_template(template_params)  
-            template_down = template_maker_down.get_template(template_params)  
-            reflected_template_down = get_flipped_map(template_down,chan=template_params['channel'])
-            true_fmap_up = flatten_map(template_up,chan=template_params['channel'])
-            true_fmap_down = flatten_map(reflected_template_down,chan=template_params['channel'])
-            if template_params['residual_up_down'] or template_params['ratio_up_down']:
-                true_fmap = np.array([true_fmap_up,true_fmap_down])
-            else:
-                true_fmap = np.append(true_fmap_up,true_fmap_down)
-        else:
-            true_template = template_maker.get_template(template_params)  
-            true_fmap = flatten_map(true_template,chan=template_params['channel'])
+        true_fmap = get_true_template(template_params,template_maker)
 
     profile.info("==> elapsed time for template maker: %s sec"%t.secs)
 

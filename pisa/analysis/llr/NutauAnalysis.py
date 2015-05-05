@@ -60,7 +60,6 @@ if scipy.__version__ < '0.12.0':
       logging.warn('Optimizer settings for \"maxiter\" will be ignored')
       minimizer_settings.pop('maxiter')
 
-
 # make sure that both pseudo data and template are using the same
 # channel. Raise Exception and quit otherwise
 channel = template_settings['params']['channel']['value']
@@ -68,7 +67,6 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg = "Both template and pseudo data must have same channel!\n"
     error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
-
 
 template_maker = TemplateMaker(get_values(template_settings['params']),
                                **template_settings['binning'])
@@ -109,7 +107,7 @@ for itrial in xrange(1,args.ntrials+1):
         #    to templates.
         rnd.seed(get_seed())
         init_nutau_norm = rnd.uniform(-0.7,3)
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
 
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start optimizer")
