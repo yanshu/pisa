@@ -35,26 +35,49 @@ def get_binwise_llh(pseudo_data,template,template_params):
         t_N_down = np.float64(template[1])
         d_N_up = np.float64(pseudo_data[0])
         d_N_down = np.float64(pseudo_data[1])
+        cut_zero = np.logical_or(np.logical_or(d_N_up == 0, d_N_down == 0), np.logical_or(t_N_up == 0,t_N_down == 0))
+        cut_nonzero = np.logical_and(np.logical_and(d_N_up != 0, d_N_down != 0), np.logical_and(t_N_up != 0,t_N_down != 0))
+        
+        d_zero_N_up = d_N_up[cut_zero]
+        d_zero_N_down = d_N_down[cut_zero]
+        d_zero = np.append(d_zero_N_up,d_zero_N_down)
+        t_zero_N_up = t_N_up[cut_zero]
+        t_zero_N_down = t_N_down[cut_zero]
+        t_zero = np.append(t_zero_N_up,t_zero_N_down)
+        print "d_zero = ", d_zero
+        print "t_zero = ", t_zero
+
+        d_N_up = d_N_up[cut_nonzero]
+        d_N_down = d_N_down[cut_nonzero]
+        t_N_up = t_N_up[cut_nonzero]
+        t_N_down = t_N_down[cut_nonzero]
+        #print "d_N_down = ", d_N_down
+
         t_R = np.nan_to_num(t_N_up/t_N_down)
         d_R = np.nan_to_num(d_N_up/d_N_down)
+        #t_R = np.nan_to_num(t_N_down/t_N_up)
+        #d_R = np.nan_to_num(d_N_down/d_N_up)
+
         #t_R_err_sqr = np.nan_to_num(t_N_up*(t_N_up+t_N_down)/(t_N_down**3))
         #d_R_err_sqr = np.nan_to_num(d_N_up*(d_N_up+d_N_down)/(d_N_down**3))
-        #t_R_err_sqrt_inv = np.nan_to_num(t_N_down*np.sqrt(t_N_down)/np.sqrt(t_N_up*(t_N_up+t_N_down)))
-        d_R_err_sqrt_inv = np.nan_to_num(d_N_down*np.sqrt(d_N_down)/np.sqrt(d_N_up*(d_N_up+d_N_down)))
-        totalLLH = -np.nan_to_num(np.sum(np.square((t_R-d_R)*d_R_err_sqrt_inv)))        # this definition is the new test statistic for ratio_analysis, it's not a likelihood function, its value should increase when two maps get more different, that's why the negative sign
-        if 0 in d_N_down:
-            print "d_N_down has 0"
-            print "d_N_down = ", d_N_down
-            print "d_N_up = ", d_N_up
-            print "d_R = ", d_R
-            print "d_R_err_sqrt_inv = ", d_R_err_sqrt_inv
-            print "totalLLH = ", totalLLH
-        if 0 in t_N_down:
-            print "t_N_down has 0"
-            print "t_N_down = ", t_N_down
-            print "t_R = ", t_R
-            print "t_R_err_sqrt_inv = ", t_R_err_sqrt_inv
-            print "totalLLH = ", totalLLH
+        #t_R_err_inv = np.nan_to_num(t_N_down*np.sqrt(t_N_down)/np.sqrt(t_N_up*(t_N_up+t_N_down)))
+
+        # inverse of the error when using ratio of up to down
+        d_R_err_inv = np.nan_to_num(d_N_down*np.sqrt(d_N_down)/np.sqrt(d_N_up*(d_N_up+d_N_down)))
+
+        # inverse of the error when using ratio of down to up
+        #d_R_err_inv = np.nan_to_num(d_N_up*np.sqrt(d_N_up)/np.sqrt(d_N_down*(d_N_down+d_N_up)))
+
+        # this definition is the new test statistic for ratio_analysis, it's not a likelihood function, its value should increase when two maps get more different, that's why the negative sign ( definition 1)
+        #totalLLH = -np.nan_to_num(np.sqrt(np.sum(np.square((t_R-d_R)*d_R_err_inv))))
+        #if d_zero !=[] and t_zero !=[]:
+        #    totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
+
+        #definition 2
+        totalLLH = -np.nan_to_num(np.sum(np.square(t_R-d_R)))      
+        if d_zero !=[] and t_zero !=[]:
+            totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
+
     else:
         totalLLH = np.sum(np.log(poisson.pmf(pseudo_data,np.float64(template))))
 

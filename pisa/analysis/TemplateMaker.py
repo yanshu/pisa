@@ -49,6 +49,9 @@ from pisa.pid.PIDServiceParam import PIDServiceParam
 from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
 from pisa.pid.PID import get_pid_maps
 
+from pisa.background.BackgroundServiceICC import BackgroundServiceICC 
+from pisa.background.ICCBackground import add_icc_background
+
 class TemplateMaker:
     '''
     This class handles all steps needed to produce a template with a
@@ -149,6 +152,9 @@ class TemplateMaker:
             error_msg+=" Please choose among: ['stored', 'param']"
             raise NotImplementedError(error_msg)
 
+        # background service
+        self.background_service = BackgroundServiceICC(self.ebins, self.czbins,
+                                              **template_settings)
         return
 
     def get_template(self, params, return_stages=False):
@@ -191,8 +197,12 @@ class TemplateMaker:
 
         logging.info("STAGE 5: Getting pid maps...")
         with Timer(verbose=False) as t:
-            final_event_rate = get_pid_maps(event_rate_reco_maps,
+            event_rate_pid_maps = get_pid_maps(event_rate_reco_maps,
                                             self.pid_service)
+            final_event_rate = add_icc_background(event_rate_pid_maps,self.background_service,**params)
+
+            #final_event_rate = get_pid_maps(event_rate_reco_maps,
+            #                                self.pid_service)
         profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
 
         if not return_stages:

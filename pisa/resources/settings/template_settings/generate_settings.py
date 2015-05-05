@@ -75,6 +75,7 @@ def processDatabase(dbfile,free_params):
                 print "  Leaving parameter free: ",key
         print "  ...all others fixed!"
     params['nutau_norm']={ "value": 1.0, "range": [-0.7,3.0], "fixed": True, "scale": 1.0, "prior": None}
+    params['atmos_mu_scale']={ "value": 1.0, "range": [0.0,5.0], "fixed": False, "scale": 1.0, "prior": None}
 
     return params
 
@@ -151,6 +152,13 @@ parser.add_argument('--pid_paramfile',metavar='STR', type=str,default="pid/V36_p
                     help='''File of parameterized PID vs. Energy''')
 parser.add_argument('--pid_kernelfile',metavar='STR', type=str,default=None,
                     help='''Kernelfile containing PID vs. Energy''')
+#   Background Stage
+parser.add_argument('--icc_bg_file',metavar='FILE',type=str,
+                    default='background/IC86_3yr_ICC.hdf5',
+                    help='''HDF5 File containing atmospheric background from 3 years'
+                    inverted corridor cut data''')
+parser.add_argument('--atmos_mu_scale',type=float,default=1.0,
+                     help='''Overall scale on atmospheric muons''')
 
 parser.add_argument('--livetime',metavar='FLOAT',type=float,default=1.0,
                     help='''Livetime for detector''')
