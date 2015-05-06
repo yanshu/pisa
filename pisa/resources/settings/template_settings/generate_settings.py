@@ -168,15 +168,17 @@ parser.add_argument('--livetime',metavar='FLOAT',type=float,default=1.0,
 parser.add_argument('--channel',metavar='STR', type=str,
                     choices=['trck', 'cscd','all','no_pid'],default='all',
                     help='''Channel to use in analysis''')
-parser.add_argument('--free_params',metavar='LIST',default=None,nargs='*',
+parser.add_argument('--free_params',metavar='LIST',default=None,nargs='+',
                     help='''List of parameters to leave as free from systematics database.
-                    If not set, will use fixed as set in database.''')
+                    If not set, will use fixed as set in database.
+                    (Ex: --free_params deltam31 theta23 nue_numu_ratio)''')
 parser.add_argument('--simp_up_down',action='store_true',default=False,
                     help='''For nutau analysis using the upgoing and downgoing map together, set 'simp_up_down' to true''')
 parser.add_argument('--residual_up_down',action='store_true',default=False,
                     help='''For nutau analysis using residual of the upgoing and downgoing map, set 'residual_up_down' to true''')
 parser.add_argument('--ratio_up_down',action='store_true',default=False,
                     help='''For nutau analysis using ratio of the upgoing and downgoing map, set 'ratio_up_down' to true''')
+
 
 args = parser.parse_args()
 
@@ -191,6 +193,8 @@ template_settings['binning']['ebins'] = ebins
 template_settings['binning']['czbins'] = czbins
 template_settings['binning']['oversample_e'] = args.oversample_e
 template_settings['binning']['oversample_cz'] = args.oversample_cz
+
+#print "free params: ",args.free_params
 
 # Now process the (possibly not fixed) systematic parameters of the database:
 dbparams = processDatabase(args.dbfile,args.free_params)
