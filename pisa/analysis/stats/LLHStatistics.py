@@ -42,7 +42,7 @@ def generalized_ln_poisson(data,expectation):
         raise ValueError(
             "Unknown data dtype: %s. Must be float or int!"%psuedo_data.dtype)
 
-def get_binwise_llh(pseudo_data,template):
+def get_binwise_llh(pseudo_data,template,template_params):
     """
     Computes the log-likelihood (llh) of the pseudo_data from the
     template, where each input is expected to be a 2d numpy array

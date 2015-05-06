@@ -60,21 +60,51 @@
       "scale": 1.0, 
       "value": 1.0
     }, 
+    "YeI": {
+      "fixed": true, 
+      "prior": null, 
+      "range": [
+        0.46, 
+        0.47
+      ], 
+      "scale": 1.0, 
+      "value": 0.4656
+    }, 
+    "YeM": {
+      "fixed": true, 
+      "prior": null, 
+      "range": [
+        0.496, 
+        0.495
+      ], 
+      "scale": 1.0, 
+      "value": 0.4957
+    }, 
+    "YeO": {
+      "fixed": true, 
+      "prior": null, 
+      "range": [
+        0.46, 
+        0.47
+      ], 
+      "scale": 1.0, 
+      "value": 0.4656
+    }, 
     "aeff_coszen_par": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/"
+      "value": "~/pisa/pisa/resources/aeff/DC12/"
     }, 
     "aeff_egy_par": {
       "fixed": true, 
       "value": {
-        "NC": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuall_nc.dat", 
-        "NC_bar": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuallbar_nc.dat", 
-        "nue": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nue.dat", 
-        "nue_bar": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuebar.dat", 
-        "numu": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_numu.dat", 
-        "numu_bar": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_numubar.dat", 
-        "nutau": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nutau.dat", 
-        "nutau_bar": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nutaubar.dat"
+        "NC": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuall_nc.dat", 
+        "NC_bar": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuallbar_nc.dat", 
+        "nue": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nue.dat", 
+        "nue_bar": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nuebar.dat", 
+        "numu": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_numu.dat", 
+        "numu_bar": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_numubar.dat", 
+        "nutau": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nutau.dat", 
+        "nutau_bar": "~/pisa/pisa/resources/aeff/DC12/nocuts/a_eff_nutaubar.dat"
       }
     }, 
     "aeff_mode": {
@@ -93,7 +123,7 @@
     }, 
     "aeff_weight_file": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/aeff/DC12_aeff_mc.hdf5"
+      "value": "~/pisa/pisa/resources/aeff/DC12_aeff_mc.hdf5"
     }, 
     "atmos_mu_scale": {
       "fixed": false, 
@@ -105,9 +135,19 @@
       "scale": 1.0, 
       "value": 0.447
     }, 
+    "atm_delta_index": {
+      "fixed": false, 
+      "prior": 0.05, 
+      "range": [
+        -0.2, 
+        0.2
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
     "channel": {
       "fixed": true, 
-      "value": "all"
+      "value": "cscd"
     }, 
     "cz_reco_scale": {
       "fixed": true, 
@@ -243,7 +283,7 @@
     }, 
     "pid_paramfile": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/pid/DC12_pid.json"
+      "value": "~/pisa/pisa/resources/pid/DC12_pid.json"
     }, 
     "prop_height": {
       "fixed": true, 
@@ -259,7 +299,7 @@
     }, 
     "reco_mc_wt_file": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/events/DC12_weighted_aeff_joined_nu_nubar.hdf5"
+      "value": "~/pisa/pisa/resources/events/DC12_weighted_aeff_joined_nu_nubar.hdf5"
     }, 
     "reco_mode": {
       "fixed": true, 
@@ -271,7 +311,7 @@
     }, 
     "reco_vbwkde_evts_file": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/events/DC12_weighted_aeff_joined_nu_nubar.hdf5"
+      "value": "~/pisa/pisa/resources/events/DC12_weighted_aeff_joined_nu_nubar.hdf5"
     }, 
     "residual_up_down": {
       "fixed": true, 
