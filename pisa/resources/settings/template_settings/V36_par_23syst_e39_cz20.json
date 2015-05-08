@@ -154,23 +154,20 @@
       "scale": 1.0,
       "prior": 1.0
     },
-
     "flux_spectral_index_d": {
       "value": 0.0,
       "range": [-3.0,3.0],
       "fixed": false,
       "scale": 1.0,
       "prior": 1.0
-    },      
-
-    "Flux_pion_chargeratio_Chg": {
+    },
+    "flux_pion_chargeratio_Chg": {
       "value": 0.0,
       "range": [-3.0,3.0],
       "fixed": false,
       "scale": 1.0,
       "prior": 1.0
-    },      
-     
+    },
     "UNC_FILES": {
 	"value": {
         "UNCF_A": "flux/UNC_A.txt",

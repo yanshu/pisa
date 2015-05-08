@@ -68,13 +68,12 @@ class HondaFluxService():
             #and store
             self.spline_dict[nutype] = spline
 
-    def get_flux(self, ebins, czbins, prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES, **params):
+    def get_flux(self, ebins, czbins, prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z,  flux_prim_norm_a, flux_prim_exp_norm_b, flux_prim_exp_factor_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES, **params):
         '''Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary.'''
         
         #Evaluate the flux at the bin centers
         evals = get_bin_centers(ebins)
-        #print 'honda ebins: ', len(evals)
         czvals = get_bin_centers(czbins)
     
         # Get the spline interpolation, which is in
@@ -90,9 +89,6 @@ class HondaFluxService():
         bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
     
         return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
-#        unc_map = modify_shape(ebins, czbins, UNC_A, UNC_FILES['UNCF_A'])
-#        print 'unc_map', unc_map
-        logging.trace('UNC_A, value: %.2f'%UNC_A)
       
         ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
         return_table = return_table \
