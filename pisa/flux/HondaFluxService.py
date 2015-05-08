@@ -68,7 +68,7 @@ class HondaFluxService():
             #and store
             self.spline_dict[nutype] = spline
 
-    def get_flux(self, ebins, czbins, prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, Flux_pion_chargeratio_Chg, UNC_FILES, **params):
+    def get_flux(self, ebins, czbins, prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES, **params):
         '''Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary.'''
         
@@ -96,24 +96,24 @@ class HondaFluxService():
       
         ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
         return_table = return_table \
-                       + return_table * modify_shape(ebins, czbins, UNC_A, UNC_FILES['UNCF_A']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_B, UNC_FILES['UNCF_B']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_C, UNC_FILES['UNCF_C']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_D, UNC_FILES['UNCF_D']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_E, UNC_FILES['UNCF_E']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_F, UNC_FILES['UNCF_F']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_G, UNC_FILES['UNCF_G']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_H, UNC_FILES['UNCF_H']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_I, UNC_FILES['UNCF_I']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_W, UNC_FILES['UNCF_W']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_X, UNC_FILES['UNCF_X']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_Y, UNC_FILES['UNCF_Y']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_Z, UNC_FILES['UNCF_Z']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_a, UNC_FILES['UNCF_a']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_b, UNC_FILES['UNCF_b']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_c, UNC_FILES['UNCF_c']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_d, UNC_FILES['UNCF_d']) \
-                       + return_table * modify_shape(ebins, czbins, UNC_Chg, UNC_FILES['UNCF_Chg'])
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_A, UNC_FILES['UNCF_A']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_B, UNC_FILES['UNCF_B']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_C, UNC_FILES['UNCF_C']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_D, UNC_FILES['UNCF_D']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_E, UNC_FILES['UNCF_E']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_F, UNC_FILES['UNCF_F']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_G, UNC_FILES['UNCF_G']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_H, UNC_FILES['UNCF_H']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_I, UNC_FILES['UNCF_I']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_W, UNC_FILES['UNCF_W']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_X, UNC_FILES['UNCF_X']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_Y, UNC_FILES['UNCF_Y']) \
+                       + return_table * modify_shape(ebins, czbins, flux_hadronic_Z, UNC_FILES['UNCF_Z']) \
+                       + return_table * modify_shape(ebins, czbins, flux_prim_norm_a, UNC_FILES['UNCF_a']) \
+                       + return_table * modify_shape(ebins, czbins, flux_prim_exp_norm_b, UNC_FILES['UNCF_b']) \
+                       + return_table * modify_shape(ebins, czbins, flux_prim_exp_factor_c, UNC_FILES['UNCF_c']) \
+                       + return_table * modify_shape(ebins, czbins, flux_spectral_index_d, UNC_FILES['UNCF_d']) \
+                       + return_table * modify_shape(ebins, czbins, flux_pion_chargeratio_Chg, UNC_FILES['UNCF_Chg'])
                 
         return return_table.T
 

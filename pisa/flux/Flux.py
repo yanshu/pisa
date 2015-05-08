@@ -53,7 +53,7 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     return flux_maps
 
 
-def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, Flux_pion_chargeratio_Chg, UNC_FILES, nue_numu_ratio, energy_scale, **kwargs):
+def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES, nue_numu_ratio, energy_scale, **kwargs):
     '''
     Get a set of flux maps for the different primaries.
 
@@ -80,7 +80,7 @@ def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B,
         #Get the flux for this primary
         maps[prim] = {'ebins': ebins,
                       'czbins': czbins,
-                      'map': flux_service.get_flux(ebins*energy_scale,czbins,prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, Flux_pion_chargeratio_Chg, UNC_FILES)}
+                      'map': flux_service.get_flux(ebins*energy_scale,czbins,prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES)}
 
         #be a bit verbose
         logging.trace("Total flux of %s is %u [s^-1 m^-2]"%
