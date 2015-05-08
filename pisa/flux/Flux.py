@@ -22,7 +22,6 @@ from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.analysis.stats.Maps import apply_ratio_scale
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
-from pisa.flux.UncService import UncService
 
 
 def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
@@ -54,7 +53,7 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     return flux_maps
 
 
-def get_flux_maps(flux_service, ebins, czbins, UNC_A, nue_numu_ratio, energy_scale, **kwargs):
+def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, Flux_pion_chargeratio_Chg, UNC_FILES, nue_numu_ratio, energy_scale, **kwargs):
     '''
     Get a set of flux maps for the different primaries.
 
@@ -72,7 +71,6 @@ def get_flux_maps(flux_service, ebins, czbins, UNC_A, nue_numu_ratio, energy_sca
     #Be verbose on input
     params = get_params()
     report_params(params, units = [''])
-#    print 'All parameters used in Flux: ', params
 
     #Initialize return dict
     maps = {'params': params}
@@ -82,7 +80,7 @@ def get_flux_maps(flux_service, ebins, czbins, UNC_A, nue_numu_ratio, energy_sca
         #Get the flux for this primary
         maps[prim] = {'ebins': ebins,
                       'czbins': czbins,
-                      'map': flux_service.get_flux(ebins*energy_scale,czbins,prim, UNC_A)}
+                      'map': flux_service.get_flux(ebins*energy_scale,czbins,prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_spectral_index_a, flux_spectral_index_b, flux_spectral_index_c, flux_spectral_index_d, Flux_pion_chargeratio_Chg, UNC_FILES)}
 
         #be a bit verbose
         logging.trace("Total flux of %s is %u [s^-1 m^-2]"%
@@ -95,7 +93,7 @@ def get_flux_maps(flux_service, ebins, czbins, UNC_A, nue_numu_ratio, energy_sca
     #if nue_numu_ratio != 1.:
     #    return apply_nue_numu_ratio(maps, nue_numu_ratio)
     # else: no scaling to be applied
-    #return maps
+    #return map
 
 
 if __name__ == '__main__':
@@ -115,8 +113,42 @@ if __name__ == '__main__':
                         default = 'flux/spl-solmax-aa.d')
     parser.add_argument('--nue_numu_ratio',metavar='FLOAT',type=float,
                         help='''Factor to scale nue_flux by''',default=1.0)
-    parser.add_argument('--UNC_A',metavar='FLOAT',type=float,
+    parser.add_argument('--flux_hadronic_A',metavar='FLOAT',type=float,
                         help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_B',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_C',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_D',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_E',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_F',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_G',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)   
+    parser.add_argument('--flux_hadronic_H',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_I',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+
+    parser.add_argument('--flux_hadronic_W',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_X',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_Y',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_Z',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_prim_norm_a',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_prim_exp_norm_b',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_prim_exp_factor_c',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)   
+    parser.add_argument('--flux_spectral_index_d',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_pion_chargeratio_Chg',metavar='FLOAT',type=float,                        help='''Factor to scale flux shape by''',default=0)
     parser.add_argument('--energy_scale',metavar='FLOAT',type=float,
                         help='''Factor to scale TRUE energy by''',default=1.0)
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE',
