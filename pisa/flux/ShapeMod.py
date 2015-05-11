@@ -39,9 +39,12 @@ def data_spliner(filename, ebins): #take filename, return spline
     Ret_Spline = InterpolatedUnivariateSpline(en2, dat2, k=1)
     return Ret_Spline
         
-def modify_shape(ebins, czbins, *args, **params): #takes in *args as modification factors and filename strings. Must be sorted in matching way for both or wrong shape will be weighted wrong.  
-    '''Get the uncertainty for the given
-    bin edges in energy and the primary.'''
+def modify_shape(ebins, czbins, *args, **params):
+    '''
+    Get the shape modification factor for a given uncertainty.
+    Takes in *args as modification factors and filename strings. Must be
+    sorted in matching way for both or wrong shape will be weighted wrong.  
+    '''
     FactorTable = []
     spline_dict = {}
     evals = get_bin_centers(ebins)

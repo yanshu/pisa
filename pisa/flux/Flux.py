@@ -141,14 +141,15 @@ if __name__ == '__main__':
     parser.add_argument('--flux_hadronic_Z',metavar='FLOAT',type=float,
                         help='''Factor to scale flux shape by''',default=0)
     parser.add_argument('--flux_prim_norm_a',metavar='FLOAT',type=float,
-                        help='''Factor to scale flux shape by''',default=0)
+                        help='''Flux primary normalization factor''',default=0)
     parser.add_argument('--flux_prim_exp_norm_b',metavar='FLOAT',type=float,
-                        help='''Factor to scale flux shape by''',default=0)
+                        help='''Flux primary exponential normalization''',default=0)
     parser.add_argument('--flux_prim_exp_factor_c',metavar='FLOAT',type=float,
-                        help='''Factor to scale flux shape by''',default=0)   
+                        help='''Flux primary exponential exponent''',default=0)   
     parser.add_argument('--flux_spectral_index_d',metavar='FLOAT',type=float,
+                        help='''Flux primary spectral index''',default=0)
+    parser.add_argument('--flux_pion_chargeratio_Chg',metavar='FLOAT',type=float,
                         help='''Factor to scale flux shape by''',default=0)
-    parser.add_argument('--flux_pion_chargeratio_Chg',metavar='FLOAT',type=float,                        help='''Factor to scale flux shape by''',default=0)
     parser.add_argument('--energy_scale',metavar='FLOAT',type=float,
                         help='''Factor to scale TRUE energy by''',default=1.0)
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE',
