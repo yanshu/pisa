@@ -12,9 +12,9 @@
       36.43424152, 40.76682716, 45.61462315, 51.03889584,
       57.10819707, 63.89923057, 71.49782126, 80.0],
     "czbins": [
-	-1.0,  -0.95, -0.9, -0.85, -0.8, -0.75, -0.7, -0.65, -0.6,
-    	-0.55, -0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15,
-     	-0.1,  -0.05, 0.0],
+      -1.0,  -0.95, -0.9, -0.85, -0.8, -0.75, -0.7, -0.65, -0.6,
+      -0.55, -0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15,
+      -0.1,  -0.05, 0.0],
     "oversample_cz": 10,
     "oversample_e": 10
   },
@@ -168,27 +168,27 @@
       "scale": 1.0,
       "prior": 1.0
     },
-    "UNC_FILES": {
-	"value": {
-        "UNCF_A": "flux/UNC_A.txt",
-	"UNCF_B": "flux/UNC_B.txt",
-	"UNCF_C": "flux/UNC_C.txt",
-	"UNCF_D": "flux/UNC_D.txt",
-	"UNCF_E": "flux/UNC_E.txt",
-	"UNCF_F": "flux/UNC_F.txt",
-	"UNCF_G": "flux/UNC_G.txt",
-        "UNCF_H": "flux/UNC_H.txt",
-        "UNCF_I": "flux/UNC_I.txt",
-	"UNCF_W": "flux/UNC_W.txt",
-	"UNCF_X": "flux/UNC_X.txt",
-	"UNCF_Y": "flux/UNC_Y.txt",
-	"UNCF_Z": "flux/UNC_Z.txt",
-	"UNCF_a": "flux/UNC_a.txt",
-	"UNCF_b": "flux/UNC_b.txt",
-	"UNCF_c": "flux/UNC_c.txt",
-        "UNCF_d": "flux/UNC_d.txt",
-            "UNCF_Chg": "flux/UNC_Chg.txt"},
-	"fixed": true
+    "flux_uncertainty_inputs": {
+        "value": {
+        "flux_hadronic_A": "flux/hadronic_A.txt",
+        "flux_hadronic_B": "flux/hadronic_B.txt",
+        "flux_hadronic_C": "flux/hadronic_C.txt",
+        "flux_hadronic_D": "flux/hadronic_D.txt",
+        "flux_hadronic_E": "flux/hadronic_E.txt",
+        "flux_hadronic_F": "flux/hadronic_F.txt",
+        "flux_hadronic_G": "flux/hadronic_G.txt",
+        "flux_hadronic_H": "flux/hadronic_H.txt",
+        "flux_hadronic_I": "flux/hadronic_I.txt",
+        "flux_hadronic_W": "flux/hadronic_W.txt",
+        "flux_hadronic_X": "flux/hadronic_X.txt",
+        "flux_hadronic_Y": "flux/hadronic_Y.txt",
+        "flux_hadronic_Z": "flux/hadronic_Z.txt",
+        "flux_prim_norm_a": "flux/prim_norm_a.txt",
+        "flux_exp_norm_b": "flux/exp_norm_b.txt",
+        "flux_exp_factor_c": "flux/exp_factor_c.txt",
+        "flux_spectral_index_d": "flux/spectral_index_d.txt",
+        "flux_pion_chargeratio_Chg": "flux/pion_chargeratio_Chg.txt"},
+        "fixed": true
     },
 
     "aeff_mode": {

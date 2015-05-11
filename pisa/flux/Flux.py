@@ -53,7 +53,13 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     return flux_maps
 
 
-def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_prim_norm_a, flux_prim_exp_norm_b, flux_prim_exp_factor_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES, nue_numu_ratio, energy_scale, **kwargs):
+def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B,
+    flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F,
+    flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W,
+    flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z, flux_prim_norm_a,
+    flux_prim_exp_norm_b, flux_prim_exp_factor_c, flux_spectral_index_d,
+    flux_pion_chargeratio_Chg, flux_uncertainty_inputs,
+    nue_numu_ratio, energy_scale, **kwargs):
     '''
     Get a set of flux maps for the different primaries.
 
@@ -77,10 +83,19 @@ def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B,
 
     for prim in primaries:
 
-        #Get the flux for this primary
+        #Get the flux
+        flux = flux_service.get_flux(ebins*energy_scale,czbins,prim,
+            flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D,
+            flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H,
+            flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y,
+            flux_hadronic_Z,  flux_prim_norm_a, flux_prim_exp_norm_b,
+            flux_prim_exp_factor_c, flux_spectral_index_d,
+            flux_pion_chargeratio_Chg, flux_uncertainty_inputs)
+       
+        #Create return map
         maps[prim] = {'ebins': ebins,
                       'czbins': czbins,
-                      'map': flux_service.get_flux(ebins*energy_scale,czbins,prim, flux_hadronic_A, flux_hadronic_B, flux_hadronic_C, flux_hadronic_D, flux_hadronic_E, flux_hadronic_F, flux_hadronic_G, flux_hadronic_H, flux_hadronic_I, flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y, flux_hadronic_Z,  flux_prim_norm_a, flux_prim_exp_norm_b, flux_prim_exp_factor_c, flux_spectral_index_d, flux_pion_chargeratio_Chg, UNC_FILES)}
+                      'map': flux }
 
         #be a bit verbose
         logging.trace("Total flux of %s is %u [s^-1 m^-2]"%
@@ -89,11 +104,6 @@ def get_flux_maps(flux_service, ebins, czbins, flux_hadronic_A, flux_hadronic_B,
     # now scale the nue(bar) / numu(bar) flux ratios, keeping the total
     # flux (nue + numu, nue_bar + numu_bar) constant, or return unscaled maps:
     return apply_nue_numu_ratio(maps, nue_numu_ratio) if nue_numu_ratio != 1.0 else maps
-
-    #if nue_numu_ratio != 1.:
-    #    return apply_nue_numu_ratio(maps, nue_numu_ratio)
-    # else: no scaling to be applied
-    #return map
 
 
 if __name__ == '__main__':
