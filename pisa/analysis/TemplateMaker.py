@@ -162,10 +162,6 @@ class TemplateMaker:
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
         output from each stage as a simple tuple. 
-        If params['residual_up_down'] is True, template is a combined map 
-        of up-going and down-going neutrinos, the last stage returns
-        a residual map: up-going map minus the reflected down-going map
-        (reflect about cos_zen=0).
         '''
 
         logging.info("STAGE 1: Getting Atm Flux maps...")

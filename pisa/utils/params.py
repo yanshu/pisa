@@ -61,7 +61,7 @@ def change_nutau_norm_settings(params,nutau_norm_val,nutau_norm_fix):
     ''' Change the value of nutau_norm["value"] and ["fixed"] (for the template settings file)'''
     if not isinstance(nutau_norm_fix, bool):
                 raise ValueError('nutau_norm_fix must be boolean value')
-    newparams = params
+    newparams = select_hierarchy(params,True)
     newparams["nutau_norm"]["value"] = nutau_norm_val
     newparams["nutau_norm"]["fixed"] = nutau_norm_fix
     return newparams

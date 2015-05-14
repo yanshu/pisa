@@ -147,7 +147,7 @@
     }, 
     "channel": {
       "fixed": true, 
-      "value": "cscd"
+      "value": "all"
     }, 
     "cz_reco_scale": {
       "fixed": true, 

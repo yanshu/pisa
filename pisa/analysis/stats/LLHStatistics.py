@@ -12,7 +12,7 @@
 
 import re
 import numpy as np
-from scipy.stats import poisson,skellam
+from scipy.stats import poisson, skellam, norm
 from scipy.special import iv, multigammaln
 from pisa.utils.jsons import from_json
 
@@ -66,6 +66,11 @@ def get_binwise_llh(pseudo_data,template,template_params):
         t_N_down = np.float64(template[1])
         d_N_up = np.float64(pseudo_data[0])
         d_N_down = np.float64(pseudo_data[1])
+        #print "t_N_up = ", t_N_up
+        #print "t_N_down = ", t_N_down
+        #print "d_N_up = ", d_N_up
+        #print "d_N_down = ", d_N_down
+        print "min(d_N) = ", min(min(d_N_down),min(d_N_up))
         cut_zero = np.logical_or(np.logical_or(d_N_up == 0, d_N_down == 0), np.logical_or(t_N_up == 0,t_N_down == 0))
         cut_nonzero = np.logical_and(np.logical_and(d_N_up != 0, d_N_down != 0), np.logical_and(t_N_up != 0,t_N_down != 0))
         
@@ -105,7 +110,18 @@ def get_binwise_llh(pseudo_data,template,template_params):
         #    totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
 
         #definition 2
-        totalLLH = -np.nan_to_num(np.sum(np.square(t_R-d_R)))      
+        #totalLLH = -np.nan_to_num(np.sum(np.square(t_R-d_R)))      
+        #if d_zero !=[] and t_zero !=[]:
+        #    totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
+
+        #definition 3, normal approximation
+        a2 = d_R*d_R/t_N_up + 1/t_N_down
+        a = np.sqrt(a2)
+        b = d_R + 1
+        c = t_N_up + t_N_down
+        d = np.exp(0.5*(b*b-c*a2)/a2)
+        pdf = b*d*(norm.cdf(b/a)-norm.cdf(-b/a))/a2/np.sqrt(2*t_N_up*t_N_down*np.pi) + np.exp(-0.5*c)/a2/np.pi/np.sqrt(t_N_up*t_N_down)
+        totalLLH = np.sum(np.log(pdf))
         if d_zero !=[] and t_zero !=[]:
             totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
 
