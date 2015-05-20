@@ -20,7 +20,7 @@ from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.utils.plot import product_map
-from pisa.flux.ShapeMod import modify_shape
+from pisa.utils.shape import modify_shape
 from pisa.resources.resources import open_resource
 
 #Global definition of primaries for which there is a neutrino flux
