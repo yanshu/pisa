@@ -200,7 +200,7 @@
     }, 
     "deltam31_ih": {
       "fixed": false, 
-      "prior": 5e-05, 
+      "prior": null, 
       "range": [
         -0.0025, 
         -0.0022
@@ -210,7 +210,7 @@
     }, 
     "deltam31_nh": {
       "fixed": false, 
-      "prior": 5e-05, 
+      "prior": null, 
       "range": [
         0.0023, 
         0.0026
