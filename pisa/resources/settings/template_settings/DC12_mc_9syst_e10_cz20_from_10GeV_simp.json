@@ -130,7 +130,7 @@
       "prior": null, 
       "range": [
         0.0, 
-        5.0
+        1.0
       ], 
       "scale": 1.0, 
       "value": 0.447
@@ -233,7 +233,7 @@
     }, 
     "icc_bg_file": {
       "fixed": true, 
-      "value": "/Users/feifeihuang/pisa/pisa/resources/background/IC86_3yr_ICC.hdf5"
+      "value": "~/pisa/pisa/resources/background/IC86_3yr_ICC.hdf5"
     }, 
     "livetime": {
       "fixed": true, 
