@@ -96,62 +96,45 @@ class HondaFluxService():
     
         return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
       
-        ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
-        return_table = return_table \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_A,
-                               flux_uncertainty_inputs['flux_hadronic_A']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_B,
-                               flux_uncertainty_inputs['flux_hadronic_B']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_C,
-                               flux_uncertainty_inputs['flux_hadronic_C']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_D,
-                               flux_uncertainty_inputs['flux_hadronic_D']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_E,
-                               flux_uncertainty_inputs['flux_hadronic_E']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_F,
-                               flux_uncertainty_inputs['flux_hadronic_F']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_G,
-                               flux_uncertainty_inputs['flux_hadronic_G']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_H,
-                               flux_uncertainty_inputs['flux_hadronic_H']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_I,
-                               flux_uncertainty_inputs['flux_hadronic_I']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_W,
-                               flux_uncertainty_inputs['flux_hadronic_W']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_X,
-                               flux_uncertainty_inputs['flux_hadronic_X']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_Y,
-                               flux_uncertainty_inputs['flux_hadronic_Y']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_hadronic_Z,
-                               flux_uncertainty_inputs['flux_hadronic_Z']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_prim_norm_a,
-                               flux_uncertainty_inputs['flux_prim_norm_a']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_prim_exp_norm_b,
-                               flux_uncertainty_inputs['flux_exp_norm_b']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_prim_exp_factor_c,
-                               flux_uncertainty_inputs['flux_exp_factor_c']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_spectral_index_d,
-                               flux_uncertainty_inputs['flux_spectral_index_d']) \
-                       + return_table * modify_shape(ebins, czbins,
-                               flux_pion_chargeratio_Chg,
-                               flux_uncertainty_inputs['flux_pion_chargeratio_Chg'])
+        #Now apply all the shape modification for each of the flux uncertainties
+        #Modellling of the uncertainties follows the discussion
+        #in Barr et al. (2006)
+        return_table = modify_shape(return_table, ebins, czbins,
+                flux_hadronic_A, flux_uncertainty_inputs['flux_hadronic_A'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_B, flux_uncertainty_inputs['flux_hadronic_B'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_C, flux_uncertainty_inputs['flux_hadronic_C'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_D, flux_uncertainty_inputs['flux_hadronic_D'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_E, flux_uncertainty_inputs['flux_hadronic_E'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_F, flux_uncertainty_inputs['flux_hadronic_F'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_G, flux_uncertainty_inputs['flux_hadronic_G'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_H, flux_uncertainty_inputs['flux_hadronic_H'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_I, flux_uncertainty_inputs['flux_hadronic_I'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_W, flux_uncertainty_inputs['flux_hadronic_W'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_X, flux_uncertainty_inputs['flux_hadronic_X'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_Y, flux_uncertainty_inputs['flux_hadronic_Y'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_hadronic_Z, flux_uncertainty_inputs['flux_hadronic_Z'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_prim_norm_a, flux_uncertainty_inputs['flux_prim_norm_a'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_prim_exp_norm_b, flux_uncertainty_inputs['flux_exp_norm_b'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_prim_exp_factor_c, flux_uncertainty_inputs['flux_exp_factor_c'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_spectral_index_d, flux_uncertainty_inputs['flux_spectral_index_d'])
+        return_table =  modify_shape(return_table, ebins, czbins,
+                flux_pion_chargeratio_Chg, flux_uncertainty_inputs['flux_pion_chargeratio_Chg'])
                 
         return return_table.T
 
