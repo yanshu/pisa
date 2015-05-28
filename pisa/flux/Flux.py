@@ -66,7 +66,6 @@ def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
         for flavour in flavours:
             # process nu and nubar in one go
             if not 'bar' in flavour:
-                # do this for each interaction channel (cc and nc)
                 scaled_nu_rates, scaled_nubar_rates = apply_ratio_scale(
                         orig_maps = event_rate_maps,
                         key1 = flavour, key2 = flavour+'_bar',
