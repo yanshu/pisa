@@ -56,6 +56,26 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
 
     return flux_maps
 
+def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
+    """
+    Applies the nu_nubar_ratio systematic to the event rate
+    maps and returns the scaled maps. The actual calculation is
+    done by apply_ratio_scale.
+    """ flavours = event_rate_maps.keys()
+    if 'params' in flavours: flavours.remove('params') 
+        for flavour in flavours:
+            # process nu and nubar in one go
+            if not 'bar' in flavour:
+                # do this for each interaction channel (cc and nc)
+                scaled_nu_rates, scaled_nubar_rates = apply_ratio_scale(
+                        orig_maps = event_rate_maps,
+                        key1 = flavour, key2 = flavour+'_bar',
+                        ratio_scale = nu_nubar_ratio,
+                        is_flux_scale = True,)
+                event_rate_maps[flavour]['map'] = scaled_nu_rates
+                event_rate_maps[flavour+'_bar']['map'] = scaled_nubar_rates
+                return event_rate_maps
+
 def apply_delta_index(flux_maps, delta_index, egy_med):
     """
     Applies the spectral index systematic to the flux maps by scaling
@@ -126,6 +146,9 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, energy_scale,
     # now scale the nue(bar) / numu(bar) flux ratios, keeping the total
     # Flux (nue + numu, nue_bar + numu_bar) constant, or return unscaled maps:
     scaled_maps = apply_nue_numu_ratio(maps, nue_numu_ratio) if nue_numu_ratio != 1.0 else maps
+
+    if nu_nubar_ratio != 1.:
+        scaled_maps = apply_nu_nubar_ratio(scaled_maps, nu_nubar_ratio)
 
     median_energy = get_median_energy(maps['numu'])
 
