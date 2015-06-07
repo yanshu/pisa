@@ -74,9 +74,9 @@ if __name__ == '__main__':
     ebins, czbins = check_binning(args.event_rate_pid_maps)
 
     logging.info("Defining background_service...")
-    aeff_service = BackgroundServiceICC(ebins,czbins,icc_bg_file=args.background_file)
+    background_service = BackgroundServiceICC(ebins,czbins,icc_bg_file=args.background_file)
 
-    event_rate_maps = add_icc_background(args.event_rate_pid_maps,aeff_service,args.atmos_mu_scale)
+    event_rate_maps = add_icc_background(args.event_rate_pid_maps,background_service,args.atmos_mu_scale)
 
     logging.info("Saving output to: %s"%args.outfile)
     to_json(event_rate_maps,args.outfile)
