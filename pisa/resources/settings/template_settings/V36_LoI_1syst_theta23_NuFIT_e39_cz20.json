@@ -155,7 +155,7 @@
       "value": "param"
     },
     "aeff_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "kind": "uniform"
       },
@@ -171,7 +171,7 @@
       "value": null
     },
     "atm_delta_index": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 0.0,
         "sigma": 0.05,
@@ -229,7 +229,7 @@
       "value": 7.5e-05
     },
     "deltam31_ih": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": -0.00237,
         "sigma": 5e-05,
@@ -243,7 +243,7 @@
       "value": -0.00237
     },
     "deltam31_nh": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 0.00246,
         "sigma": 5e-05,
@@ -279,7 +279,7 @@
       "value": "oscillations/PREM_12layer.dat"
     },
     "energy_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "sigma": 0.1,
@@ -301,7 +301,7 @@
       "value": 1.0
     },
     "nu_nubar_ratio": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "sigma": 0.1,
@@ -315,7 +315,7 @@
       "value": 1.0
     },
     "nue_numu_ratio": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "sigma": 0.03,
@@ -383,7 +383,7 @@
       "value": 0.5846852994181004
     },
     "theta13": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 0.14835298641951802,
         "sigma": 0.003490658503988659,
