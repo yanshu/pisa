@@ -10,6 +10,98 @@
 # date:   16 October 2014
 #
 
+import scipy as sp
+import numpy as np
+
+class Prior(object):
+    def __init__(self, **kwargs):
+        self.constructor_args = kwargs
+        if not kwargs.has_key('kind'):
+            raise TypeError(str(self.__class__) + ' __init__ requires `kind` kwarg to be specified')
+        kind = kwargs.pop('kind')
+        # Dispatch the correct initialization method
+        if kind.lower() in ['none', 'uniform'] or kind is None:
+            Prior.__init_uniform(self, **kwargs)
+        elif kind.lower() == 'gaussian':
+            Prior.__init_gaussian(self, **kwargs)
+        elif kind.lower() == 'linterp':
+            Prior.__init_linterp(self, **kwargs)
+        elif kind.lower() == 'spline':
+            Prior.__init_spline(self, **kwargs)
+        else:
+            raise TypeError('Unknown Prior kind `' + str(kind) + '`')
+
+    @classmethod
+    def from_old_style_param_dict(cls, param_dict):
+        if not param_dict.has_key('prior'):
+            return None #cls(kind='uniform')
+        prior = param_dict['prior']
+        if prior is None or (isinstance(prior, str) and prior.lower() == 'none'):
+            return cls(kind='uniform')
+        fiducial = param_dict['value']
+        sigma = prior
+        return cls(kind='gaussian', fiducial=fiducial, sigma=sigma)
+
+    def __str__(self):
+        return self._str(self)
+
+    def __repr__(self):
+        return '<' + str(self.__class__) + ' ' + self.__str__() + '>'
+
+    def build_dict(self, node_dict=None):
+        if node_dict is None:
+            node_dict = {}
+        node_dict['prior'] = self.constructor_args
+        return node_dict
+
+    def __init_uniform(self):
+        self.kind = 'uniform'
+        self.llh = lambda x: 0.*x
+        self.valid_range = [-np.inf, np.inf]
+        self.max_at = np.nan
+        self.max_at_str = "no maximum"
+        self._str = lambda s: "uniform prior"
+
+    def __init_gaussian(self, fiducial, sigma):
+        self.kind = 'gaussian'
+        self.fiducial = fiducial
+        self.sigma = sigma
+        self.llh = lambda x: -(x-self.fiducial)**2 / (2*self.sigma**2)
+        self.valid_range = [-np.inf, np.inf]
+        self.max_at = self.fiducial
+        self.max_at_str = format(self.max_at, '6.4f')
+        self._str = lambda s: "gaussian prior: sigma=%6.4f, max at %6.4f" % (self.sigma, self.fiducial)
+
+    def __init_linterp(self, x, y):
+        self.kind = 'linterp'
+        self.x = np.array(x)
+        self.y = np.array(y)
+        self.interp = sp.interpolate.interp1d(self.x, self.y, kind='linear',
+                                              copy=True, bounds_error=True)
+        self.llh = lambda x_new: self.interp(x_new)
+        self.valid_range = [min(self.x), max(self.x)]
+        self.max_at = self.x[self.y == np.max(self.y)]
+        self.max_at_str = ", ".join([format(v, '6.4f') for v in self.max_at])
+        self._str = lambda s: "linearly-interpolated prior: valid in [%6.4f, %6.4f], max at %s" % (self.valid_range[0], self.valid_range[1], self.max_at_str)
+
+    def __init_spline(self, knots, coeffs, deg):
+        self.kind = 'spline'
+        self.knots = knots
+        self.coeffs = coeffs
+        self.deg = deg
+        self.llh = lambda x: sp.interpolate.splev(x, tck=(knots, coeffs, deg), ext=2)
+        self.valid_range = [np.min(knots), np.max(knots)]
+        self.max_at = sp.optimize.fminbound(
+            func=lambda x,a: -sp.interpolate.splev(x,a),
+            x1=self.valid_range[0],
+            x2=self.valid_range[1],
+            args=((self.knots, self.coeffs, self.deg),)
+        )
+        self.max_at_str = format(self.max_at, '6.4f')
+        self._str = lambda s: "spline prior: deg %d, valid in [%6.4f, %6.4f], max at %s" % (self.deg, self.valid_range[0], self.valid_range[1], self.max_at_str)
+
+    def check_range(self, x_range):
+        return min(x_range) >= self.valid_range[0] and max(x_range) <= self.valid_range[1]
 
 def get_values(params):
     """
@@ -82,18 +174,6 @@ def get_free_params(params):
 
     return { key: value for key, value in params.items() if not value['fixed']}
 
-def get_prior_llh(value,sigma,fiducial):
-    """
-    Returns the log(prior) for a gaussian prior probability, unless it
-    has not been defined, in which case 0.0 is returned.. Ignores the
-    constant term proportional to log(sigma_prior).
-
-    value - specific value of free parameter in likelihood hypothesis
-    sigma - (gaussian) prior on free parameter.
-    fiducial - best fit value of free parameter.
-    """
-    return 0.0 if sigma is None else -((value - fiducial)**2/(2.0*sigma**2))
-
 def get_param_values(params):
     """
     Returns a list of parameter values
@@ -114,9 +194,17 @@ def get_param_bounds(params):
 
 def get_param_priors(params):
     """
-    Returns a list of [(prior,value),...] for each param
+    Returns a list of Prior objects, one for each param.
     """
-    return [ [val['prior'],val['value']] for key,val in sorted(params.items()) ]
+    priors = []
+    for pname,param in sorted(params.items()):
+        try:
+            prior = Prior(**param['prior'])
+        except TypeError:
+            print "Check the template settings format, may be old-style priors"
+            raise
+        priors.append(prior)
+    return priors
 
 def get_atm_params(params):
     """

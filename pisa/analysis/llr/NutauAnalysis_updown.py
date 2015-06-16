@@ -17,8 +17,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.llr.LLHAnalysis import find_max_llh_bfgs
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed
+from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
+from pisa.analysis.stats.Maps import get_seed
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings
 
@@ -112,7 +113,7 @@ for itrial in xrange(1,args.ntrials+1):
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
                         get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
                                    normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
-                                    seed=results[data_tag]['seed'],chan=channel)
+                                    seed=results[data_tag]['seed'],channel=channel)
 
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.

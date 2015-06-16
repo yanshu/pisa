@@ -1,10 +1,11 @@
 #! /usr/bin/env python
 #
-# LLRScanAnalysis.py
+# ScanAnalysisNutau_ratio.py
 #
 # Runs a brute-force scan LLR analysis
 #
-# author: Sebatian Boeser - sboeser@uni-mainz.de
+# authors: Feifei Huang - fxh140@psu.edu
+#          Sebatian Boeser - sboeser@uni-mainz.de
 #
 
 import numpy as np
@@ -13,43 +14,69 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed,get_asimov_data_fmap_up_down 
-from pisa.analysis.scan.Scan import find_max_grid
+from pisa.analysis.stats.Maps import get_seed
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down 
+from pisa.analysis.scan.Scan_nutau import find_max_grid
 from pisa.analysis.TemplateMaker import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings
+from pisa.utils.params import get_values
+from pisa.utils.params_nutau import select_hierarchy_and_nutau_norm, change_nutau_norm_settings
 import random as rnd
 
-parser = ArgumentParser(description='''Runs a brute-force scan analysis varying a number of systematic parameters
-defined in settings.json file and saves the likelihood values for all
-combination of hierarchies.''',
-                        formatter_class=ArgumentDefaultsHelpFormatter)
-parser.add_argument('-t','--template_settings',type=str,
-                    metavar='JSONFILE', required = True,
-                    help='''Settings (f floating) related to the template generation and systematics.''')
-parser.add_argument('-pd','--pseudo_data_settings',type=str,
-                    metavar='JSONFILE', required = False,
-                    help='''Settings for pseudo data templates(tau,f=0), if desired to be different from template_settings.''')
-parser.add_argument('-g','--grid_settings',type=str,
-                    metavar='JSONFILE', required = True,
-                    help='''Settings for the grid search.''')
-parser.add_argument('-n','--ntrials',type=int, default = 1,
-                    help="Number of trials to run")
+parser = ArgumentParser(
+    description='''Runs a brute-force scan analysis varying a number of systematic parameters
+    defined in settings.json file and saves the likelihood values for all
+    combination of hierarchies.''',
+    formatter_class=ArgumentDefaultsHelpFormatter)
+parser.add_argument(
+    '-t', '--template_settings',
+    type=str,
+    metavar='JSONFILE',
+    required = True,
+    help='''Settings (f floating) related to the template generation and systematics.''')
+parser.add_argument(
+    '-pd', '--pseudo_data_settings',
+    type=str,
+    metavar='JSONFILE',
+    required = False,
+    help='''Settings for pseudo data templates(tau,f=0), if desired to be different from template_settings.''')
+parser.add_argument(
+    '-g', '--grid_settings',type=str,
+    metavar='JSONFILE',
+    required=True,
+    help='''Settings for the grid search.''')
+parser.add_argument(
+    '-n', '--ntrials',
+    type=int,
+    default=1,
+    help="Number of trials to run")
 sselect = parser.add_mutually_exclusive_group(required=False)
-sselect.add_argument('--save-steps',action='store_true',
-                    default=True, dest='save_steps',
-                    help="Save all steps")
-sselect.add_argument('--no-save-steps', action='store_false',
-                    default=False, dest='save_steps',
-                    help="Save just the maximum")
-parser.add_argument('-o','--outfile',type=str,default='llh_data.json',metavar='JSONFILE',
-                    help="Output filename.")
-parser.add_argument('-v', '--verbose', action='count', default=None,
-                    help='set verbosity level')
+sselect.add_argument(
+    '--save-steps', action='store_true',
+    default=True,
+    dest='save_steps',
+    help="Save all steps")
+sselect.add_argument(
+    '--no-save-steps',
+    action='store_false',
+    default=False,
+    dest='save_steps',
+   help="Save just the maximum")
+parser.add_argument(
+    '-o', '--outfile',
+    type=str,
+    default='llh_data.json',
+    metavar='JSONFILE',
+    help="Output filename.")
+parser.add_argument(
+    '-v', '--verbose',
+    action='count',
+    default=None,
+   help='set verbosity level')
 args = parser.parse_args()
 
 set_verbosity(args.verbose)
 
-#Read in the settings
+# Read in the settings
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
 
@@ -78,15 +105,15 @@ if args.pseudo_data_settings:
 else:
     pseudo_data_template_maker = template_maker
 
-# make sure that both pseudo data and template are using the same
-# channel. Raise Exception and quit otherwise
+# Make sure that both pseudo data and template are using the same channel.
+# Raise Exception and quit otherwise
 channel = template_settings['params']['channel']['value']
 if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg = "template_settings and pseudo_data_settings must have the same channel!\n"
     error_msg += " template_settings: '%s', pseudo_data_settings: '%s' " %(channel,pseudo_data_settings['params']['channel']['value'])
     raise ValueError(error_msg)
 
-for itrial in xrange(1,args.ntrials+1):
+for itrial in xrange(1, args.ntrials+1):
     profile.info("start trial %d"%itrial)
     logging.info(">"*10 + "Running trial: %05d"%itrial + "<"*10)
 
@@ -109,10 +136,15 @@ for itrial in xrange(1,args.ntrials+1):
         #results[data_tag]['seed'] = 100
         logging.info("  RNG seed: %ld"%results[data_tag]['seed'])
         # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
-        fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
-                        get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                   normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
-                                    seed=results[data_tag]['seed'],chan=channel)
+        fiducial_param_values = get_values(
+            select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
+                                            normal_hierarchy=data_normal,
+                                            nutau_norm_value=data_nutau_norm)
+        )
+        fmap = get_pseudo_data_fmap(template_maker=pseudo_data_template_maker,
+                                    fiducial_params=fiducial_param_values,
+                                    channel=channel,
+                                    seed=results[data_tag]['seed'])
         print pseudo_data_settings['params']
         #fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
         #                get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
@@ -127,24 +159,31 @@ for itrial in xrange(1,args.ntrials+1):
         for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',1.0, True)]:
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start scan")
-            llh_data = find_max_grid(fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
-                                 hypo_nutau_norm,nutau_norm_fix),
-                                    grid_settings,args.save_steps,
+            hypo_params = change_nutau_norm_settings(
+                template_settings['params'],
+                hypo_nutau_norm,nutau_norm_fix
+            )
+            llh_data = find_max_grid(fmap=fmap,
+                                     template_maker=template_maker,
+                                     params=hypo_params,
+                                     grid_settings=grid_settings,
+                                     save_steps=args.save_steps,
                                     normal_hierarchy=hypo_normal)
             profile.info("stop scan")
-            #Store the LLH data
+
+            # Store the LLH data
             results[data_tag][hypo_tag] = llh_data
 
 
-    #Store this trial
+    # Store this trial
     trials += [results]
     profile.info("stop trial %d"%itrial)
 
-#Assemble output dict
+# Assemble output dict
 output = {'trials' : trials,
           'template_settings_up' : up_template_settings,
           'template_settings_down' : down_template_settings,
           'grid_settings' : grid_settings}
 output['pseudo_data_settings'] = pseudo_data_settings
-#And write to file
-to_json(output,args.outfile)
+# And write to file
+to_json(output, args.outfile)
