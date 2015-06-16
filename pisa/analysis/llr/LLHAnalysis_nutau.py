@@ -103,25 +103,11 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     free_params = get_free_params(select_hierarchy(params,normal_hierarchy))
     template_params = dict(free_params.items() + get_values(fixed_params).items())
 
-    if len(free_params) == 0:
-        logging.warn("NO FREE PARAMS, returning LLH")
-        true_template = template_maker.get_template(get_values(fixed_params))
-        channel = params['channel']['value']
-        true_fmap = flatten_map(template=true_template, channel=channel)
-        return {'llh': [-get_binwise_llh(fmap, true_fmap)]}
-
     init_vals = get_param_values(free_params)
     scales = get_param_scales(free_params)
     bounds = get_param_bounds(free_params)
     priors = get_param_priors(free_params)
     names  = sorted(free_params.keys())
-
-    #if len(free_params)==0:
-    #    true_fmap = get_true_template(template_params,template_maker)
-    #    llh = -get_binwise_llh(fmap,true_fmap,template_params)
-    #    llh -= sum([ get_prior_llh(opt_val,sigma,value)
-    #             for (opt_val,(sigma,value)) in zip(init_vals,priors)])
-    #    return llh
 
     # Scale init-vals and bounds to work with bfgs opt:
     init_vals = np.array(init_vals)*np.array(scales)
@@ -137,6 +123,15 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
+
+    if len(free_params)==0:
+        unscaled_opt_vals = [init_vals[i] for i in xrange(len(init_vals))]
+        true_fmap = get_true_template(template_params,template_maker)
+        neg_llh = -get_binwise_llh(fmap,true_fmap,template_params)
+        neg_llh -= sum([prior.llh(opt_val)
+                    for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
+        physics.debug("LLH is %.2f "%neg_llh)
+        return neg_llh
 
     # If needed, run optimizer again, checking for second octant solution:
     if check_octant and ('theta23' in free_params.keys()):
