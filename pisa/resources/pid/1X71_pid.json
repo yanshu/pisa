@@ -1,0 +1,19 @@
+{
+ "numu_cc": {
+     "trck": "lambda E: 5.33e-01/(np.exp((1.33e+00 - np.log10(E))/1.32e-01) + 1.) + 1.92e-01",
+     "cscd": "lambda E: 1. - (5.33e-01/(np.exp((1.33e+00 - np.log10(E))/1.32e-01) + 1.) + 1.92e-01)"
+  },
+  "nuall_nc": {
+      "trck": "lambda E: -3.62e+00*scipy.stats.norm(loc=1.38e+01, scale=2.68e+01).pdf(E) + 1.85e-01",
+      "cscd": "lambda E: 1. - (-3.62e+00*scipy.stats.norm(loc=1.38e+01, scale=2.68e+01).pdf(E) + 1.85e-01)"
+
+  },
+  "nue_cc": {
+      "trck": "lambda E: -6.31e+00*scipy.stats.norm(loc=9.63e+00, scale=3.16e+01).pdf(E) + 2.01e-01",
+      "cscd": "lambda E: 1. - (-6.31e+00*scipy.stats.norm(loc=9.63e+00, scale=3.16e+01).pdf(E) + 2.01e-01)"
+  },
+  "nutau_cc": {
+      "trck": "lambda E: -1.35e+00*scipy.stats.norm(loc=1.12e+01, scale=7.75e+00).pdf(E) + 2.19e-01",
+      "cscd": "lambda E: 1. - (-1.35e+00*scipy.stats.norm(loc=1.12e+01, scale=7.75e+00).pdf(E) + 2.19e-01)"
+  }
+}
