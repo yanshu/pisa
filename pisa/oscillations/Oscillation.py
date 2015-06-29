@@ -32,7 +32,7 @@ except:
 
 def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
                  energy_scale=None, theta12=None,theta13=None,theta23=None,
-                 deltacp=None,nutau_norm=None,**kwargs):
+                 deltacp=None,**kwargs):
     '''
     Obtain a map in energy and cos(zenith) of the oscillation probabilities from
 
@@ -51,9 +51,6 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     #Initialize return dict
     osc_flux_maps = {'params': add_params(params,flux_maps['params'])}
 
-    #add 'nutau_norm' parameter to params
-    osc_flux_maps = {'params': add_params(params,{'nutau_norm':nutau_norm})}
-
     #Get oscillation probability map from service
     osc_prob_maps = osc_service.get_osc_prob_maps(deltam21=deltam21,
                                                   deltam31=deltam31,
@@ -70,13 +67,10 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
 	for mID in ['','_bar']: # 'matter' ID
             nue_flux = flux_maps['nue'+mID]['map']
             numu_flux = flux_maps['numu'+mID]['map']
-            scale = 1
-            if(to_flav=='nutau'):
-                scale = nutau_norm
             oscflux = {'ebins':ebins,
                        'czbins':czbins,
-                       'map':(scale*nue_flux*osc_prob_maps['nue'+mID+'_maps'][to_flav+mID] +
-                              scale*numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
+                       'map':(nue_flux*osc_prob_maps['nue'+mID+'_maps'][to_flav+mID] +
+                              numu_flux*osc_prob_maps['numu'+mID+'_maps'][to_flav+mID])
                        }
             osc_flux_maps[to_flav+mID] = oscflux
 
@@ -107,8 +101,6 @@ if __name__ == '__main__':
                         help='''theta23 value [rad]''')
     parser.add_argument('--deltacp',type=float,default=0.0,
                         help='''deltaCP value to use [rad]''')
-    parser.add_argument('--nutau_norm',type=float,default=1.0,
-                        help='''nutau normalization factor''')
     parser.add_argument('--earth-model',type=str,default='oscillations/PREM_12layer.dat',
                         dest='earth_model',
                         help='''Earth model data (density as function of radius)''')
@@ -177,7 +169,6 @@ if __name__ == '__main__':
                                  deltam21 = args.deltam21,
                                  deltam31 = args.deltam31,
                                  deltacp = args.deltacp,
-                                 nutau_norm = args.nutau_norm,
                                  theta12 = args.theta12,
                                  theta13 = args.theta13,
                                  theta23 = args.theta23,

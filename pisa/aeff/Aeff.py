@@ -33,8 +33,40 @@ from pisa.aeff.AeffServiceMC import AeffServiceMC
 from pisa.aeff.AeffServicePar import AeffServicePar
 from pisa.analysis.stats.Maps import apply_ratio_scale
 
-def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
-                    aeff_scale=None,**kwargs):
+
+def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
+    '''
+    Applies the nu_nubar_ratio systematic to the event rate
+    maps and returns the scaled maps. The actual calculation is
+    done by apply_ratio_scale.
+    '''
+    flavours = event_rate_maps.keys()
+    if(event_rate_maps['params']['nutau_norm'] == 0.0):
+       flavours.remove('nutau')
+       flavours.remove('nutau_bar')
+    if 'params' in flavours: flavours.remove('params')
+
+    for flavour in flavours:
+        # process nu and nubar in one go
+        if not 'bar' in flavour:
+             # do this for each interaction channel (cc and nc)
+             for int_type in event_rate_maps[flavour].keys():
+                 scaled_nu_rates, scaled_nubar_rates = apply_ratio_scale(
+                     orig_maps = event_rate_maps,
+                     key1 = flavour, key2 = flavour+'_bar',
+                     ratio_scale = nu_nubar_ratio,
+                     is_flux_scale = False,
+                     int_type = int_type
+                 )
+
+                 event_rate_maps[flavour][int_type]['map'] = scaled_nu_rates
+                 event_rate_maps[flavour+'_bar'][int_type]['map'] = scaled_nubar_rates
+
+    return event_rate_maps
+
+
+def get_event_rates(osc_flux_maps,aeff_service,livetime=None,nu_nubar_ratio=None,
+                    aeff_scale=None,nutau_norm=None,**kwargs):
     '''
     Main function for this module, which returns the event rate maps
     for each flavor and interaction type, using true energy and zenith
@@ -48,6 +80,10 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
       * osc_flux_maps - maps containing oscillated fluxes
       * aeff_service - the effective area service to use
       * livetime - detector livetime for which to calculate event counts
+      * nu_nubar_ratio - systematic to be a proxy for the realistic
+        counts_nue(cc/nc) / counts_nuebar(cc/nc), ... ratios,
+        keeping the total flavour counts constant.
+        The adjusted ratios are given by "nu_nubar_ratio * original ratio".
       * aeff_scale - systematic to be a proxy for the realistic effective area
     '''
 
@@ -57,6 +93,9 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
 
     #Initialize return dict
     event_rate_maps = {'params': add_params(params,osc_flux_maps['params'])}
+
+    #add 'nutau_norm' parameter to params
+    event_rate_maps = {'params': add_params(params,{'nutau_norm':nutau_norm})}
 
     #Get effective area
     aeff_dict = aeff_service.get_aeff()
@@ -69,7 +108,11 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
         osc_flux_map = osc_flux_maps[flavour]['map']
         int_type_dict = {}
         for int_type in ['cc','nc']:
-            event_rate = osc_flux_map*aeff_dict[flavour][int_type]*aeff_scale
+            scale = 1.0
+            if flavour == 'nutau' or flavour == 'nutau_bar':
+                if int_type == 'cc':
+                    scale = nutau_norm 
+            event_rate = scale*osc_flux_map*aeff_dict[flavour][int_type]*aeff_scale
             event_rate *= (livetime*Julian_year)
             int_type_dict[int_type] = {'map':event_rate,
                                        'ebins':ebins,
@@ -107,8 +150,12 @@ area and its cos(zenith) dependence. Only applies in parametric mode.''')
                         default='aeff/V36/V36_aeff_cz.json')
     parser.add_argument('--livetime',type=float,default=1.0,
                         help='''livetime in years to re-scale by.''')
+    parser.add_argument('--nu_nubar_ratio',type=float,default=1.0,
+                        help='''Overall scale on nu xsec.''')
     parser.add_argument('--aeff_scale',type=float,default=1.0,
                         help='''Overall scale on aeff''')
+    parser.add_argument('--nutau_norm',type=float,default=1.0,
+                        help='''nutau normalization factor''')
     parser.add_argument('--mc_mode',action='store_true', default=False,
                         help='''Use MC-based effective areas instead of using the parameterized versions.''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
@@ -135,7 +182,9 @@ area and its cos(zenith) dependence. Only applies in parametric mode.''')
         aeff_service = AeffServicePar(ebins,czbins,**aeff_settings)
 
 
-    event_rate_maps = get_event_rates(args.osc_flux_maps,aeff_service,args.livetime, args.aeff_scale)
+    event_rate_maps = get_event_rates(args.osc_flux_maps,aeff_service,args.livetime,
+                                      args.nu_nubar_ratio,args.aeff_scale,
+                                      args.nutau_norm)
 
     logging.info("Saving output to: %s"%args.outfile)
     to_json(event_rate_maps,args.outfile)
