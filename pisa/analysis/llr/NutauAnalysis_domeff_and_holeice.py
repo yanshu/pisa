@@ -17,8 +17,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.llr.LLHAnalysis import find_max_llh_bfgs
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed
+from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_seed
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings
 
@@ -57,7 +57,7 @@ up_template_settings['binning']['czbins']=czbins[czbins<=0]
 
 down_template_settings = copy.deepcopy(template_settings)
 down_template_settings['binning']['czbins']=czbins[czbins>=0]
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/work/pisa/pisa/resources/pid/1X60_pid_down.json'}
+down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
@@ -76,7 +76,7 @@ if scipy.__version__ < '0.12.0':
 channel = template_settings['params']['channel']['value']
 if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg = "Both template and pseudo data must have same channel!\n"
-    error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
+    error_msg += " pseudo_data_settings channel: '%s', template channel: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
 
 
@@ -87,10 +87,10 @@ template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
 
 DH_template_makers = []
 for run_num in [50,60,61,64,65,70,71,72]:
-    aeff_mc_file = '~/work/pisa/pisa/resources/aeff/1X%i_aeff_mc.hdf5' % run_num
-    reco_mc_file = '~/work/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar.hdf5' % run_num
-    pid_param_file_up = '~/work/pisa/pisa/resources/pid/1X%i_pid.json' % run_num
-    pid_param_file_down = '~/work/pisa/pisa/resources/pid/1X%i_pid_down.json' % run_num
+    aeff_mc_file = '~/pisa/pisa/resources/aeff/1X%i_aeff_mc.hdf5' % run_num
+    reco_mc_file = '~/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar.hdf5' % run_num
+    pid_param_file_up = '~/pisa/pisa/resources/pid/1X%i_pid.json' % run_num
+    pid_param_file_down = '~/pisa/pisa/resources/pid/1X%i_pid_down.json' % run_num
     DH_up_template_settings = copy.deepcopy(up_template_settings)
     DH_up_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_up_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file 
@@ -134,7 +134,7 @@ for itrial in xrange(1,args.ntrials+1):
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
                         get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
                                    normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
-                                    seed=results[data_tag]['seed'],chan=channel)
+                                    seed=results[data_tag]['seed'],channel=channel)
 
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
