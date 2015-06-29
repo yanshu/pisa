@@ -101,8 +101,6 @@ if __name__ == '__main__':
                         help='''theta23 value [rad]''')
     parser.add_argument('--deltacp',type=float,default=0.0,
                         help='''deltaCP value to use [rad]''')
-    parser.add_argument('--nutau_norm',type=float,default=1.0,
-                        help='''nutau normalization factor''')
     parser.add_argument('--earth-model',type=str,default='oscillations/PREM_12layer.dat',
                         dest='earth_model',
                         help='''Earth model data (density as function of radius)''')
@@ -171,7 +169,6 @@ if __name__ == '__main__':
                                  deltam21 = args.deltam21,
                                  deltam31 = args.deltam31,
                                  deltacp = args.deltacp,
-                                 nutau_norm = args.nutau_norm,
                                  theta12 = args.theta12,
                                  theta13 = args.theta13,
                                  theta23 = args.theta23,
