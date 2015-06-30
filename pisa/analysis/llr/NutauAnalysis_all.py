@@ -58,7 +58,6 @@ up_template_settings['binning']['czbins']=czbins[czbins<=0]
 
 down_template_settings = copy.deepcopy(template_settings)
 down_template_settings['binning']['czbins']=czbins[czbins>=0]
-#down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/DC12_down_pid.json'}
 down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
@@ -78,7 +77,7 @@ if scipy.__version__ < '0.12.0':
 channel = template_settings['params']['channel']['value']
 if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg = "Both template and pseudo data must have same channel!\n"
-    error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
+    error_msg += " pseudo_data_settings channel: '%s', template channel: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
 
 
@@ -142,7 +141,8 @@ for itrial in xrange(1,args.ntrials+1):
         #    to templates.
         rnd.seed(get_seed())
         init_nutau_norm = rnd.uniform(-0.7,3)
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
+        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False)]:
 
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start optimizer")

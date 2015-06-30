@@ -136,7 +136,7 @@ class TemplateMaker:
                                                   **template_settings)
         else:
             error_msg = "reco_mode: %s is not implemented! "%reco_mode
-            error_msg+=" Please choose among: ['MC', 'param', 'stored']"
+            error_msg+=" Please choose among: ['MC', 'param', 'stored','vbwkde']"
             raise NotImplementedError(error_msg)
 
         # PID Service:
