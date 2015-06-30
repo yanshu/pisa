@@ -58,7 +58,7 @@ up_template_settings['binning']['czbins']=czbins[czbins<=0]
 
 down_template_settings = copy.deepcopy(template_settings)
 down_template_settings['binning']['czbins']=czbins[czbins>=0]
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/DC12_down_pid.json'}
+down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
