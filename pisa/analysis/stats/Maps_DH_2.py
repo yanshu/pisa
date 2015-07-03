@@ -107,11 +107,6 @@ def apply_domeff_holeice(template, params):
             slope_HI_down = slope['slopes']['data_tau']['k_HoleIce'][flav]['down']
             scale_up = slope_DE_up*(dom_eff_val-0.91)+ slope_HI_up*(hole_ice_val-0.2) + 1
             scale_down = slope_DE_down*(dom_eff_val-0.91)+ slope_HI_down*(hole_ice_val-0.2) + 1
-            #print "scale_up ", flav, " ", scale_up
-            #print "scale_down ", flav, " ", scale_down
-            #print "slope_DE_up , ", flav ," ", slope_DE_up
-            #print "slope_HI_up , ", flav ," ", slope_HI_up
-            #print "slope_DE_down ", slope_DE_down
             output_map_up = {flav:{
                 'map': (template_up[flav]['map'])*scale_up,
                 'ebins':template_up[flav]['ebins'],
