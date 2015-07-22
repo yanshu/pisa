@@ -15,9 +15,27 @@ from scipy import interpolate
 
 from pisa.reco.RecoServiceBase import RecoServiceBase
 from pisa.resources.resources import find_resource
+from pisa.utils.confInterval import MLConfInterval
 from pisa.utils import kde, hdf, utils, confInterval
 from pisa.utils.log import logging
 
+openmp_num_threads = 1
+try:
+    import pisa.utils.gaussians as GAUS
+except:
+    def gaussian(outbuf, x, mu, sigma):
+        xlessmu = x-mu
+        outbuf += 1./(sqrt2pi*sigma) * np.exp(-xlessmu*xlessmu/(2.*sigma*sigma))
+    def gaussians(outbuf, x, mu, sigma, **kwargs):
+        [gaussian(outbuf, x, mu[n], sigma[n]) for n in xrange(len(mu))]
+else:
+    gaussian = GAUS.gaussian
+    gaussians = GAUS.gaussians
+    try:
+        import multiprocessing
+        openmp_num_threads = max(multiprocessing.cpu_count(), 8)
+    except:
+        openmp_num_threads = 1
 
 def reflect1d(x, refl):
     """Reflect a point x in 1D about another point, refl"""
@@ -91,13 +109,54 @@ class RecoServiceVBWKDE(RecoServiceBase):
         self.EPSILON = 1e-10
         self.ENERGY_RANGE = [0, 501]
 
-        RecoServiceBase.__init__(self, ebins=ebins, czbins=czbins,
-                                 reco_vbwkde_evts_file=reco_vbwkde_evts_file,
-                                 reco_vbwkde_make_plots=reco_vbwkde_make_plots,
-                                 **kwargs)
+        # Get binning information
+        self.ebins = ebins
+        self.czbins = czbins
+        assert np.min(np.diff(ebins)) > 0, \
+            "Energy bin edges not monotonically increasing."
+        assert np.min(np.diff(czbins)) > 0, \
+            "coszen bin edges not monotonically increasing."
 
-    def _get_reco_kernels(self, reco_vbwkde_evts_file=None, evts_dict=None,
-                          reco_vbwkde_make_plots=False, **kwargs):
+        # NOTE: below defines bin centers on linear scale; other logic
+        # in this method assumes this to be the case, so
+        # **DO NOT USE** utils.utils.get_bin_centers in this method, which
+        # may return logarithmically-defined centers instead.
+
+        self.ebin_edges = np.array(ebins)
+        self.left_ebin_edges = self.ebin_edges[0:-1]
+        self.right_ebin_edges = self.ebin_edges[1:]
+        self.ebin_centers = (self.left_ebin_edges+ self.right_ebin_edges)/2.0
+        self.n_ebins = len(self.ebin_centers)
+
+        self.czbin_edges = np.array(czbins)
+        left_czbin_edges = self.czbin_edges[0:-1]
+        right_czbin_edges = self.czbin_edges[1:]
+        self.czbin_centers = (left_czbin_edges+ right_czbin_edges)/2.0
+        self.n_czbins = len(self.czbin_centers)
+
+        assert self.n_czbins % 2 == 0 ,\
+                " No. of czbins should be even for full-sky nutau analysis."
+
+        if not isinstance(reco_vbwkde_make_plots, bool):
+            raise ValueError("Option reco_vbwkde_make_plots must be specified and of bool type")
+
+        REMOVE_SIM_DOWNGOING = False 
+
+        fpath = find_resource(reco_vbwkde_evts_file)
+        eventsdict = hdf.from_hdf(fpath)
+
+        # Find out if the file is down-going or not, because we only broadens the kde bandwidth of the down-going template.
+        self.DOWNGOING_MAP = False
+        if np.all(eventsdict['numu']['cc']['true_coszen']>=0):
+            self.DOWNGOING_MAP = True
+
+        self.kernel_gaussians = self.all_kernel_gaussians_from_events(eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING)
+
+        self.simfile = reco_vbwkde_evts_file 
+
+    def _get_reco_kernels(self, evts_dict=None,
+                          reco_vbwkde_make_plots=False, e_reco_scale = None,
+                          cz_reco_scale = None, **kwargs):
         """Given a reco events resource (resource file name or dictionary),
         retrieve data from it then serialize and hash the data. If the object
         attribute kernels were computed from the same source data, simply
@@ -107,7 +166,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
         ---------
         NOTE: One--and only one--of the two arguments must be specified.
 
-        reco_vbwkde_evts_file : str (or dict)
+        simfile : str (or dict)
             Name or path to file containing event reco info. See doc for
             __init__ method for details about contents. If a dict is passed
             in, it is automatically populated to evts_dict (see below).
@@ -123,51 +182,92 @@ class RecoServiceVBWKDE(RecoServiceBase):
         if not isinstance(reco_vbwkde_make_plots, bool):
             raise ValueError("Option reco_vbwkde_make_plots must be specified and of bool type")
 
-        for reco_scale in ['e_reco_scale', 'cz_reco_scale']:
-            if reco_scale in kwargs and kwargs[reco_scale] != 1:
-                raise ValueError('%s = %.2f, must be 1.0 for RecoServiceVBWKDE!'
-                                  %(reco_scale, kwargs[reco_scale]))
-        
+        REMOVE_SIM_DOWNGOING = False 
 
-        REMOVE_SIM_DOWNGOING = True
-
-        if (reco_vbwkde_evts_file is not None) and (evts_dict is not None):
+        if (self.simfile is not None) and (evts_dict is not None):
             raise TypeError(
-                'One--and only one--of {reco_vbwkde_evts_file|evts_dict} ' +
+                'One--and only one--of {simfile|evts_dict} ' +
                 'may be specified'
             )
 
-        if isinstance(reco_vbwkde_evts_file, dict):
-            evts_dict = reco_vbwkde_evts_file
+        if isinstance(self.simfile, dict):
             evts_dict = None
 
-        if isinstance(reco_vbwkde_evts_file, str):
+        if isinstance(self.simfile, str):
             logging.info('Constructing VBWKDEs from event true & reco ' +
-                         'info in file: %s' % reco_vbwkde_evts_file)
-            fpath = find_resource(reco_vbwkde_evts_file)
+                         'info in file: %s' % self.simfile)
+            fpath = find_resource(self.simfile)
             eventsdict = hdf.from_hdf(fpath)
             new_hash = utils.hash_file(fpath)
         elif isinstance(evts_dict, dict):
             eventsdict = evts_dict
             new_hash = utils.hash_obj(eventsdict)
         else:
-            raise TypeError('A {reco_vbwkde_evts_file|evts_dict} must be' +
+            raise TypeError('A {simfile|evts_dict} must be' +
                             'provided, where the former must be a str ' +
                             'and the latter must be a dict.')
 
-        if (self.kernels is not None) and (new_hash == self.reco_events_hash):
+        if (self.kernels is not None) and (new_hash == self.reco_events_hash) and e_reco_scale==1 and cz_reco_scale==1:
             return self.kernels
 
         self.kernels = self.all_kernels_from_events(
             eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
+            e_reco_scale = e_reco_scale, cz_reco_scale = cz_reco_scale,
             make_plots=reco_vbwkde_make_plots
+            #make_plots=True
         )
         self.reco_events_hash = new_hash
 
         return self.kernels
 
-    def all_kernels_from_events(self, eventsdict, remove_sim_downgoing,
-                                make_plots=False):
+    def get_pdf(self, mesh, err, bw):
+        vbw_dens_est = np.zeros_like(mesh, dtype=np.double)
+        gaussians(outbuf  = vbw_dens_est,
+                 x       = mesh.astype(np.double),
+                 mu      = err.astype(np.double),
+                 sigma   = bw.astype(np.double),
+                 threads = int(openmp_num_threads))
+        # Normalize distribution to have area of 1
+        pdf = vbw_dens_est/np.trapz(y=vbw_dens_est, x=mesh)
+        return pdf
+
+    def broaden_bandwidth(self, enu_err, cz_err, e_reco_scale, cz_reco_scale, ebin_n, flav, int_type):
+        """ Broadens the kernels by e_reco_scale and cz_reco_scale."""
+        logging.info("Broadens the kernels by e_reco_scale ( = %.4f) and cz_reco_scale ( = %.4f)." % (e_reco_scale, cz_reco_scale))
+        enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
+        enu_mesh = np.array(self.kernel_gaussians[flav][int_type]['enu_mesh'][ebin_n])
+        cz_bw = np.array(self.kernel_gaussians[flav][int_type]['cz_bw'][ebin_n])
+        cz_mesh = np.array(self.kernel_gaussians[flav][int_type]['cz_mesh'][ebin_n])
+
+        # option 1: use e_reco_scale * original bandwidth (enu_bw is equal to 2 * gaus_std)
+        #enu_bw = e_reco_scale * enu_bw
+        #cz_bw = cz_reco_scale * cz_bw
+
+        enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
+        cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
+
+        # option2 : use mlci, new bandwidth = original bandwidth + (e_reco_scale - 1)* mlci_width
+        enu_mlci = MLConfInterval(enu_mesh,enu_pdf)
+        enu_ci_lower, enu_ci_upper, enu_ci_prob, enu_r = enu_mlci.findCI_lin(0.68)
+        enu_mlci_width = enu_ci_upper- enu_ci_lower
+        #print "enu_mlci_width = ", enu_mlci_width
+        enu_bw = enu_bw + (e_reco_scale - 1)* enu_mlci_width
+        if np.any(enu_bw <=0):
+            print "e_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
+        enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
+
+        cz_mlci = MLConfInterval(cz_mesh,cz_pdf)
+        cz_ci_lower, cz_ci_upper, cz_ci_prob, cz_r = cz_mlci.findCI_lin(0.68)
+        cz_mlci_width = cz_ci_upper- cz_ci_lower
+        #print "cz_mlci_width = ", cz_mlci_width
+        cz_bw = cz_bw + (cz_reco_scale - 1)* cz_mlci_width
+        if np.any(cz_bw <=0):
+            print "cz_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
+        cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
+
+        return enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf
+
+    def all_kernel_gaussians_from_events(self, eventsdict, remove_sim_downgoing):
         """Given a reco events dictionary, retrieve reco/true information from
         it, group MC data by flavor & interaction type, and return VBWKDE-based
         PISA reco kernels for all flavors/types. Checks are performed if
@@ -185,6 +285,125 @@ class RecoServiceVBWKDE(RecoServiceBase):
             resolutions.
 
         """
+        all_flavs = \
+                ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']
+        all_ints = ['cc', 'nc']
+        flav_ints = itertools.product(all_flavs, all_ints)
+
+        kernel_gaussians = {f:{it:{'enu_bw':[], 'enu_mesh':[], 'cz_bw' : [], 'cz_mesh':[]} for it in all_ints} for f in all_flavs}
+        kernel_gaussians['ebins'] = self.ebins
+        kernel_gaussians['czbins'] = self.czbins
+        computed_datahashes = {}
+        for flav, int_type in flav_ints:
+            logging.info("Working on %s/%s kernel_gaussians" % (flav, int_type))
+            e_true = eventsdict[flav][int_type]['true_energy']
+            e_reco = eventsdict[flav][int_type]['reco_energy']
+            cz_true = eventsdict[flav][int_type]['true_coszen']
+            cz_reco = eventsdict[flav][int_type]['reco_coszen']
+
+            if remove_sim_downgoing:
+                logging.info("Removing simulated downgoing " +
+                              "events in KDE construction.")
+                keep_inds = np.where(cz_true < 0.0)
+                e_true = e_true[keep_inds]
+                e_reco = e_reco[keep_inds]
+                cz_true = cz_true[keep_inds]
+                cz_reco = cz_reco[keep_inds]
+
+            datahash = utils.hash_obj((e_true.tolist(), e_reco.tolist(),
+                                       cz_true.tolist(), cz_reco.tolist()))
+            if datahash in computed_datahashes:
+                ref_flav, ref_int_type = computed_datahashes[datahash]
+                logging.info("   > Found duplicate source data; " +
+                              "copying kernel_gaussians already computed for " +
+                              "%s/%s to %s/%s."
+                              % (ref_flav, ref_int_type, flav, int_type))
+                kernel_gaussians[flav][int_type] = copy.deepcopy(
+                    kernel_gaussians[ref_flav][ref_int_type]
+                )
+                continue
+
+            kernel_gaussians[flav][int_type] = self.single_kernel_gaussian_set(
+                e_true=e_true, cz_true=cz_true, e_reco=e_reco, cz_reco=cz_reco,
+                flav=flav, int_type=int_type
+            )
+            computed_datahashes[datahash] = (flav, int_type)
+
+        return kernel_gaussians
+
+
+    def get_cz_kde(self, cz_err, return_pdf):
+        # Number of points in the mesh used for VBWKDE; must be large
+        # enough to capture fast changes in the data but the larger the
+        # number, the longer it takes to compute the densities at all the
+        # points. Here, just choosing a fixed number regardless of the data
+        # or binning
+        OVERFIT_FACTOR = 1.0
+        N_cz_mesh = 2**10
+
+        # Data range for VBWKDE to consider
+        cz_kde_min = -3
+        cz_kde_max = +2
+
+        if not isinstance(return_pdf, bool):
+            raise ValueError("Option return_pdf must be specified and of bool type")
+        cz_kde_failed = False
+        previous_fail = False
+        for n in xrange(3):
+            # TODO: only catch specific exception
+            try:
+                cz_bw, cz_mesh, cz_pdf = kde.vbw_kde(
+                    data           = cz_err,
+                    overfit_factor = OVERFIT_FACTOR,
+                    MIN            = cz_kde_min,
+                    MAX            = cz_kde_max,
+                    N              = N_cz_mesh
+                )
+            except:
+                cz_kde_failed = True
+                if n == 0:
+                    logging.trace('(cz vbwkde ')
+                logging.trace('fail, ')
+                # If failure occurred in vbw_kde, expand the data range it
+                # takes into account; this usually helps
+                cz_kde_min -= 1
+                cz_kde_max += 1
+            else:
+                if cz_kde_failed:
+                    previous_fail = True
+                    logging.trace('success!')
+                cz_kde_failed = False
+            finally:
+                if previous_fail:
+                    logging.trace(')')
+                previous_fail = False
+                if not cz_kde_failed:
+                    break
+
+        if cz_kde_failed:
+            return cz_kde_failed, None, None, None
+        return cz_kde_failed, cz_bw, cz_mesh, cz_pdf
+
+    def all_kernels_from_events(self, eventsdict, remove_sim_downgoing, e_reco_scale,
+                                cz_reco_scale, make_plots=False):
+        """Given a reco events dictionary, retrieve reco/true information from
+        it, group MC data by flavor & interaction type, and return VBWKDE-based
+        PISA reco kernels for all flavors/types. Checks are performed if
+        duplicate data has already been computed, in which case a (deep) copy
+        of the already-computed kernels are populated.
+
+        Arguments
+        ---------
+        eventsdict : dict
+            Dictionary containing event reco info. See docstr for __init__ for
+            details.
+
+        remove_sim_downgoing : bool
+            Whether to remove MC-true downgoing events prior to computing
+            resolutions.
+
+        """
+
         all_flavs = \
                 ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']
         all_ints = ['cc', 'nc']
@@ -225,6 +444,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             kernels[flav][int_type] = self.single_kernel_set(
                 e_true=e_true, cz_true=cz_true, e_reco=e_reco, cz_reco=cz_reco,
+                e_reco_scale = e_reco_scale, cz_reco_scale = cz_reco_scale,
                 flav=flav, int_type=int_type, make_plots=make_plots,
                 out_dir=None
             )
@@ -232,9 +452,140 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
         return kernels
 
-    def single_kernel_set(self, e_true, cz_true, e_reco, cz_reco,
+    def preparation_for_kde(self, ebin_n, e_true, e_reco, cz_true, cz_reco):
+        ebin_min = self.left_ebin_edges[ebin_n]
+        ebin_max = self.right_ebin_edges[ebin_n]
+        ebin_mid = (ebin_min+ebin_max)/2.0
+        ebin_wid = ebin_max-ebin_min
+
+        logging.debug(
+            'Processing true-energy bin_n=' + format(ebin_n, 'd') + ' of ' +
+            format(self.n_ebins-1, 'd') + ', E_{nu,true} in ' +
+            '[' + format(ebin_min, '0.3f') + ', ' +
+            format(ebin_max, '0.3f') + '] ...'
+        )
+
+        # Absolute distance from these events' re-centered reco energies to
+        # the center of this energy bin; sort in ascending-distance order
+        abs_enu_dist = np.abs(e_true - ebin_mid)
+        sorted_abs_enu_dist = np.sort(abs_enu_dist)
+
+        # Grab the distance the number-"TGT_NUM_EVENTS" event is from the
+        # bin center
+        tgt_thresh_enu_dist = sorted_abs_enu_dist[self.TGT_NUM_EVENTS-1]
+
+        # Grab the distance the number-"MIN_NUM_EVENTS" event is from the
+        # bin center
+        min_thresh_enu_dist = sorted_abs_enu_dist[self.MIN_NUM_EVENTS-1]
+
+        # TODO: revisit the below algorithm with proper testing
+
+        # Make threshold distance (which is half the total width) no more
+        # than 4x the true-energy-bin width in order to capture the
+        # "target" number of points (TGT_NUM_EVENTS) but no less than half
+        # the bin width (i.e., the bin should be at least be as wide as the
+        # pre-defined bin width).
+        #
+        # HOWEVER, allow the threshold distance (bin half-width) to expand
+        # to as much as 4x the original bin full-width in order to capture
+        # the "minimum" number of points (MIN_NUM_EVENTS).
+        thresh_enu_dist = \
+                max(min(max(tgt_thresh_enu_dist, ebin_wid/2),
+                        4*ebin_wid),
+                    min_thresh_enu_dist)
+
+        # Grab all events within the threshold distance
+        in_ebin_ind = np.where(abs_enu_dist <= thresh_enu_dist)[0]
+        #print '** IN EBIN FIRST, LAST ENERGY:', e_reco[in_ebin_ind[0]], e_reco[in_ebin_ind[-1]]
+        n_in_bin = len(in_ebin_ind)
+
+        # Record lowest/highest energies that are included in the bin
+        actual_left_ebin_edge = min(ebin_min, min(e_true[in_ebin_ind])) #max(min(ebins), ebin_mid-thresh_enu_dist)
+        actual_right_ebin_edge = max(ebin_max, max(e_true[in_ebin_ind])) #(max(ebins), ebin_mid+thresh_enu_dist)
+
+        # Extract just the neutrino-energy/coszen error columns' values for
+        # succinctness
+        enu_err = e_reco[in_ebin_ind] - e_true[in_ebin_ind]
+        cz_err = cz_reco[in_ebin_ind] - cz_true[in_ebin_ind]
+
+        #==================================================================
+        # Neutrino energy resolutions
+        #==================================================================
+        dmin = min(enu_err)
+        dmax = max(enu_err)
+        drange = dmax-dmin
+
+        e_lowerlim = min(self.ENERGY_RANGE[0]-ebin_mid*1.5, dmin-drange*0.5)
+        e_upperlim = max((np.max(self.ebin_edges)-ebin_mid)*1.5, dmax+drange*0.5)
+        egy_kde_lims = np.array([e_lowerlim, e_upperlim])
+
+        # Use at least min_num_pts points and at most the next-highest
+        # integer-power-of-two that allows for at least 10 points in the
+        # smallest energy bin
+        min_num_pts = 2**12
+        min_bin_width = np.min(self.ebin_edges[1:]- self.ebin_edges[:-1])
+        min_pts_smallest_bin = 5.0
+        kde_range = np.diff(egy_kde_lims)
+        num_pts0 = kde_range/(min_bin_width/min_pts_smallest_bin)
+        kde_num_pts = int(max(min_num_pts, 2**np.ceil(np.log2(num_pts0))))
+        logging.debug(
+            '  N_evts=' + str(n_in_bin) + ', taken from [' +
+            format(actual_left_ebin_edge, '0.3f') + ', ' +
+            format(actual_right_ebin_edge, '0.3f') + ']' + ', VBWKDE lims=' +
+            str(egy_kde_lims) + ', VBWKDE_N: ' + str(kde_num_pts)
+        )
+        return enu_err, cz_err, egy_kde_lims, kde_num_pts, ebin_mid, ebin_wid, in_ebin_ind, n_in_bin, dmin, dmax, drange, ebin_min, ebin_max, actual_left_ebin_edge, actual_right_ebin_edge
+
+    def single_kernel_gaussian_set(self, e_true, cz_true, e_reco, cz_reco,
+                                    flav, int_type):
+
+        logging.info("Getting single_kernel_gaussian_set for %s %s. "%(flav, int_type))
+        OVERFIT_FACTOR = 1.0
+        n_events = len(e_true)
+        if self.MIN_NUM_EVENTS > n_events:
+            self.MIN_NUM_EVENTS = n_events
+        if self.TGT_NUM_EVENTS > n_events:
+            self.TGT_NUM_EVENTS = n_events
+
+        single_kernel_gaussians = {'enu_bw':[], 'enu_mesh':[], 'cz_bw' : [], 'cz_mesh': []} 
+        list_enu_bw = []
+        list_enu_mesh = []
+        list_cz_bw = []
+        list_cz_mesh = []
+        for ebin_n in range(self.n_ebins):
+            
+            enu_err, cz_err, egy_kde_lims, kde_num_pts,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ = self.preparation_for_kde(ebin_n, e_true, e_reco, cz_true, cz_reco)
+
+            # Compute variable-bandwidth KDEs
+            enu_bw, enu_mesh, enu_pdf = kde.vbw_kde(
+                data           = enu_err,
+                overfit_factor = OVERFIT_FACTOR,
+                MIN            = egy_kde_lims[0],
+                MAX            = egy_kde_lims[1],
+                evaluate_dens  = False,
+                N              = kde_num_pts
+            )
+            list_enu_bw.append(list(enu_bw))
+            list_enu_mesh.append(list(enu_mesh))
+
+            cz_kde_failed, cz_bw, cz_mesh, _ = self.get_cz_kde(cz_err = cz_err, return_pdf = False)
+
+            if cz_kde_failed:
+                logging.warn('Failed to fit VBWKDE!')
+                continue
+
+            list_cz_bw.append(list(cz_bw))
+            list_cz_mesh.append(list(cz_mesh))
+        single_kernel_gaussians['enu_bw'] = list_enu_bw
+        single_kernel_gaussians['enu_mesh'] = list_enu_mesh
+        single_kernel_gaussians['cz_bw'] = list_cz_bw
+        single_kernel_gaussians['cz_mesh'] = list_cz_mesh
+        return single_kernel_gaussians
+    
+    def single_kernel_set(self, e_true, cz_true, e_reco, cz_reco, e_reco_scale, cz_reco_scale,
                           flav, int_type, make_plots=False, out_dir=None):
         """Construct a 4D kernel set from MC events using VBWKDE.
+                print "egy_err ",egy_kde_lims
 
         Given a set of MC events and each of their {energy{true, reco},
         coszen{true, reco}}, generate a 4D NumPy array that maps a 2D true-flux
@@ -248,6 +599,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
         Binning of both MC-true and reco histograms is the same and is given by
         the values in self.ebins and self.czbins which define the bin *edges*
         (not the bin centers; hence, len(self.ebins) is one greater than the
+            if ebin_n ==0:
         number of bins, etc.).
 
         NOTE: Actual limits in energy used to group events into a single "true"
@@ -321,28 +673,6 @@ class RecoServiceVBWKDE(RecoServiceBase):
             GRIDCOL = (0.4, 0.4, 0.4)
             pdfpgs = PdfPages(plot_fname)
 
-        assert np.min(np.diff(self.ebins)) > 0, \
-            "Energy bin edges not monotonically increasing."
-        assert np.min(np.diff(self.czbins)) > 0, \
-            "coszen bin edges not monotonically increasing."
-
-        # NOTE: below defines bin centers on linear scale; other logic
-        # in this method assumes this to be the case, so
-        # **DO NOT USE** utils.utils.get_bin_centers in this method, which
-        # may return logarithmically-defined centers instead.
-
-        ebin_edges = np.array(self.ebins)
-        left_ebin_edges = ebin_edges[0:-1]
-        right_ebin_edges = ebin_edges[1:]
-        ebin_centers = (left_ebin_edges+right_ebin_edges)/2.0
-        ebin_range = ebin_edges[-1] - ebin_edges[0]
-        n_ebins = len(ebin_centers)
-
-        czbin_edges = np.array(self.czbins)
-        left_czbin_edges = czbin_edges[0:-1]
-        right_czbin_edges = czbin_edges[1:]
-        czbin_centers = (left_czbin_edges+right_czbin_edges)/2.0
-        n_czbins = len(czbin_centers)
 
         n_events = len(e_true)
 
@@ -352,103 +682,22 @@ class RecoServiceVBWKDE(RecoServiceBase):
             self.TGT_NUM_EVENTS = n_events
 
         # Object with which to store the 4D kernels: np 4D array
-        kernel4d = np.zeros((n_ebins, n_czbins, n_ebins, n_czbins))
+        kernel4d = np.zeros((self.n_ebins, self.n_czbins, self.n_ebins, self.n_czbins))
 
         # Object with which to store the 2D "aggregate_map": the total number
         # of events reconstructed into a given (E, CZ) bin, used for sanity
         # checks
-        aggregate_map = np.zeros((n_ebins, n_czbins))
-        for ebin_n in range(n_ebins):
-            ebin_min = left_ebin_edges[ebin_n]
-            ebin_max = right_ebin_edges[ebin_n]
-            ebin_mid = (ebin_min+ebin_max)/2.0
-            ebin_wid = ebin_max-ebin_min
+        aggregate_map = np.zeros((self.n_ebins, self.n_czbins))
+        for ebin_n in range(self.n_ebins):
 
-            logging.debug(
-                'Processing true-energy bin_n=' + format(ebin_n, 'd') + ' of ' +
-                format(n_ebins-1, 'd') + ', E_{nu,true} in ' +
-                '[' + format(ebin_min, '0.3f') + ', ' +
-                format(ebin_max, '0.3f') + '] ...'
-            )
+            enu_err, cz_err, egy_kde_lims, kde_num_pts, ebin_mid, ebin_wid, in_ebin_ind, n_in_bin, dmin, dmax, drange, ebin_min, ebin_max, actual_left_ebin_edge, actual_right_ebin_edge = self.preparation_for_kde(ebin_n, e_true, e_reco, cz_true, cz_reco)
 
-            # Absolute distance from these events' re-centered reco energies to
-            # the center of this energy bin; sort in ascending-distance order
-            abs_enu_dist = np.abs(e_true - ebin_mid)
-            sorted_abs_enu_dist = np.sort(abs_enu_dist)
-
-            # Grab the distance the number-"TGT_NUM_EVENTS" event is from the
-            # bin center
-            tgt_thresh_enu_dist = sorted_abs_enu_dist[self.TGT_NUM_EVENTS-1]
-
-            # Grab the distance the number-"MIN_NUM_EVENTS" event is from the
-            # bin center
-            min_thresh_enu_dist = sorted_abs_enu_dist[self.MIN_NUM_EVENTS-1]
-
-            # TODO: revisit the below algorithm with proper testing
-
-            # Make threshold distance (which is half the total width) no more
-            # than 4x the true-energy-bin width in order to capture the
-            # "target" number of points (TGT_NUM_EVENTS) but no less than half
-            # the bin width (i.e., the bin should be at least be as wide as the
-            # pre-defined bin width).
-            #
-            # HOWEVER, allow the threshold distance (bin half-width) to expand
-            # to as much as 4x the original bin full-width in order to capture
-            # the "minimum" number of points (MIN_NUM_EVENTS).
-            thresh_enu_dist = \
-                    max(min(max(tgt_thresh_enu_dist, ebin_wid/2),
-                            4*ebin_wid),
-                        min_thresh_enu_dist)
-
-            # Grab all events within the threshold distance
-            in_ebin_ind = np.where(abs_enu_dist <= thresh_enu_dist)[0]
-            #print '** IN EBIN FIRST, LAST ENERGY:', e_reco[in_ebin_ind[0]], e_reco[in_ebin_ind[-1]]
-            n_in_bin = len(in_ebin_ind)
-
-            # Record lowest/highest energies that are included in the bin
-            actual_left_ebin_edge = min(ebin_min, min(e_true[in_ebin_ind])) #max(min(ebins), ebin_mid-thresh_enu_dist)
-            actual_right_ebin_edge = max(ebin_max, max(e_true[in_ebin_ind])) #(max(ebins), ebin_mid+thresh_enu_dist)
-
-            # Extract just the neutrino-energy/coszen error columns' values for
-            # succinctness
-            enu_err = e_reco[in_ebin_ind] - e_true[in_ebin_ind]
-            cz_err = cz_reco[in_ebin_ind] - cz_true[in_ebin_ind]
-
-            #==================================================================
-            # Neutrino energy resolutions
-            #==================================================================
-            dmin = min(enu_err)
-            dmax = max(enu_err)
-            drange = dmax-dmin
-
-            e_lowerlim = min(self.ENERGY_RANGE[0]-ebin_mid*1.5, dmin-drange*0.5)
-            e_upperlim = max((np.max(ebin_edges)-ebin_mid)*1.5, dmax+drange*0.5)
-            egy_kde_lims = np.array([e_lowerlim, e_upperlim])
-
-            # Use at least min_num_pts points and at most the next-highest
-            # integer-power-of-two that allows for at least 10 points in the
-            # smallest energy bin
-            min_num_pts = 2**12
-            min_bin_width = np.min(ebin_edges[1:]-ebin_edges[:-1])
-            min_pts_smallest_bin = 5.0
-            kde_range = np.diff(egy_kde_lims)
-            num_pts0 = kde_range/(min_bin_width/min_pts_smallest_bin)
-            kde_num_pts = int(max(min_num_pts, 2**np.ceil(np.log2(num_pts0))))
-            logging.debug(
-                '  N_evts=' + str(n_in_bin) + ', taken from [' +
-                format(actual_left_ebin_edge, '0.3f') + ', ' +
-                format(actual_right_ebin_edge, '0.3f') + ']' + ', VBWKDE lims=' +
-                str(egy_kde_lims) + ', VBWKDE_N: ' + str(kde_num_pts)
-            )
-
-            # Compute variable-bandwidth KDEs
-            enu_bw, enu_mesh, enu_pdf = kde.vbw_kde(
-                data           = enu_err,
-                overfit_factor = OVERFIT_FACTOR,
-                MIN            = egy_kde_lims[0],
-                MAX            = egy_kde_lims[1],
-                N              = kde_num_pts
-            )
+            # Compute variable-bandwidth KDEs with (broadend) bandwith from self.kernel_gaussians
+            if self.DOWNGOING_MAP and (e_reco_scale != 1 or cz_reco_scale != 1):
+                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, e_reco_scale, cz_reco_scale, ebin_n, flav, int_type)
+            else:
+                # do not broaden bandwidths for up-going events
+                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, 1, 1, ebin_n, flav, int_type)
 
             if np.min(enu_pdf) < 0:
                 # Only issue warning if the most-negative value is negative
@@ -493,7 +742,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
             # accounting of area in each bin, must include values out to bin
             # edges)
             edge_locs = [be for be in
-                         np.concatenate((left_ebin_edges, right_ebin_edges))
+                         np.concatenate((self.left_ebin_edges, self.right_ebin_edges))
                          if not(be in offset_enu_mesh)]
             edge_locs.sort()
             edge_pdfs = interp(edge_locs)
@@ -507,8 +756,8 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             # Chop off distribution at extrema of energy bins
             valid_ind = np.where(
-                (offset_enu_mesh >= np.min(ebin_edges)) &
-                (offset_enu_mesh <= np.max(ebin_edges))
+                (offset_enu_mesh >= np.min(self.ebin_edges)) &
+                (offset_enu_mesh <= np.max(self.ebin_edges))
             )[0]
             offset_enu_mesh = offset_enu_mesh[valid_ind]
             offset_enu_pdf = offset_enu_pdf[valid_ind]
@@ -527,8 +776,8 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             # Identify indices encapsulating the defined energy bins' ranges,
             # and find the area of each bin
-            lbinds = np.searchsorted(offset_enu_mesh, left_ebin_edges)
-            rbinds = np.searchsorted(offset_enu_mesh, right_ebin_edges)
+            lbinds = np.searchsorted(offset_enu_mesh, self.left_ebin_edges)
+            rbinds = np.searchsorted(offset_enu_mesh, self.right_ebin_edges)
             bininds = zip(lbinds, rbinds)
             ebin_areas = [np.trapz(y=offset_enu_pdf[l:r+1],
                                    x=offset_enu_mesh[l:r+1])
@@ -571,12 +820,12 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 #    -ebin_wid*1.5,
                 #    ebin_wid*1.5
                 #)
-                #    min(ebin_mid*2, ebin_edges[-1]+(ebin_edges[-1]-ebin_edges[0])*0.1)
+                #    min(ebin_mid*2, self.ebin_edges[-1]+(self.ebin_edges[-1]-self.ebin_edges[0])*0.1)
                 #)
 
                 # Histogram of events' reco error
                 hbins = np.linspace(dmin-0.02*drange, dmax+0.02*drange,
-                                    N_HBINS*np.round(drange/ebin_centers[ebin_n]))
+                                    N_HBINS*np.round(drange/self.ebin_centers[ebin_n]))
                 hvals, hbins, hpatches = ax1.hist(enu_err,
                                                   bins=hbins,
                                                   normed=True,
@@ -591,7 +840,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
                 # Grey-out regions outside binned region, so it's clear what
                 # part of tail(s) will be thrown away
-                width = -ebin_mid+ebin_edges[0]-xlims[0]
+                width = -ebin_mid+self.ebin_edges[0]-xlims[0]
                 unbinned_region_tex = r'$\mathrm{Unbinned}$'
                 if width > 0:
                     ax1.add_patch(Rectangle((xlims[0],0), width, ymax, #zorder=-1,
@@ -601,7 +850,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
                              unbinned_region_tex, fontsize=14, ha='left',
                              va='bottom', rotation=90, color='k')
                 
-                width = xlims[1] - (ebin_edges[-1]-ebin_mid)
+                width = xlims[1] - (self.ebin_edges[-1]-ebin_mid)
                 if width > 0:
                     ax1.add_patch(Rectangle((xlims[1]-width,0), width, ymax,
                                             alpha=0.30, facecolor=(0, 0, 0),
@@ -660,54 +909,6 @@ class RecoServiceVBWKDE(RecoServiceBase):
             # them into account. Normalization is based upon *all* events,
             # whether or not they fall within a bin specified above.
 
-            # Number of points in the mesh used for VBWKDE; must be large
-            # enough to capture fast changes in the data but the larger the
-            # number, the longer it takes to compute the densities at all the
-            # points. Here, just choosing a fixed number regardless of the data
-            # or binning
-            N_cz_mesh = 2**10
-
-            # Data range for VBWKDE to consider
-            cz_kde_min = -3
-            cz_kde_max = +2
-
-            cz_kde_failed = False
-            previous_fail = False
-            for n in xrange(3):
-                # TODO: only catch specific exception
-                try:
-                    cz_bw, cz_mesh, cz_pdf = kde.vbw_kde(
-                        data           = cz_err,
-                        overfit_factor = OVERFIT_FACTOR,
-                        MIN            = cz_kde_min,
-                        MAX            = cz_kde_max,
-                        N              = N_cz_mesh
-                    )
-                except:
-                    cz_kde_failed = True
-                    if n == 0:
-                        logging.trace('(cz vbwkde ')
-                    logging.trace('fail, ')
-                    # If failure occurred in vbw_kde, expand the data range it
-                    # takes into account; this usually helps
-                    cz_kde_min -= 1
-                    cz_kde_max += 1
-                else:
-                    if cz_kde_failed:
-                        previous_fail = True
-                        logging.trace('success!')
-                    cz_kde_failed = False
-                finally:
-                    if previous_fail:
-                        logging.trace(')')
-                    previous_fail = False
-                    if not cz_kde_failed:
-                        break
-
-            if cz_kde_failed:
-                logging.warn('Failed to fit VBWKDE!')
-                continue
-
             if np.min(cz_pdf) < 0:
                 logging.warn("np.min(cz_pdf) < 0: Minimum value is " +
                              str(np.min(cz_pdf)) +
@@ -718,8 +919,8 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 str(np.min(cz_pdf))
 
             # TODO: test and/or visualize the shifting & re-binning process
-            for czbin_n in range(n_czbins):
-                czbin_mid = czbin_centers[czbin_n]
+            for czbin_n in range(self.n_czbins):
+                czbin_mid = self.czbin_centers[czbin_n]
 
                 # Re-center distribution at the center of the current cz bin
                 offset_cz_mesh = cz_mesh + czbin_mid
@@ -766,7 +967,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 n_right_reflections = 4
 
                 new_czbin_edges = []
-                for edge in czbin_edges:
+                for edge in self.czbin_edges:
                     edges_refl_left = []
                     for n in xrange(n_left_reflections):
                         edge_refl_left = reflect1d(edge, -1-(2*n))
@@ -851,6 +1052,11 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 assert tot_czbin_area < int_val + self.EPSILON
 
                 kernel4d[ebin_n, czbin_n] = np.outer(ebin_areas, czbin_areas)
+                if self.DOWNGOING_MAP and czbin_n in range(0,self.n_czbins/2):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+                if self.DOWNGOING_MAP == False and czbin_n in range(self.n_czbins/2, self.n_czbins):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+
                 assert (np.sum(kernel4d[ebin_n, czbin_n]) -
                         tot_ebin_area*tot_czbin_area) < self.EPSILON
 
@@ -916,7 +1122,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
             fig2 = plt.figure(2, figsize=(8,10), dpi=90)
             fig2.clf()
             ax = fig2.add_subplot(111)
-            X, Y = np.meshgrid(range(n_czbins), range(n_ebins))
+            X, Y = np.meshgrid(range(self.n_czbins), range(self.n_ebins))
             cm = mpl.cm.Paired_r
             cm.set_over((1,1,1), 1)
             cm.set_under((0,0,0), 1)
@@ -936,7 +1142,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
             fig3 = plt.figure(2, figsize=(8,10), dpi=90)
             fig3.clf()
             ax = fig3.add_subplot(111)
-            X, Y = np.meshgrid(range(n_czbins), range(n_ebins))
+            X, Y = np.meshgrid(range(self.n_czbins), range(self.n_ebins))
             cm = mpl.cm.Paired_r
             cm.set_over((1,1,1), 1)
             cm.set_under((0,0,0), 1)
