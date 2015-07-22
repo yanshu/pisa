@@ -54,11 +54,13 @@ template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
 
 up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['binning']['czbins']=czbins[czbins<=0]
+up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
+up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
 
 down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['binning']['czbins']=czbins[czbins>=0]
 down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
+down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
+down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
@@ -119,7 +121,8 @@ for itrial in xrange(1,args.ntrials+1):
         #    to templates.
         rnd.seed(get_seed())
         init_nutau_norm = rnd.uniform(-0.7,3)
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
+        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False)]:
 
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start optimizer")
