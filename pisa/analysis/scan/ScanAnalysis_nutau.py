@@ -113,8 +113,8 @@ for itrial in xrange(1, args.ntrials+1):
     results = {}
     data_normal = True
     hypo_normal = True
-    #for data_tag, data_nutau_norm in [('data_notau',0.0)]:
-    for data_tag, data_nutau_norm in [('data_tau',1.0)]:
+    for data_tag, data_nutau_norm in [('data_notau',0.0)]:
+    #for data_tag, data_nutau_norm in [('data_tau',1.0)]:
     #for data_tag, data_nutau_norm in [('data_tau',1.0),('data_notau',0.0)]:
 
         results[data_tag] = {}
@@ -132,7 +132,6 @@ for itrial in xrange(1, args.ntrials+1):
                                     fiducial_params=fiducial_param_values,
                                     channel=channel,
                                     seed=results[data_tag]['seed'])
-        print pseudo_data_settings['params']
         #fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
         #                get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
         #                           normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
@@ -143,7 +142,7 @@ for itrial in xrange(1, args.ntrials+1):
         rnd.seed(get_seed())
         init_nutau_norm = rnd.uniform(-0.7,3)
         #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True)]:
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',1.0, True)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False)]:
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start scan")
             hypo_params = change_nutau_norm_settings(
