@@ -114,8 +114,9 @@ def show_map(pmap, title=None, cbar = True,
         axis.semilogy()
     else:
         if not is_linear(pmap['ebins']):
-           raise NotImplementedError('Bin edges appear to be neither logarithmically '
-                         'nor linearly distributed!')
+            print "bin edges not log or linear."
+           #raise NotImplementedError('Bin edges appear to be neither logarithmically '
+           #              'nor linearly distributed!')
 
 
     #Make sure that the visible range does not extend beyond the provided range
