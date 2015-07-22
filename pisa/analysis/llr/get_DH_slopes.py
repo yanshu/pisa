@@ -18,7 +18,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed, flatten_map
 from pisa.analysis.stats.Maps_nutau_noDOMIce import get_pseudo_data_fmap, get_true_template
-from pisa.analysis.stats.Maps_nutau import get_flipped_map, get_combined_map
+from pisa.analysis.stats.Maps_nutau import get_flipped_down_map, get_combined_map, get_up_map
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings, select_hierarchy
 
@@ -52,6 +52,7 @@ def dom_eff_linear_through_point(x,k):
 #Read in the settings
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
+channel = template_settings['params']['channel']['value']
 
 up_template_settings = copy.deepcopy(template_settings)
 up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
@@ -109,16 +110,16 @@ for data_tag, data_nutau_norm in [('data_tau',1.0)]:
         tmap_up = DH_template_maker_up.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
         tmap_down = DH_template_maker_down.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
 
-        template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel=fiducial_params['channel'])
-        template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
-        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
+        template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel= channel)
+        template_up = get_up_map(template_up_down_combined, channel= channel)
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= channel)
 
         #print "template_map_up = ", tmap_up
         #print "template_map_down = ", tmap_down
         results[data_tag][str(run_num)]['trck']['up'] = template_up['trck']['map']
         results[data_tag][str(run_num)]['cscd']['up'] = template_up['cscd']['map']
-        results[data_tag][str(run_num)]['trck']['down'] = relfected_template_down['trck']['map']
-        results[data_tag][str(run_num)]['cscd']['down'] = relfected_template_down['cscd']['map']
+        results[data_tag][str(run_num)]['trck']['down'] = reflected_template_down['trck']['map']
+        results[data_tag][str(run_num)]['cscd']['down'] = reflected_template_down['cscd']['map']
 
 #print "tmap_up['trck']['map'] = ", tmap_up['trck']['map']
 
@@ -133,7 +134,7 @@ for flav in ['trck','cscd']:
         
         templ = np.array(templ_list)
         tml_shape = np.shape(templ)
-        print np.shape(templ)
+        #print np.shape(templ)
         ############################### DOM efficiency ######################################
         
         for i in range(0,tml_shape[1]):
