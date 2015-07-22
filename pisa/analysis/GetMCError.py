@@ -74,7 +74,7 @@ class GetMCError:
        
         mc_event_maps = {'params': params}
         all_flavors_dict = {}
-        for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+        for flavor in ['nue', 'numu','nutau']:
             flavor_dict = {}
             logging.debug("Working on %s "%flavor)
             for int_type in ['cc','nc']:
@@ -85,20 +85,22 @@ class GetMCError:
                 flavor_dict[int_type] = hist_2d
             all_flavors_dict[flavor] = flavor_dict
 
-        numu_cc_map = all_flavors_dict['numu']['cc']+all_flavors_dict['numu_bar']['cc']
-        nue_cc_map = all_flavors_dict['nue']['cc']+all_flavors_dict['nue_bar']['cc']
-        nutau_cc_map = all_flavors_dict['nutau']['cc']+all_flavors_dict['nutau_bar']['cc']
-        nuall_nc_map = all_flavors_dict['numu']['nc']+all_flavors_dict['numu_bar']['nc']+all_flavors_dict['nue']['nc']+all_flavors_dict['nue_bar']['nc'] +all_flavors_dict['nutau']['nc']+all_flavors_dict['nutau_bar']['nc']
+        numu_cc_map = all_flavors_dict['numu']['cc']
+        nue_cc_map = all_flavors_dict['nue']['cc']
+        nutau_cc_map = all_flavors_dict['nutau']['cc']
+        nuall_nc_map = all_flavors_dict['numu']['nc']
 
-        #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
+        print " no. of events in numu_cc_map, nue_cc_map, nutau_cc_map, nuall_nc_map", sum(numu_cc_map), " ",  sum(nue_cc_map), " ", sum(nutau_cc_map), " ", sum(nuall_nc_map)
+
+        print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
         mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
         mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
         mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
         mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
 
         final_MC_event_rate = get_pid_maps(mc_event_maps, self.pid_service)
-        #print "No. of MC events (trck) : ", sum(sum(final_MC_event_rate['trck']['map']))
-        #print "No. of MC events (cscd) : ", sum(sum(final_MC_event_rate['cscd']['map']))
+        print "No. of MC events (trck) : ", sum(sum(final_MC_event_rate['trck']['map']))
+        print "No. of MC events (cscd) : ", sum(sum(final_MC_event_rate['cscd']['map']))
         print "Total no. of MC events : ", sum(sum(final_MC_event_rate['trck']['map']))+ sum(sum(final_MC_event_rate['cscd']['map']))
         return final_MC_event_rate
 
