@@ -59,6 +59,7 @@ up_template_settings['binning']['czbins']=czbins[czbins<=0]
 down_template_settings = copy.deepcopy(template_settings)
 down_template_settings['binning']['czbins']=czbins[czbins>=0]
 down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
+down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
@@ -90,19 +91,20 @@ DH_template_makers = []
 for run_num in [50,60,61,64,65,70,71,72]:
     aeff_mc_file = '~/pisa/pisa/resources/aeff/1X%i_aeff_mc.hdf5' % run_num
     reco_mc_file = '~/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar.hdf5' % run_num
-    reco_vbwkde_file = '~/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar.hdf5' % run_num
+    reco_vbwkde_file_up = '~/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5' % run_num
+    reco_vbwkde_file_down = '~/pisa/pisa/resources/events/1X%i_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5' % run_num
     pid_param_file_up = '~/pisa/pisa/resources/pid/1X%i_pid.json' % run_num
     pid_param_file_down = '~/pisa/pisa/resources/pid/1X%i_pid_down.json' % run_num
     DH_up_template_settings = copy.deepcopy(up_template_settings)
     DH_up_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_up_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file 
-    DH_up_template_settings['params']['reco_vbwkde_evts_file']['value'] = reco_vbwkde_file 
+    DH_up_template_settings['params']['reco_vbwkde_evts_file']['value'] = reco_vbwkde_file_up
     DH_up_template_settings['params']['pid_paramfile']['value'] = pid_param_file_up 
 
     DH_down_template_settings = copy.deepcopy(down_template_settings)
     DH_down_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_down_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file 
-    DH_down_template_settings['params']['reco_vbwkde_evts_file']['value'] = reco_vbwkde_file 
+    DH_down_template_settings['params']['reco_vbwkde_evts_file']['value'] = reco_vbwkde_file_down
     DH_down_template_settings['params']['pid_paramfile']['value'] = pid_param_file_down
 
     DH_template_maker_down = TemplateMaker(get_values(DH_down_template_settings['params']), **DH_down_template_settings['binning'])
