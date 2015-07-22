@@ -15,6 +15,7 @@ from itertools import product
 from pisa.reco.RecoServiceBase import RecoServiceBase
 from pisa.utils.log import logging
 from pisa.resources.resources import find_resource
+from pisa.utils.utils import Timer
 
 class RecoServiceMC(RecoServiceBase):
     """
