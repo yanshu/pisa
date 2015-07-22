@@ -22,7 +22,11 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
         template_maker_down = template_maker[1]
         template_up = template_maker_up.get_template(fiducial_params)  
         template_down = template_maker_down.get_template(fiducial_params)  
-        reflected_template_down = get_flipped_map(template_down, channel=fiducial_params['channel'])
+
+        template_up_down_combined = get_combined_map(template_up,template_down, channel=fiducial_params['channel'])
+        template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
+
         true_fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
         fmap_up = np.int32(true_fmap_up+0.5)
@@ -58,9 +62,13 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         template_maker_down = template_maker[1]
         template_up = template_maker_up.get_template(fiducial_params)  
         template_down = template_maker_down.get_template(fiducial_params)  
+
+        template_up_down_combined = get_combined_map(template_up,template_down, channel=fiducial_params['channel'])
+        template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
+
         # add domeff and/or hole ice effects
-        [template_up_dh,template_down_dh] = apply_domeff_holeice([template_up,template_down],fiducial_params)
-        reflected_template_down_dh = get_flipped_map(template_down_dh, channel=fiducial_params['channel'])
+        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
         true_fmap_up = Maps.flatten_map(template_up_dh, channel=fiducial_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
@@ -97,9 +105,11 @@ def apply_domeff_holeice(template, params):
     if isinstance(template,list) and len(template)==2:
         template_up = template[0]
         template_down = template[1]
+        assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
+        assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
         dom_eff_val = params['dom_eff']
         hole_ice_val = params['hole_ice']
-        slope = from_json('DH_slopes_up_down.json')
+        slope = from_json('/Users/feifeihuang/pisa/pisa/resources/reco/DH_slopes_up_down.json')
         for flav in flavs:
             slope_DE_up = slope['slopes']['data_tau']['k_DomEff'][flav]['up']
             slope_DE_down = slope['slopes']['data_tau']['k_DomEff'][flav]['down']
@@ -119,8 +129,23 @@ def apply_domeff_holeice(template, params):
                     for flav in flavs}
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
-        #TODO
-        print "to do"
+        dom_eff_val = params['dom_eff']
+        hole_ice_val = params['hole_ice']
+        slope = from_json('/Users/feifeihuang/pisa/pisa/resources/reco/DH_slopes_up_down.json')
+        if np.all(template[flav]['czbins']) <= 0:
+            direction = 'up'
+        if np.all(template[flav]['czbins']) >= 0:
+            direction = 'down'
+        for flav in flavs:
+            slope_DE = slope['slopes']['data_tau']['k_DomEff'][flav][direction]
+            slope_HI = slope['slopes']['data_tau']['k_HoleIce'][flav][direction]
+            scale = slope_DEup*(hole_ice_val-0.2) + 1
+            output_map= {flav:{
+                'map': (template[flav]['map'])*scale,
+                'ebins':template[flav]['ebins'],
+                'czbins': template[flav]['czbins'] }
+                    for flav in flavs}
+        return output_map
     else:
        raise TypeError("The type of input template is wrong!")
 
@@ -137,9 +162,13 @@ def get_true_template(template_params, template_maker):
         template_maker_down = template_maker[1]
         template_up = template_maker_up.get_template(template_params)  
         template_down = template_maker_down.get_template(template_params)  
+
+        template_up_down_combined = get_combined_map(template_up,template_down, channel= template_params['channel'])
+        template_up = get_up_map(template_up_down_combined, channel= template_params['channel'])
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= template_params['channel'])
+
         # add domeff and/or hole ice effects
-        [template_up_dh,template_down_dh] = apply_domeff_holeice([template_up,template_down],template_params)
-        reflected_template_down_dh = get_flipped_map(template_down_dh, channel=template_params['channel'])
+        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],template_params)
         true_fmap_up = Maps.flatten_map(template_up_dh, channel=template_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh, channel=template_params['channel'])
         if template_params['residual_up_down'] or template_params['ratio_up_down']:
@@ -172,7 +201,11 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         template_maker_down = template_maker[1]
         template_up = template_maker_up.get_tau_template(fiducial_params)  
         template_down = template_maker_down.get_tau_template(fiducial_params)  
-        reflected_template_down = get_flipped_map(template_down, channel=fiducial_params['channel'])
+
+        template_up_down_combined = get_combined_map(template_up,template_down, channel=fiducial_params['channel'])
+        template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
+
         true_fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
@@ -185,7 +218,8 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
             fmap = np.append(fmap_up, fmap_down)
     else:
         true_template = template_maker.get_tau_template(fiducial_params)  
-        true_fmap = Maps.flatten_map(true_template, channel=channel)
+        true_template_dh = apply_domeff_holeice(true_template,fiducial_params)
+        true_fmap = Maps.flatten_map(true_template_dh, channel=channel)
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
@@ -204,8 +238,9 @@ def get_up_map(map, channel):
             'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
     else:
         raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
-    czbin_edges = len(map['cscd']['czbins'])
-    czbin_mid_idx = (czbin_edges-1)/2
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
     return {flav:{
         'map': map[flav]['map'][:,0:czbin_mid_idx],
         'ebins':map[flav]['ebins'],
@@ -214,8 +249,9 @@ def get_up_map(map, channel):
 
 def get_flipped_down_map(map, channel):
     ''' Gets the downgoing map from a full sky map and flip it around cz = 0.'''
-    czbin_edges = len(map['cscd']['czbins'])
-    czbin_mid_idx = (czbin_edges-1)/2
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
     if  channel=='all':
         flavs=['trck', 'cscd']
     elif  channel=='trck':
@@ -256,4 +292,27 @@ def get_flipped_map(map, channel):
         'map': np.fliplr(map[flav]['map']),
         'ebins':map[flav]['ebins'],
         'czbins': np.sort(-map[flav]['czbins']) }
+            for flav in flavs}
+
+def get_combined_map(amap, bmap, channel):
+    ''' Sum the up-going and the down-going map.'''
+    if not (np.all(amap['cscd']['czbins'] == bmap['cscd']['czbins']) and np.all(amap['trck']['czbins'] == bmap['trck']['czbins'])):
+        raise ValueError("These two maps should have the same cz binning!")
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': amap['trck']['map']+ amap['cscd']['map']+ bmap['trck']['map']+bmap['cscd']['map'],
+            'ebins':amap['trck']['ebins'],
+            'czbins': amap['cscd']['czbins'] }}
+    else:
+        raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    return {flav:{
+        'map': amap[flav]['map'] + bmap[flav]['map'],
+        'ebins':amap[flav]['ebins'],
+        'czbins': amap[flav]['czbins'] }
             for flav in flavs}
