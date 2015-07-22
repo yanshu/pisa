@@ -28,50 +28,35 @@ parser = ArgumentParser(
     combination of hierarchies.''',
     formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument(
-    '-t', '--template_settings',
-    type=str,
-    metavar='JSONFILE',
-    required = True,
+    '-t', '--template_settings', type=str,
+    metavar='JSONFILE', required = True,
     help='''Settings (f floating) related to the template generation and systematics.''')
 parser.add_argument(
-    '-pd', '--pseudo_data_settings',
-    type=str,
-    metavar='JSONFILE',
-    required = False,
+    '-pd', '--pseudo_data_settings', type=str,
+    metavar='JSONFILE', required = False,
     help='''Settings for pseudo data templates(tau,f=0), if desired to be different from template_settings.''')
 parser.add_argument(
     '-g', '--grid_settings',type=str,
-    metavar='JSONFILE',
-    required=True,
+    metavar='JSONFILE', required=True,
     help='''Settings for the grid search.''')
 parser.add_argument(
-    '-n', '--ntrials',
-    type=int,
-    default=1,
-    help="Number of trials to run")
+    '-n', '--ntrials', type=int,
+    default=1, help="Number of trials to run")
 sselect = parser.add_mutually_exclusive_group(required=False)
 sselect.add_argument(
-    '--save-steps', action='store_true',
-    default=True,
-    dest='save_steps',
-    help="Save all steps")
+    '--save-steps', action='store_true', default=True,
+    dest='save_steps', help="Save all steps")
 sselect.add_argument(
-    '--no-save-steps',
-    action='store_false',
-    default=False,
-    dest='save_steps',
+    '--no-save-steps', action='store_false',
+    default=False, dest='save_steps',
    help="Save just the maximum")
 parser.add_argument(
-    '-o', '--outfile',
-    type=str,
-    default='llh_data.json',
-    metavar='JSONFILE',
+    '-o', '--outfile', type=str,
+    default='llh_data.json', metavar='JSONFILE',
     help="Output filename.")
 parser.add_argument(
-    '-v', '--verbose',
-    action='count',
-    default=None,
-   help='set verbosity level')
+    '-v', '--verbose', action='count',
+    default=None, help='set verbosity level')
 args = parser.parse_args()
 
 set_verbosity(args.verbose)
