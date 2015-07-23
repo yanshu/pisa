@@ -55,8 +55,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
     assert(len(data_nc_trueE)==len(data_nc_recoE))
     assert(len(data_nc_trueCZ)==len(data_nc_recoCZ))
     assert(len(data_nc_trueCZ)==len(data_nc_trueE))
-    #cut = data_nc_trueCZ < 0
-    cut = data_nc_recoCZ < 0
+    cut = data_nc_trueCZ < 0
     data_nc_trueE = data_nc_trueE[cut]
     data_nc_recoE = data_nc_recoE[cut]
     data_nc_trueCZ = data_nc_trueCZ[cut]
@@ -83,8 +82,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
         assert(len(data_cc_trueE)==len(data_cc_recoE))
         assert(len(data_cc_trueCZ)==len(data_cc_recoCZ))
         assert(len(data_cc_trueCZ)==len(data_cc_trueE))
-        #cut = data_cc_trueCZ < 0
-        cut = data_cc_recoCZ < 0
+        cut = data_cc_trueCZ < 0
         data_cc_trueE = data_cc_trueE[cut]
         data_cc_recoE = data_cc_recoE[cut]
         data_cc_trueCZ = data_cc_trueCZ[cut]
