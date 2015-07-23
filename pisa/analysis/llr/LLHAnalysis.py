@@ -19,7 +19,7 @@ from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
-from pisa.analysis.stats.Maps import flatten_map, get_up_map,get_flipped_map
+from pisa.analysis.stats.Maps import flatten_map
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
                            minimizer_settings,only_atm_params=True,check_octant=False):
@@ -68,7 +68,7 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
     for name, init_val, bound, prior in zip(names, init_vals, bounds, priors):
         physics.info(('%20s : init = %6.4f, bounds = [%6.4f,%6.4f], '
                       'best = %6.4f, prior = %s') %
-                     (name, init_val, up, down, best, prior))
+                     (name, init_val, bound[0], bound[1], init_val, prior))
 
     physics.debug("Optimizer settings:")
     for key,item in bfgs_settings.items():
