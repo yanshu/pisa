@@ -131,15 +131,18 @@ def apply_domeff_holeice(template, params):
     elif isinstance(template,dict):
         dom_eff_val = params['dom_eff']
         hole_ice_val = params['hole_ice']
+        assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
-        if np.all(template[flav]['czbins']) <= 0:
+        if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
-        if np.all(template[flav]['czbins']) >= 0:
+        elif np.all(template['cscd']['czbins']) >= 0:
             direction = 'down'
+        else:
+            raise ValueError( "czbins should be either >=0 or <=0! ")
         for flav in flavs:
             slope_DE = slope['slopes']['data_tau']['k_DomEff'][flav][direction]
             slope_HI = slope['slopes']['data_tau']['k_HoleIce'][flav][direction]
-            scale = slope_DEup*(hole_ice_val-0.2) + 1
+            scale = slope_DE*(dom_eff_val-0.91)+ slope_HI*(hole_ice_val-0.2) + 1
             output_map= {flav:{
                 'map': (template[flav]['map'])*scale,
                 'ebins':template[flav]['ebins'],
