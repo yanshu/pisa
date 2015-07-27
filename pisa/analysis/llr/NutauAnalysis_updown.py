@@ -20,7 +20,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap
-from pisa.analysis.TemplateMaker import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings
 
 parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
