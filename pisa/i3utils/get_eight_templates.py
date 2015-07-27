@@ -26,19 +26,13 @@ from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings, select_hierarchy
 
-parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
-defined in settings.json file and saves the likelihood values for all
-combination of hierarchies.''',
-                        formatter_class=ArgumentDefaultsHelpFormatter)
+parser = ArgumentParser(description='''Get eight templates from eight MC sets (using different DOM eff. and hole ice values), write all template bin values to a json file. ''', formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('-t','--template_settings',type=str,
                     metavar='JSONFILE', required = True,
                     help='''Settings related to the template generation and systematics.''')
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
-parser.add_argument('-s','--save-steps',action='store_true',default=False,
-                    dest='save_steps',
-                    help="Save all steps the optimizer takes.")
 parser.add_argument('-o','--outfile',type=str,default='llh_data.json',metavar='JSONFILE',
                     help="Output filename.")
 parser.add_argument('-v', '--verbose', action='count', default=None,

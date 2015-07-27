@@ -25,7 +25,7 @@ parser.add_argument('-i','--data_file',type=str,
                          help='''Input json file containing the bin values information from eight MC sets.''')
 parser.add_argument('-o', '--png_name', type=str,
                          metavar='NAME', required = True,
-                         help='Output png file.')
+                         help='Output png name.')
 parser.add_argument('-n', '--npoints', type = int,
                          metavar='INT', required = True,
                          help='No. of points for x axis')
