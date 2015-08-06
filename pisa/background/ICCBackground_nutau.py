@@ -23,7 +23,7 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.background.BackgroundServiceICC_nutau import BackgroundServiceICC
 
 
-def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,**kwargs):
+def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,livetime,**kwargs):
 
     """
     Primary function for this stage, returns the event map with ICC 
@@ -41,7 +41,7 @@ def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,**k
     for flav in ['trck','cscd']:
         ebins, czbins = get_binning(event_rate_pid_maps[flav])
         event_rate_pid_map = event_rate_pid_maps[flav]['map']
-        event_rate = event_rate_pid_map + background_dict[flav] * atmos_mu_scale
+        event_rate = event_rate_pid_map + background_dict[flav] * atmos_mu_scale * livetime
         event_rate_maps[flav] = {'map':event_rate,
                                  'ebins':ebins,
                                  'czbins':czbins}
@@ -61,7 +61,9 @@ if __name__ == '__main__':
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
     parser.add_argument('--atmos_mu_scale',type=float,default=1.0,
-                        help='''Overall scale on atmospheric muons''')
+                        help='''Overall scale on atmospheric muons for livetime = 1.0 yr''')
+    parser.add_argument('--livetime',type=float,default=1.0,
+                        help='''livetime in years to re-scale by.''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
                         action='store',default="event_rate.json",
                         help='''file to store the output''')
@@ -78,7 +80,7 @@ if __name__ == '__main__':
     logging.info("Defining background_service...")
     background_service = BackgroundServiceICC(ebins,czbins,icc_bg_file=args.background_file)
 
-    event_rate_maps = add_icc_background(args.event_rate_pid_maps,background_service,args.atmos_mu_scale)
+    event_rate_maps = add_icc_background(args.event_rate_pid_maps,background_service,args.atmos_mu_scale,args.livetime)
 
     logging.info("Saving output to: %s"%args.outfile)
     to_json(event_rate_maps,args.outfile)
