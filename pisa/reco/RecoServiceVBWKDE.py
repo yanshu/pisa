@@ -214,7 +214,6 @@ class RecoServiceVBWKDE(RecoServiceBase):
             eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
             e_reco_scale = e_reco_scale, cz_reco_scale = cz_reco_scale,
             make_plots=reco_vbwkde_make_plots
-            #make_plots=True
         )
         self.reco_events_hash = new_hash
 
@@ -236,30 +235,24 @@ class RecoServiceVBWKDE(RecoServiceBase):
         logging.info("Broadens the kernels by e_reco_scale ( = %.4f) and cz_reco_scale ( = %.4f)." % (e_reco_scale, cz_reco_scale))
         enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
         enu_mesh = np.array(self.kernel_gaussians[flav][int_type]['enu_mesh'][ebin_n])
+        enu_mlci_width = np.array(self.kernel_gaussians[flav][int_type]['enu_mlci_width'][ebin_n])
+
         cz_bw = np.array(self.kernel_gaussians[flav][int_type]['cz_bw'][ebin_n])
         cz_mesh = np.array(self.kernel_gaussians[flav][int_type]['cz_mesh'][ebin_n])
+        cz_mlci_width = np.array(self.kernel_gaussians[flav][int_type]['cz_mlci_width'][ebin_n])
 
         # option 1: use e_reco_scale * original bandwidth (enu_bw is equal to 2 * gaus_std)
         #enu_bw = e_reco_scale * enu_bw
         #cz_bw = cz_reco_scale * cz_bw
-
-        enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
-        cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
+        #enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
+        #cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
 
         # option2 : use mlci, new bandwidth = original bandwidth + (e_reco_scale - 1)* mlci_width
-        enu_mlci = MLConfInterval(enu_mesh,enu_pdf)
-        enu_ci_lower, enu_ci_upper, enu_ci_prob, enu_r = enu_mlci.findCI_lin(0.68)
-        enu_mlci_width = enu_ci_upper- enu_ci_lower
-        #print "enu_mlci_width = ", enu_mlci_width
         enu_bw = enu_bw + (e_reco_scale - 1)* enu_mlci_width
         if np.any(enu_bw <=0):
             print "e_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
         enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
 
-        cz_mlci = MLConfInterval(cz_mesh,cz_pdf)
-        cz_ci_lower, cz_ci_upper, cz_ci_prob, cz_r = cz_mlci.findCI_lin(0.68)
-        cz_mlci_width = cz_ci_upper- cz_ci_lower
-        #print "cz_mlci_width = ", cz_mlci_width
         cz_bw = cz_bw + (cz_reco_scale - 1)* cz_mlci_width
         if np.any(cz_bw <=0):
             print "cz_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
@@ -290,7 +283,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
         all_ints = ['cc', 'nc']
         flav_ints = itertools.product(all_flavs, all_ints)
 
-        kernel_gaussians = {f:{it:{'enu_bw':[], 'enu_mesh':[], 'cz_bw' : [], 'cz_mesh':[]} for it in all_ints} for f in all_flavs}
+        kernel_gaussians = {f:{it:{'enu_bw':[], 'enu_mesh':[], 'enu_mlci_width':[], 'cz_bw' : [], 'cz_mesh':[], 'cz_mlci_width':[]} for it in all_ints} for f in all_flavs}
         kernel_gaussians['ebins'] = self.ebins
         kernel_gaussians['czbins'] = self.czbins
         computed_datahashes = {}
@@ -357,6 +350,7 @@ class RecoServiceVBWKDE(RecoServiceBase):
                     overfit_factor = OVERFIT_FACTOR,
                     MIN            = cz_kde_min,
                     MAX            = cz_kde_max,
+                    evaluate_dens  = return_pdf,
                     N              = N_cz_mesh
                 )
             except:
@@ -547,11 +541,13 @@ class RecoServiceVBWKDE(RecoServiceBase):
         if self.TGT_NUM_EVENTS > n_events:
             self.TGT_NUM_EVENTS = n_events
 
-        single_kernel_gaussians = {'enu_bw':[], 'enu_mesh':[], 'cz_bw' : [], 'cz_mesh': []} 
+        single_kernel_gaussians = {'enu_bw':[], 'enu_mesh':[], 'enu_mlci_width':[], 'cz_bw' : [], 'cz_mesh':[], 'cz_mlci_width':[]}
         list_enu_bw = []
         list_enu_mesh = []
+        list_enu_mlci_width = []
         list_cz_bw = []
         list_cz_mesh = []
+        list_cz_mlci_width = []
         for ebin_n in range(self.n_ebins):
             
             enu_err, cz_err, egy_kde_lims, kde_num_pts,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ = self.preparation_for_kde(ebin_n, e_true, e_reco, cz_true, cz_reco)
@@ -562,24 +558,33 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 overfit_factor = OVERFIT_FACTOR,
                 MIN            = egy_kde_lims[0],
                 MAX            = egy_kde_lims[1],
-                evaluate_dens  = False,
+                evaluate_dens  = True,
                 N              = kde_num_pts
             )
+            enu_mlci = MLConfInterval(enu_mesh,enu_pdf)
+            enu_ci_lower, enu_ci_upper, enu_ci_prob, enu_r = enu_mlci.findCI_lin(0.68)
+            enu_mlci_width = enu_ci_upper - enu_ci_lower
             list_enu_bw.append(list(enu_bw))
             list_enu_mesh.append(list(enu_mesh))
+            list_enu_mlci_width.append(enu_mlci_width)
 
-            cz_kde_failed, cz_bw, cz_mesh, _ = self.get_cz_kde(cz_err = cz_err, return_pdf = False)
-
+            cz_kde_failed, cz_bw, cz_mesh, cz_pdf = self.get_cz_kde(cz_err = cz_err, return_pdf = True)
             if cz_kde_failed:
                 logging.warn('Failed to fit VBWKDE!')
                 continue
-
             list_cz_bw.append(list(cz_bw))
             list_cz_mesh.append(list(cz_mesh))
+            cz_mlci = MLConfInterval(cz_mesh,cz_pdf)
+            cz_ci_lower, cz_ci_upper, cz_ci_prob, cz_r = cz_mlci.findCI_lin(0.68)
+            cz_mlci_width = cz_ci_upper - cz_ci_lower
+            list_cz_mlci_width.append(cz_mlci_width)
+
         single_kernel_gaussians['enu_bw'] = list_enu_bw
         single_kernel_gaussians['enu_mesh'] = list_enu_mesh
+        single_kernel_gaussians['enu_mlci_width'] = list_enu_mlci_width
         single_kernel_gaussians['cz_bw'] = list_cz_bw
         single_kernel_gaussians['cz_mesh'] = list_cz_mesh
+        single_kernel_gaussians['cz_mlci_width'] = list_cz_mlci_width
         return single_kernel_gaussians
     
     def single_kernel_set(self, e_true, cz_true, e_reco, cz_reco, e_reco_scale, cz_reco_scale,
@@ -697,7 +702,12 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, e_reco_scale, cz_reco_scale, ebin_n, flav, int_type)
             else:
                 # do not broaden bandwidths for up-going events
-                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, 1, 1, ebin_n, flav, int_type)
+                enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
+                enu_mesh = np.array(self.kernel_gaussians[flav][int_type]['enu_mesh'][ebin_n])
+                cz_bw = np.array(self.kernel_gaussians[flav][int_type]['cz_bw'][ebin_n])
+                cz_mesh = np.array(self.kernel_gaussians[flav][int_type]['cz_mesh'][ebin_n])
+                enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
+                cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
 
             if np.min(enu_pdf) < 0:
                 # Only issue warning if the most-negative value is negative
