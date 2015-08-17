@@ -235,11 +235,11 @@ class RecoServiceVBWKDE(RecoServiceBase):
         logging.info("Broadens the kernels by e_reco_scale ( = %.4f) and cz_reco_scale ( = %.4f)." % (e_reco_scale, cz_reco_scale))
         enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
         enu_mesh = np.array(self.kernel_gaussians[flav][int_type]['enu_mesh'][ebin_n])
-        enu_mlci_width = np.array(self.kernel_gaussians[flav][int_type]['enu_mlci_width'][ebin_n])
+        enu_mlci_width = self.kernel_gaussians[flav][int_type]['enu_mlci_width'][ebin_n]
 
         cz_bw = np.array(self.kernel_gaussians[flav][int_type]['cz_bw'][ebin_n])
         cz_mesh = np.array(self.kernel_gaussians[flav][int_type]['cz_mesh'][ebin_n])
-        cz_mlci_width = np.array(self.kernel_gaussians[flav][int_type]['cz_mlci_width'][ebin_n])
+        cz_mlci_width = self.kernel_gaussians[flav][int_type]['cz_mlci_width'][ebin_n]
 
         # option 1: use e_reco_scale * original bandwidth (enu_bw is equal to 2 * gaus_std)
         #enu_bw = e_reco_scale * enu_bw
