@@ -195,11 +195,8 @@ class TemplateMaker:
         with Timer(verbose=False) as t:
             event_rate_pid_maps = get_pid_maps(event_rate_reco_maps,
                                             self.pid_service)
-            print "params = ", params
             final_event_rate = add_icc_background(event_rate_pid_maps,self.background_service,**params)
 
-            #final_event_rate = get_pid_maps(event_rate_reco_maps,
-            #                                self.pid_service)
         profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
 
         if not return_stages:
