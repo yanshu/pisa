@@ -151,7 +151,11 @@ class RecoServiceVBWKDE(RecoServiceBase):
             self.DOWNGOING_MAP = True
 
         self.kernel_gaussians = self.all_kernel_gaussians_from_events(eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING)
-
+        self.nominal_kernels = self.all_kernels_from_events(
+            eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
+            e_reco_scale = 1.0, cz_reco_scale = 1.0,
+            make_plots=reco_vbwkde_make_plots
+        )
         self.simfile = reco_vbwkde_evts_file 
 
     def _get_reco_kernels(self, evts_dict=None,
@@ -207,8 +211,8 @@ class RecoServiceVBWKDE(RecoServiceBase):
                             'provided, where the former must be a str ' +
                             'and the latter must be a dict.')
 
-        if (self.kernels is not None) and (new_hash == self.reco_events_hash) and e_reco_scale==1 and cz_reco_scale==1:
-            return self.kernels
+        if (new_hash == self.reco_events_hash) and e_reco_scale==1 and cz_reco_scale==1:
+            return self.nominal_kernels
 
         self.kernels = self.all_kernels_from_events(
             eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
