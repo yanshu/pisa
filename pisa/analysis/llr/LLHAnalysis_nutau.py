@@ -137,8 +137,8 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     if check_octant and ('theta23' in free_params.keys()):
         physics.info("Checking alternative octant solution")
         old_th23_val = free_params['theta23']['value']
-        delta = np.pi - old_th23_val
-        free_params['theta23']['value'] = np.pi + delta
+        delta = np.pi/4 - old_th23_val
+        free_params['theta23']['value'] = np.pi/4 + delta
         init_vals = get_param_values(free_params)
 
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
