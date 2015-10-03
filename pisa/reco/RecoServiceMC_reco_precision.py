@@ -35,7 +35,9 @@ class RecoServiceMC(RecoServiceBase):
         * reco_weight_file: HDF5 containing the MC events to construct the kernels
         """
         self.simfile = reco_mc_wt_file
-        RecoServiceBase.__init__(self, ebins, czbins, simfile=self.simfile, **kwargs)
+        self.ebins = ebins
+        self.czbins = czbins
+        self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, e_reco_precision_down = 1, cz_reco_precision_down = 1)
 
 
     def kernel_from_simfile(self, simfile=None,e_reco_precision_up=None, cz_reco_precision_up= None,
@@ -62,17 +64,21 @@ class RecoServiceMC(RecoServiceBase):
                 reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
                 reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
 
-                reco_energy[true_coszen<=0] *= e_reco_precision_up
-                reco_energy[true_coszen<=0] -= (e_reco_precision_up - 1) * true_energy[true_coszen<=0]
+                if e_reco_precision_up != 1:
+                    reco_energy[true_coszen<=0] *= e_reco_precision_up
+                    reco_energy[true_coszen<=0] -= (e_reco_precision_up - 1) * true_energy[true_coszen<=0]
 
-                reco_energy[true_coszen>0] *= e_reco_precision_down
-                reco_energy[true_coszen>0] -= (e_reco_precision_down - 1) * true_energy[true_coszen>0]
+                if e_reco_precision_down != 1:
+                    reco_energy[true_coszen>0] *= e_reco_precision_down
+                    reco_energy[true_coszen>0] -= (e_reco_precision_down - 1) * true_energy[true_coszen>0]
 
-                reco_coszen[true_coszen<=0] *= cz_reco_precision_up
-                reco_coszen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_coszen[true_coszen<=0]
+                if cz_reco_precision_up != 1:
+                    reco_coszen[true_coszen<=0] *= cz_reco_precision_up
+                    reco_coszen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_coszen[true_coszen<=0]
 
-                reco_coszen[true_coszen>0] *= cz_reco_precision_down
-                reco_coszen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_coszen[true_coszen>0]
+                if cz_reco_precision_down != 1:
+                    reco_coszen[true_coszen>0] *= cz_reco_precision_down
+                    reco_coszen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_coszen[true_coszen>0]
 
                 while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
                     reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
@@ -111,8 +117,11 @@ class RecoServiceMC(RecoServiceBase):
             logging.info('Reconstruction from non-default MC file %s!'%simfile)
             return kernel_from_simfile(simfile=simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], e_reco_precision_down = kwargs['e_reco_precision_down'], cz_reco_precision_down = kwargs['cz_reco_precision_down'])
 
-        if not hasattr(self, 'kernels'):
+        if not hasattr(self, 'nominal_kernels'):
             logging.info('Using file %s for default reconstruction'%(simfile))
-            self.kernels = self.kernel_from_simfile(simfile=simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], e_reco_precision_down = kwargs['e_reco_precision_down'], cz_reco_precision_down = kwargs['cz_reco_precision_down'])
+            self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, e_reco_precision_down = 1, cz_reco_precision_down = 1)
 
-        return self.kernels
+        if kwargs['e_reco_precision_up'] ==1 and kwargs['cz_reco_precision_up'] == 1 and kwargs['e_reco_precision_down'] == 1 and kwargs['cz_reco_precision_down'] == 1:
+            return self.nominal_kernels
+        else:
+            return self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], e_reco_precision_down = kwargs['e_reco_precision_down'], cz_reco_precision_down = kwargs['cz_reco_precision_down'])
