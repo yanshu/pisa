@@ -203,6 +203,27 @@
       "fixed": true,
       "scale": 1.0,
       "prior": 0.02
+    },
+    "YeI": {
+      "value": 0.4656,
+      "range": [0.46,0.47],
+      "fixed": false,
+      "scale": 1.0,
+      "prior": null
+    },
+    "YeO": {
+      "value": 0.4656,
+      "range": [0.46,0.47],
+      "fixed": false,
+      "scale": 1.0,
+      "prior": null
+    },
+    "YeM": {
+      "value": 0.4957,
+      "range": [0.495,0.496],
+      "fixed": true,
+      "scale": 1.0,
+      "prior": null
     }
   }
 }

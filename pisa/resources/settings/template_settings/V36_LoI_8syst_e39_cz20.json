@@ -171,7 +171,7 @@
       "value": null
     },
     "atm_delta_index": {
-      "fixed": true,
+      "fixed": false,
       "prior": {
         "fiducial": 0.0,
         "kind": "gaussian",
@@ -330,7 +330,7 @@
     },
     "osc_code": {
       "fixed": true,
-      "value": "prob3"
+      "value": "gpu"
     },
     "pid_kernelfile": {
       "fixed": true,
