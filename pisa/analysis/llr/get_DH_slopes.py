@@ -17,10 +17,11 @@ from pisa.utils.log import logging, profile, physics
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed, flatten_map
-from pisa.analysis.stats.Maps_nutau_noDOMIce import get_pseudo_data_fmap, get_true_template
 from pisa.analysis.stats.Maps_nutau import get_flipped_down_map, get_combined_map, get_up_map
-from pisa.analysis.TemplateMaker import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings, select_hierarchy
+from pisa.utils.plot import show_map
+import os
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -114,14 +115,22 @@ for data_tag, data_nutau_norm in [('data_tau',1.0)]:
         template_up = get_up_map(template_up_down_combined, channel= channel)
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= channel)
 
-        #print "template_map_up = ", tmap_up
-        #print "template_map_down = ", tmap_down
+        #print "template_map_up = ", template_up
+        #print "template_map_down = ", template_down
         results[data_tag][str(run_num)]['trck']['up'] = template_up['trck']['map']
         results[data_tag][str(run_num)]['cscd']['up'] = template_up['cscd']['map']
         results[data_tag][str(run_num)]['trck']['down'] = reflected_template_down['trck']['map']
         results[data_tag][str(run_num)]['cscd']['down'] = reflected_template_down['cscd']['map']
-
-#print "tmap_up['trck']['map'] = ", tmap_up['trck']['map']
+        if run_num == 50:
+            for chan in ['trck','cscd']:
+                plt.figure()
+                show_map(template_up[chan],vmax=150)
+                print 'no. of upgoing ' ,chan , ' ', np.sum(template_up[chan]['map'])
+                print 'Saving %s chan...'%chan
+                filename = os.path.join('FullSky_up_'+chan+'.png')
+                plt.title(chan + ' (true: up only) Nevts: %.1f'%(np.sum(template_up[chan]['map'])))
+                plt.savefig(filename,dpi=150)
+                plt.clf()
 
 for flav in ['trck','cscd']:
     for direction in ['up','down']:
