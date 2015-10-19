@@ -27,10 +27,10 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
         template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
-        true_fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
-        true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
-        fmap_up = np.int32(true_fmap_up+0.5)
-        fmap_down = np.int32(true_fmap_down+0.5)
+        #fmap_up = np.int32(true_fmap_up+0.5)
+        #fmap_down = np.int32(true_fmap_down+0.5)
+        fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
+        fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -40,7 +40,6 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
     else:
         true_template = template_maker.get_template(fiducial_params)  
         true_fmap = Maps.flatten_map(true_template, channel=channel)
-        fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
 def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
@@ -228,6 +227,9 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
 
 def get_up_map(map, channel):
     ''' Gets the upgoing map from a full sky map.'''
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
     if channel =='all':
         flavs=['trck', 'cscd']
     elif channel =='trck':
@@ -241,9 +243,7 @@ def get_up_map(map, channel):
             'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
     else:
         raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
-    len_czbin_edges = len(map['cscd']['czbins'])
-    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
-    czbin_mid_idx = (len_czbin_edges-1)/2
+    print "channel" , channel
     return {flav:{
         'map': map[flav]['map'][:,0:czbin_mid_idx],
         'ebins':map[flav]['ebins'],
@@ -255,13 +255,13 @@ def get_flipped_down_map(map, channel):
     len_czbin_edges = len(map['cscd']['czbins'])
     assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
     czbin_mid_idx = (len_czbin_edges-1)/2
-    if  channel=='all':
+    if channel=='all':
         flavs=['trck', 'cscd']
-    elif  channel=='trck':
+    elif channel=='trck':
         flavs=['trck']
-    elif  channel=='cscd':
+    elif channel=='cscd':
         flavs=['cscd']
-    elif  channel == 'no_pid':
+    elif channel == 'no_pid':
         return {'no_pid':{
             'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
             'ebins':map['trck']['ebins'],
@@ -271,7 +271,7 @@ def get_flipped_down_map(map, channel):
     return {flav:{
         'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
         'ebins':map[flav]['ebins'],
-        'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
+        'czbins': np.sort(-map[flav]['czbins'][czbin_mid_idx:]) }
             for flav in flavs}
 
 def get_flipped_map(map, channel):
