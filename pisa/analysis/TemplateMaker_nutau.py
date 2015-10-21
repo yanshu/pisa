@@ -163,7 +163,6 @@ class TemplateMaker:
         'params' dict. If 'return_stages' is set to True, returns
         output from each stage as a simple tuple. 
         '''
-
         logging.info("STAGE 1: Getting Atm Flux maps...")
         with Timer() as t:
             flux_maps = get_flux_maps(self.flux_service, self.ebins,
