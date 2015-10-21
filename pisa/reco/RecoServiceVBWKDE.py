@@ -153,14 +153,15 @@ class RecoServiceVBWKDE(RecoServiceBase):
         self.kernel_gaussians = self.all_kernel_gaussians_from_events(eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING)
         self.nominal_kernels = self.all_kernels_from_events(
             eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
-            e_reco_scale = 1.0, cz_reco_scale = 1.0,
+            e_reco_precision_up = 1.0, cz_reco_precision_up = 1.0,
+            e_reco_precision_down = 1.0, cz_reco_precision_down = 1.0,
             make_plots=reco_vbwkde_make_plots
         )
         self.simfile = reco_vbwkde_evts_file 
 
     def _get_reco_kernels(self, evts_dict=None,
-                          reco_vbwkde_make_plots=False, e_reco_scale = None,
-                          cz_reco_scale = None, **kwargs):
+                          reco_vbwkde_make_plots=False, e_reco_precision_up = None, e_reco_precision_down = None,
+                          cz_reco_precision_up = None, cz_reco_precision_down = None, **kwargs):
         """Given a reco events resource (resource file name or dictionary),
         retrieve data from it then serialize and hash the data. If the object
         attribute kernels were computed from the same source data, simply
@@ -211,12 +212,13 @@ class RecoServiceVBWKDE(RecoServiceBase):
                             'provided, where the former must be a str ' +
                             'and the latter must be a dict.')
 
-        if (new_hash == self.reco_events_hash) and e_reco_scale==1 and cz_reco_scale==1:
+        if (new_hash == self.reco_events_hash) and e_reco_precision_up==1 and cz_reco_precision_up==1 and e_reco_precision_down==1 and cz_reco_precision_down==1:
             return self.nominal_kernels
 
         self.kernels = self.all_kernels_from_events(
             eventsdict=eventsdict, remove_sim_downgoing=REMOVE_SIM_DOWNGOING,
-            e_reco_scale = e_reco_scale, cz_reco_scale = cz_reco_scale,
+            e_reco_precision_up = e_reco_precision_up, cz_reco_precision_up = cz_reco_precision_up,
+            e_reco_precision_down = e_reco_precision_down, cz_reco_precision_down = cz_reco_precision_down,
             make_plots=reco_vbwkde_make_plots
         )
         self.reco_events_hash = new_hash
@@ -234,9 +236,9 @@ class RecoServiceVBWKDE(RecoServiceBase):
         pdf = vbw_dens_est/np.trapz(y=vbw_dens_est, x=mesh)
         return pdf
 
-    def broaden_bandwidth(self, enu_err, cz_err, e_reco_scale, cz_reco_scale, ebin_n, flav, int_type):
-        """ Broadens the kernels by e_reco_scale and cz_reco_scale."""
-        logging.info("Broadens the kernels by e_reco_scale ( = %.4f) and cz_reco_scale ( = %.4f)." % (e_reco_scale, cz_reco_scale))
+    def broaden_bandwidth(self, enu_err, cz_err, e_reco_precision, cz_reco_precision, ebin_n, flav, int_type):
+        """ Broadens the kernels by e_reco_precision and cz_reco_precision."""
+        logging.info("Broadens the kernels by e_reco_precision ( = %.4f) and cz_reco_precision ( = %.4f)." % (e_reco_precision, cz_reco_precision))
         enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
         enu_mesh = np.array(self.kernel_gaussians[flav][int_type]['enu_mesh'][ebin_n])
         enu_mlci_width = self.kernel_gaussians[flav][int_type]['enu_mlci_width'][ebin_n]
@@ -245,21 +247,21 @@ class RecoServiceVBWKDE(RecoServiceBase):
         cz_mesh = np.array(self.kernel_gaussians[flav][int_type]['cz_mesh'][ebin_n])
         cz_mlci_width = self.kernel_gaussians[flav][int_type]['cz_mlci_width'][ebin_n]
 
-        # option 1: use e_reco_scale * original bandwidth (enu_bw is equal to 2 * gaus_std)
-        #enu_bw = e_reco_scale * enu_bw
-        #cz_bw = cz_reco_scale * cz_bw
+        # option 1: use e_reco_precision * original bandwidth (enu_bw is equal to 2 * gaus_std)
+        #enu_bw = e_reco_precision * enu_bw
+        #cz_bw = cz_reco_precision * cz_bw
         #enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
         #cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
 
-        # option2 : use mlci, new bandwidth = original bandwidth + (e_reco_scale - 1)* mlci_width
-        enu_bw = enu_bw + (e_reco_scale - 1)* enu_mlci_width
+        # option2 : use mlci, new bandwidth = original bandwidth + (e_reco_precision - 1)* mlci_width
+        enu_bw = enu_bw + (e_reco_precision - 1)* enu_mlci_width
         if np.any(enu_bw <=0):
-            print "e_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
+            print "e_reco_precision value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
         enu_pdf = self.get_pdf(enu_mesh, enu_err, enu_bw)
 
-        cz_bw = cz_bw + (cz_reco_scale - 1)* cz_mlci_width
+        cz_bw = cz_bw + (cz_reco_precision - 1)* cz_mlci_width
         if np.any(cz_bw <=0):
-            print "cz_reco_scale value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
+            print "cz_reco_precision value is too small, it makes the bandwidth < 0, need a larger value or change the definition of mlci_width"
         cz_pdf = self.get_pdf(cz_mesh, cz_err, cz_bw)
 
         return enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf
@@ -382,8 +384,9 @@ class RecoServiceVBWKDE(RecoServiceBase):
             return cz_kde_failed, None, None, None
         return cz_kde_failed, cz_bw, cz_mesh, cz_pdf
 
-    def all_kernels_from_events(self, eventsdict, remove_sim_downgoing, e_reco_scale,
-                                cz_reco_scale, make_plots=False):
+    def all_kernels_from_events(self, eventsdict, remove_sim_downgoing,
+                                 e_reco_precision_up, cz_reco_precision_up, e_reco_precision_down, cz_reco_precision_down,
+                                 make_plots=False):
         """Given a reco events dictionary, retrieve reco/true information from
         it, group MC data by flavor & interaction type, and return VBWKDE-based
         PISA reco kernels for all flavors/types. Checks are performed if
@@ -442,7 +445,8 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             kernels[flav][int_type] = self.single_kernel_set(
                 e_true=e_true, cz_true=cz_true, e_reco=e_reco, cz_reco=cz_reco,
-                e_reco_scale = e_reco_scale, cz_reco_scale = cz_reco_scale,
+                e_reco_precision_up = e_reco_precision_up, cz_reco_precision_up = cz_reco_precision_up,
+                e_reco_precision_down = e_reco_precision_down, cz_reco_precision_down = cz_reco_precision_down,
                 flav=flav, int_type=int_type, make_plots=make_plots,
                 out_dir=None
             )
@@ -591,7 +595,9 @@ class RecoServiceVBWKDE(RecoServiceBase):
         single_kernel_gaussians['cz_mlci_width'] = list_cz_mlci_width
         return single_kernel_gaussians
     
-    def single_kernel_set(self, e_true, cz_true, e_reco, cz_reco, e_reco_scale, cz_reco_scale,
+    def single_kernel_set(self, e_true, cz_true, e_reco, cz_reco,
+                          e_reco_precision_up, cz_reco_precision_up,
+                          e_reco_precision_down, cz_reco_precision_down,
                           flav, int_type, make_plots=False, out_dir=None):
         """Construct a 4D kernel set from MC events using VBWKDE.
                 print "egy_err ",egy_kde_lims
@@ -702,8 +708,10 @@ class RecoServiceVBWKDE(RecoServiceBase):
             enu_err, cz_err, egy_kde_lims, kde_num_pts, ebin_mid, ebin_wid, in_ebin_ind, n_in_bin, dmin, dmax, drange, ebin_min, ebin_max, actual_left_ebin_edge, actual_right_ebin_edge = self.preparation_for_kde(ebin_n, e_true, e_reco, cz_true, cz_reco)
 
             # Compute variable-bandwidth KDEs with (broadend) bandwith from self.kernel_gaussians
-            if self.DOWNGOING_MAP and (e_reco_scale != 1 or cz_reco_scale != 1):
-                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, e_reco_scale, cz_reco_scale, ebin_n, flav, int_type)
+            if (not self.DOWNGOING_MAP) and (e_reco_precision_up != 1 or cz_reco_precision_up != 1):
+                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, e_reco_precision_up, cz_reco_precision_up, ebin_n, flav, int_type)
+            elif (self.DOWNGOING_MAP) and (e_reco_precision_down != 1 or cz_reco_precision_down != 1):
+                enu_bw, enu_mesh, enu_pdf, cz_bw, cz_mesh, cz_pdf = self.broaden_bandwidth(enu_err, cz_err, e_reco_precision_down, cz_reco_precision_down, ebin_n, flav, int_type)
             else:
                 # do not broaden bandwidths for up-going events
                 enu_bw = np.array(self.kernel_gaussians[flav][int_type]['enu_bw'][ebin_n])
@@ -934,6 +942,14 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             # TODO: test and/or visualize the shifting & re-binning process
             for czbin_n in range(self.n_czbins):
+
+                if self.DOWNGOING_MAP and czbin_n in range(0,self.n_czbins/2):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+                        continue
+                if self.DOWNGOING_MAP == False and czbin_n in range(self.n_czbins/2, self.n_czbins):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+                        continue
+
                 czbin_mid = self.czbin_centers[czbin_n]
 
                 # Re-center distribution at the center of the current cz bin
@@ -1066,10 +1082,6 @@ class RecoServiceVBWKDE(RecoServiceBase):
                 assert tot_czbin_area < int_val + self.EPSILON
 
                 kernel4d[ebin_n, czbin_n] = np.outer(ebin_areas, czbin_areas)
-                if self.DOWNGOING_MAP and czbin_n in range(0,self.n_czbins/2):
-                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
-                if self.DOWNGOING_MAP == False and czbin_n in range(self.n_czbins/2, self.n_czbins):
-                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
 
                 assert (np.sum(kernel4d[ebin_n, czbin_n]) -
                         tot_ebin_area*tot_czbin_area) < self.EPSILON
