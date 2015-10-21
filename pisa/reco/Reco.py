@@ -34,8 +34,10 @@ from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
 from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 
 
-def get_reco_maps(true_event_maps, reco_service=None, e_reco_scale=None,
-                  cz_reco_scale=None, **kwargs):
+def get_reco_maps(true_event_maps, reco_service=None,
+                  e_reco_precision_up=None, cz_reco_precision_up=None,
+                  e_reco_precision_down=None, cz_reco_precision_down=None,
+                  **kwargs):
     """
     Primary function for this stage, which returns the reconstructed
     event rate maps from the true event rate maps. The returned maps will
@@ -60,7 +62,9 @@ def get_reco_maps(true_event_maps, reco_service=None, e_reco_scale=None,
 
     # Retrieve all reconstruction kernels
     reco_kernel_dict = reco_service.get_reco_kernels(
-        e_reco_scale=e_reco_scale, cz_reco_scale=cz_reco_scale, **kwargs
+        e_reco_precision_up =e_reco_precision_up, cz_reco_precision_up=cz_reco_precision_up,
+        e_reco_precision_down =e_reco_precision_down, cz_reco_precision_down=cz_reco_precision_down,
+        **kwargs
     )
 
     # DEBUG / HACK to store the computed kernels to a file
@@ -138,9 +142,13 @@ if __name__ == '__main__':
     parser.add_argument('--kernel_file', metavar='JSON/HDF5',
                         type=str, default=None,
                         help='''JSON file holding the pre-calculated kernels''')
-    parser.add_argument('--e_reco_scale', type=float, default=1.0,
+    parser.add_argument('--e_reco_precision_up', type=float, default=1.0,
                         help='''Reconstructed energy scaling.''')
-    parser.add_argument('--cz_reco_scale', type=float, default=1.0,
+    parser.add_argument('--cz_reco_precision_up', type=float, default=1.0,
+                        help='''Reconstructed coszen scaling.''')
+    parser.add_argument('--e_reco_precision_down', type=float, default=1.0,
+                        help='''Reconstructed energy scaling.''')
+    parser.add_argument('--cz_reco_precision_down', type=float, default=1.0,
                         help='''Reconstructed coszen scaling.''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='JSON',
                         type=str, action='store', default="reco.json",
