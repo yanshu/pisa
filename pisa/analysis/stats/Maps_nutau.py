@@ -109,23 +109,23 @@ def apply_domeff_holeice(template, params):
         dom_eff_val = params['dom_eff']
         hole_ice_val = params['hole_ice']
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
+        output_map_up = {}
+        output_map_down = {}
         for flav in flavs:
+            output_map_up[flav] = {}
+            output_map_down[flav] = {}
             slope_DE_up = slope['slopes']['data_tau']['k_DomEff'][flav]['up']
             slope_DE_down = slope['slopes']['data_tau']['k_DomEff'][flav]['down']
             slope_HI_up = slope['slopes']['data_tau']['k_HoleIce'][flav]['up']
             slope_HI_down = slope['slopes']['data_tau']['k_HoleIce'][flav]['down']
-            scale_up = slope_DE_up*(dom_eff_val-0.91)+ slope_HI_up*(hole_ice_val-0.2) + 1
-            scale_down = slope_DE_down*(dom_eff_val-0.91)+ slope_HI_down*(hole_ice_val-0.2) + 1
-            output_map_up = {flav:{
-                'map': (template_up[flav]['map'])*scale_up,
-                'ebins':template_up[flav]['ebins'],
-                'czbins': template_up[flav]['czbins'] }
-                    for flav in flavs}
-            output_map_down = {flav:{
-                'map': (template_down[flav]['map'])*scale_down,
-                'ebins':template_down[flav]['ebins'],
-                'czbins': template_down[flav]['czbins'] }
-                    for flav in flavs}
+            scale_up = slope_DE_up * (dom_eff_val-0.91)+ slope_HI_up * (hole_ice_val-0.2) + 1
+            scale_down = slope_DE_down * (dom_eff_val-0.91)+ slope_HI_down * (hole_ice_val-0.2) + 1
+            output_map_up[flav] = { 'map': (template_up[flav]['map'])*scale_up,
+                                    'ebins':template_up[flav]['ebins'],
+                                    'czbins': template_up[flav]['czbins'] }
+            output_map_down[flav]={ 'map': (template_down[flav]['map'])*scale_down,
+                                    'ebins':template_down[flav]['ebins'],
+                                    'czbins': template_down[flav]['czbins'] }
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
         dom_eff_val = params['dom_eff']
@@ -138,15 +138,15 @@ def apply_domeff_holeice(template, params):
             direction = 'down'
         else:
             raise ValueError( "czbins should be either >=0 or <=0! ")
+        output_map = {}
         for flav in flavs:
+            output_map[flav] = {}
             slope_DE = slope['slopes']['data_tau']['k_DomEff'][flav][direction]
             slope_HI = slope['slopes']['data_tau']['k_HoleIce'][flav][direction]
             scale = slope_DE*(dom_eff_val-0.91)+ slope_HI*(hole_ice_val-0.2) + 1
-            output_map= {flav:{
-                'map': (template[flav]['map'])*scale,
-                'ebins':template[flav]['ebins'],
-                'czbins': template[flav]['czbins'] }
-                    for flav in flavs}
+            output_map[flav]={ 'map': (template[flav]['map'])*scale,
+                               'ebins':template[flav]['ebins'],
+                               'czbins': template[flav]['czbins']}
         return output_map
     else:
        raise TypeError("The type of input template is wrong!")
@@ -243,7 +243,6 @@ def get_up_map(map, channel):
             'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
     else:
         raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
-    print "channel" , channel
     return {flav:{
         'map': map[flav]['map'][:,0:czbin_mid_idx],
         'ebins':map[flav]['ebins'],
