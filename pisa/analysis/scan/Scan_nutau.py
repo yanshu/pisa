@@ -75,9 +75,8 @@ def find_max_grid(fmap, template_maker, params, grid_settings, save_steps=True,
         # Now get true template
         profile.info('start template calculation')
         true_fmap = get_true_template(template_params, template_maker)
-        #true_template = template_maker.get_template(template_params)
+
         profile.info('stop template calculation')
-        #true_fmap = flatten_map(true_template)
 
         # and calculate the likelihood
         llh = -get_binwise_llh(fmap, true_fmap, template_params)
