@@ -115,6 +115,10 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     opt_steps_dict = {key:[] for key in names}
     opt_steps_dict['llh'] = []
+    before_check_opt_steps_dict = {key:[] for key in names}
+    before_check_opt_steps_dict['llh'] = []
+    after_check_opt_steps_dict = {key:[] for key in names}
+    after_check_opt_steps_dict['llh'] = []
 
     const_args = (names,scales,fmap,fixed_params,template_maker,opt_steps_dict,priors)
 
@@ -132,6 +136,12 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
         physics.debug("LLH is %.2f "%neg_llh)
         return neg_llh
+
+    before_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
+    if not save_steps:
+        for key in opt_steps_dict.keys():
+            before_check_opt_steps_dict[key] = [opt_steps_dict[key][-1]]
+    print "before check_octant, opt_steps_dict = ", before_check_opt_steps_dict 
 
     # If needed, run optimizer again, checking for second octant solution:
     if check_octant and ('theta23' in free_params.keys()):
@@ -152,11 +162,21 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
 
+        after_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
+        if not save_steps:
+            for key in opt_steps_dict.keys():
+                after_check_opt_steps_dict[key] = [opt_steps_dict[key][-1]]
+        print "after check_octant, opt_steps_dict = ", after_check_opt_steps_dict 
+
         # Alternative octant solution is optimal:
         if alt_llh < llh:
             best_fit_vals = alt_fit_vals
             llh = alt_llh
             dict_flags = alt_dict_flags
+            #opt_steps_dict = after_check_opt_steps_dict
+        else:
+            opt_steps_dict = before_check_opt_steps_dict
+
 
     best_fit_params = { name: value for name, value in zip(names, best_fit_vals) }
 
@@ -176,6 +196,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         for key in opt_steps_dict.keys():
             opt_steps_dict[key] = [opt_steps_dict[key][-1]]
 
+    #print "final result = ", opt_steps_dict
     return opt_steps_dict
 
 
