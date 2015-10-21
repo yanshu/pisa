@@ -12,7 +12,7 @@
 
 import re
 import numpy as np
-from scipy.special import iv, multigammaln
+from scipy.special import iv, multigammaln, gammaln
 from scipy.stats import poisson, skellam, norm
 
 from pisa.analysis.stats import LLHStatistics as LLHSTAT
@@ -105,5 +105,6 @@ def get_binwise_llh(pseudo_data, template, template_params):
 
     else:
         totalLLH = np.sum(LLHSTAT.generalized_ln_poisson(pseudo_data, template))
+        #totalLLH = np.sum( pseudo_data * np.log(template)- gammaln(pseudo_data+1) - template)
 
     return totalLLH
