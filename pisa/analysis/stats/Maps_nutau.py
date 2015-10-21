@@ -27,10 +27,10 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
         template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
-        #fmap_up = np.int32(true_fmap_up+0.5)
-        #fmap_down = np.int32(true_fmap_down+0.5)
         fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
         fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
+        #fmap_up = np.int32(true_fmap_up+0.5)
+        #fmap_down = np.int32(true_fmap_down+0.5)
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -68,8 +68,9 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
 
         # add domeff and/or hole ice effects
         [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
-        true_fmap_up = Maps.flatten_map(template_up_dh, channel=fiducial_params['channel'])
-        true_fmap_down = Maps.flatten_map(reflected_template_down_dh, channel=fiducial_params['channel'])
+        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
+        true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
+        true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         if fiducial_params['residual_up_down']:
@@ -81,14 +82,17 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
     else:
         true_template = template_maker.get_template(fiducial_params)
         # add domeff and/or hole ice effects
-        true_template_dh = apply_domeff_holeice(true_template,fiducial_params)
-        true_fmap = Maps.flatten_map(true_template_dh, channel=channel)
+        true_template_dh = apply_domeff_holeice(true_template, fiducial_params)
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, fiducial_params)
+        true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=channel)
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
 def apply_domeff_holeice(template, params):
     # Apply DOMeff and HoleIce changes to template 
     channel=params['channel']
+    dom_eff_val = params['dom_eff']
+    hole_ice_val = params['hole_ice']
     if channel=='all':
         flavs=['trck', 'cscd']
     elif channel=='trck':
@@ -106,8 +110,6 @@ def apply_domeff_holeice(template, params):
         template_down = template[1]
         assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
         assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
-        dom_eff_val = params['dom_eff']
-        hole_ice_val = params['hole_ice']
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         output_map_up = {}
         output_map_down = {}
@@ -118,8 +120,8 @@ def apply_domeff_holeice(template, params):
             slope_DE_down = slope['slopes']['data_tau']['k_DomEff'][flav]['down']
             slope_HI_up = slope['slopes']['data_tau']['k_HoleIce'][flav]['up']
             slope_HI_down = slope['slopes']['data_tau']['k_HoleIce'][flav]['down']
-            scale_up = slope_DE_up * (dom_eff_val-0.91)+ slope_HI_up * (hole_ice_val-0.2) + 1
-            scale_down = slope_DE_down * (dom_eff_val-0.91)+ slope_HI_down * (hole_ice_val-0.2) + 1
+            scale_up = slope_DE_up*(dom_eff_val-0.91)+ slope_HI_up*(hole_ice_val-0.2) + 1
+            scale_down = slope_DE_down*(dom_eff_val-0.91)+ slope_HI_down*(hole_ice_val-0.2) + 1
             output_map_up[flav] = { 'map': (template_up[flav]['map'])*scale_up,
                                     'ebins':template_up[flav]['ebins'],
                                     'czbins': template_up[flav]['czbins'] }
@@ -128,8 +130,6 @@ def apply_domeff_holeice(template, params):
                                     'czbins': template_down[flav]['czbins'] }
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
-        dom_eff_val = params['dom_eff']
-        hole_ice_val = params['hole_ice']
         assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         if np.all(template['cscd']['czbins']) <= 0:
@@ -151,6 +151,79 @@ def apply_domeff_holeice(template, params):
     else:
        raise TypeError("The type of input template is wrong!")
 
+def apply_reco_precisions(template, params):
+    # Apply reconstruction precision changes to template 
+    channel=params['channel']
+    e_precision_up_val = params['e_reco_precision_up']
+    e_precision_down_val = params['e_reco_precision_down']
+    cz_precision_up_val = params['cz_reco_precision_up']
+    cz_precision_down_val = params['cz_reco_precision_down']
+    if e_precision_up_val == 1.0 and e_precision_down_val == 1.0 and cz_precision_up_val == 1.0 and cz_precision_down_val == 1.0:
+        return template
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        print "To do"
+        #TODO
+    else:
+        raise ValueError(
+                "channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    if isinstance(template,list) and len(template)==2:
+        template_up = template[0]
+        template_down = template[1]
+        assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
+        assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
+        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.8_2.0_data_tau.json')
+        output_map_up = {}
+        output_map_down = {}
+        for flav in flavs:
+            output_map_up[flav] = {}
+            output_map_down[flav] = {}
+            for direction in ['up', 'down']:
+                cubic_coeff_e_precision_up = cubic_coeff['coeffs']['data_tau']['e_reco_precision_up'][flav][direction]
+                cubic_coeff_e_precision_down = cubic_coeff['coeffs']['data_tau']['e_reco_precision_down'][flav][direction]
+                cubic_coeff_cz_precision_up = cubic_coeff['coeffs']['data_tau']['cz_reco_precision_up'][flav][direction]
+                cubic_coeff_cz_precision_down = cubic_coeff['coeffs']['data_tau']['cz_reco_precision_down'][flav][direction]
+                #scale = cubic_coeff_e_precision_up[:,:,0] * (e_precision_up_val**3 - 1.0) + cubic_coeff_e_precision_up[:,:,1] * (e_precision_up_val**2 - 1.0) + cubic_coeff_e_precision_up[:,:,2] * (e_precision_up_val - 1.0) + cubic_coeff_e_precision_down[:,:,0] * (e_precision_down_val**3 - 1.0) + cubic_coeff_e_precision_down[:,:,1] * (e_precision_down_val**2 - 1.0) + cubic_coeff_e_precision_down[:,:,2] * (e_precision_down_val - 1.0)  + cubic_coeff_cz_precision_up[:,:,0] * (cz_precision_up_val**3 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,1] * (cz_precision_up_val**2 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,2] * (cz_precision_up_val - 1.0 ) + cubic_coeff_cz_precision_down[:,:,0] * (cz_precision_down_val**3 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,1] * (cz_precision_down_val**2 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,2] * (cz_precision_down_val - 1.0 ) + 1.0
+                scale = (cubic_coeff_e_precision_up[:,:,0] * (e_precision_up_val**3 - 1.0) + cubic_coeff_e_precision_up[:,:,1] * (e_precision_up_val**2 - 1.0) + cubic_coeff_e_precision_up[:,:,2] * (e_precision_up_val - 1.0) + 1.0) * (cubic_coeff_e_precision_down[:,:,0] * (e_precision_down_val**3 - 1.0) + cubic_coeff_e_precision_down[:,:,1] * (e_precision_down_val**2 - 1.0) + cubic_coeff_e_precision_down[:,:,2] * (e_precision_down_val - 1.0)  + 1.0) * (cubic_coeff_cz_precision_up[:,:,0] * (cz_precision_up_val**3 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,1] * (cz_precision_up_val**2 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,2] * (cz_precision_up_val - 1.0 ) + 1.0) * (cubic_coeff_cz_precision_down[:,:,0] * (cz_precision_down_val**3 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,1] * (cz_precision_down_val**2 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,2] * (cz_precision_down_val - 1.0 ) + 1.0)
+
+                if direction == 'up':
+                    output_map_up[flav] = { 'map': (template_up[flav]['map'])*scale,
+                                            'ebins':template_up[flav]['ebins'],
+                                            'czbins': template_up[flav]['czbins'] }
+                else:
+                    output_map_down[flav] = { 'map': (template_down[flav]['map'])*scale,
+                                              'ebins':template_down[flav]['ebins'],
+                                              'czbins': template_down[flav]['czbins'] }
+        return [output_map_up,output_map_down]
+    elif isinstance(template,dict):
+        assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
+        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.8_2.0_data_tau.json')
+        if np.all(template['cscd']['czbins']) <= 0:
+            direction = 'up'
+        elif np.all(template['cscd']['czbins']) >= 0:
+            direction = 'down'
+        else:
+            raise ValueError( "czbins should be either >=0 or <=0! ")
+        output_map = {}
+        for flav in flavs:
+            output_map[flav] = {}
+            cubic_coeff_e_precision_up = cubic_coeff['coeffs']['data_tau']['e_reco_precision_up'][flav][direction]
+            cubic_coeff_e_precision_down = cubic_coeff['coeffs']['data_tau']['e_reco_precision_down'][flav][direction]
+            cubic_coeff_cz_precision_up = cubic_coeff['coeffs']['data_tau']['cz_reco_precision_up'][flav][direction]
+            cubic_coeff_cz_precision_down = cubic_coeff['coeffs']['data_tau']['cz_reco_precision_down'][flav][direction]
+            scale = cubic_coeff_e_precision_up[:,:,0] * (e_precision_up_val**3 - 1.0) + cubic_coeff_e_precision_up[:,:,1] * (e_precision_up_val**2 - 1.0) + cubic_coeff_e_precision_up[:,:,2] * (e_precision_up_val - 1.0) + cubic_coeff_e_precision_down[:,:,0] * (e_precision_down_val**3 - 1.0) + cubic_coeff_e_precision_down[:,:,1] * (e_precision_down_val**2 - 1.0) + cubic_coeff_e_precision_down[:,:,2] * (e_precision_down_val - 1.0)  + cubic_coeff_cz_precision_up[:,:,0] * (cz_precision_up_val**3 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,1] * (cz_precision_up_val**2 - 1.0 ) + cubic_coeff_cz_precision_up[:,:,2] * (cz_precision_up_val - 1.0 ) + cubic_coeff_cz_precision_down[:,:,0] * (cz_precision_down_val**3 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,1] * (cz_precision_down_val**2 - 1.0 ) + cubic_coeff_cz_precision_down[:,:,2] * (cz_precision_down_val - 1.0 ) + 1.0
+            output_map[flav]={ 'map': (template[flav]['map'])*scale,
+                               'ebins':template[flav]['ebins'],
+                               'czbins': template[flav]['czbins']}
+        return output_map
+    else:
+       raise TypeError("The type of input template is wrong!")
+
 
 def get_true_template(template_params, template_maker):
     if template_params['theta23'] == 0.0:
@@ -158,7 +231,8 @@ def get_true_template(template_params, template_maker):
         true_template = template_maker.get_template_no_osc(template_params)
         # add domeff and/or hole ice effects
         true_template_dh = apply_domeff_holeice(true_template,template_params)
-        true_fmap = Maps.flatten_map(true_template_dh, channel=template_params['channel'])
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params)
+        true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=template_params['channel'])
     elif type(template_maker)==list and len(template_maker)==2:
         template_maker_up = template_maker[0]
         template_maker_down = template_maker[1]
@@ -171,8 +245,9 @@ def get_true_template(template_params, template_maker):
 
         # add domeff and/or hole ice effects
         [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],template_params)
-        true_fmap_up = Maps.flatten_map(template_up_dh, channel=template_params['channel'])
-        true_fmap_down = Maps.flatten_map(reflected_template_down_dh, channel=template_params['channel'])
+        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],template_params)
+        true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=template_params['channel'])
+        true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=template_params['channel'])
         if template_params['residual_up_down'] or template_params['ratio_up_down']:
             true_fmap = np.array([true_fmap_up, true_fmap_down])
         else:
@@ -181,7 +256,8 @@ def get_true_template(template_params, template_maker):
         true_template = template_maker.get_template(template_params)  
         # add domeff and/or hole ice effects
         true_template_dh = apply_domeff_holeice(true_template,template_params)
-        true_fmap = Maps.flatten_map(true_template_dh, channel=template_params['channel'])
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params)
+        true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=template_params['channel'])
 
     return true_fmap
 
@@ -208,8 +284,11 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
-        true_fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
-        true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
+        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
+        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
+        true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
+        true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
+
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         if fiducial_params['residual_up_down']:
@@ -221,15 +300,13 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
     else:
         true_template = template_maker.get_tau_template(fiducial_params)  
         true_template_dh = apply_domeff_holeice(true_template,fiducial_params)
-        true_fmap = Maps.flatten_map(true_template_dh, channel=channel)
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, fiducial_params)
+        true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=channel)
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
 
 def get_up_map(map, channel):
     ''' Gets the upgoing map from a full sky map.'''
-    len_czbin_edges = len(map['cscd']['czbins'])
-    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
-    czbin_mid_idx = (len_czbin_edges-1)/2
     if channel =='all':
         flavs=['trck', 'cscd']
     elif channel =='trck':
@@ -243,6 +320,9 @@ def get_up_map(map, channel):
             'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
     else:
         raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
     return {flav:{
         'map': map[flav]['map'][:,0:czbin_mid_idx],
         'ebins':map[flav]['ebins'],
@@ -254,13 +334,13 @@ def get_flipped_down_map(map, channel):
     len_czbin_edges = len(map['cscd']['czbins'])
     assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
     czbin_mid_idx = (len_czbin_edges-1)/2
-    if channel=='all':
+    if  channel=='all':
         flavs=['trck', 'cscd']
-    elif channel=='trck':
+    elif  channel=='trck':
         flavs=['trck']
-    elif channel=='cscd':
+    elif  channel=='cscd':
         flavs=['cscd']
-    elif channel == 'no_pid':
+    elif  channel == 'no_pid':
         return {'no_pid':{
             'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
             'ebins':map['trck']['ebins'],
@@ -270,7 +350,7 @@ def get_flipped_down_map(map, channel):
     return {flav:{
         'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
         'ebins':map[flav]['ebins'],
-        'czbins': np.sort(-map[flav]['czbins'][czbin_mid_idx:]) }
+        'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
             for flav in flavs}
 
 def get_flipped_map(map, channel):
