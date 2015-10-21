@@ -45,6 +45,9 @@ parser.add_argument('-o','--outfile',type=str,default='llh_data.json',metavar='J
                     help="Output filename.")
 parser.add_argument('-v', '--verbose', action='count', default=None,
                     help='set verbosity level')
+parser.add_argument('--check_octant',action='store_true',default=False,
+                    help="When theta23 LLH is multi-modal, check both octants for global minimum.")
+
 args = parser.parse_args()
 
 set_verbosity(args.verbose)
@@ -109,7 +112,8 @@ for itrial in xrange(1,args.ntrials+1):
 
         results[data_tag] = {}
         # 0) get a random seed and store with the data
-        results[data_tag]['seed'] = get_seed()
+        #results[data_tag]['seed'] = get_seed()
+        results[data_tag]['seed'] = 101
         logging.info("  RNG seed: %ld"%results[data_tag]['seed'])
         # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
@@ -120,7 +124,7 @@ for itrial in xrange(1,args.ntrials+1):
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
         rnd.seed(get_seed())
-        init_nutau_norm = rnd.uniform(-0.7,3)
+        init_nutau_norm = rnd.uniform(-1.5,2.5)
         #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
         for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False)]:
 
@@ -129,7 +133,8 @@ for itrial in xrange(1,args.ntrials+1):
             llh_data = find_max_llh_bfgs(fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
                                          hypo_nutau_norm,nutau_norm_fix),
                                          minimizer_settings,args.save_steps,
-                                         normal_hierarchy=hypo_normal)
+                                         normal_hierarchy=hypo_normal,
+                                         check_octant = args.check_octant)
             print "injected initial nutau_norm: ",init_nutau_norm
             profile.info("stop optimizer")
 
