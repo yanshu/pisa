@@ -15,9 +15,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down 
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_true_template
 from pisa.analysis.scan.Scan_nutau import find_max_grid
-from pisa.analysis.TemplateMaker import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values
 from pisa.utils.params_nutau import select_hierarchy_and_nutau_norm, change_nutau_norm_settings
 import random as rnd
@@ -113,14 +113,14 @@ for itrial in xrange(1, args.ntrials+1):
     results = {}
     data_normal = True
     hypo_normal = True
-    for data_tag, data_nutau_norm in [('data_notau',0.0)]:
-    #for data_tag, data_nutau_norm in [('data_tau',1.0)]:
+    #for data_tag, data_nutau_norm in [('data_notau',0.0)]:
+    for data_tag, data_nutau_norm in [('data_tau',1.0)]:
     #for data_tag, data_nutau_norm in [('data_tau',1.0),('data_notau',0.0)]:
 
         results[data_tag] = {}
         # 0) get a random seed and store with the data
         results[data_tag]['seed'] = get_seed()
-        #results[data_tag]['seed'] = 100
+        #results[data_tag]['seed'] = 1004
         logging.info("  RNG seed: %ld"%results[data_tag]['seed'])
         # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
         fiducial_param_values = get_values(
@@ -128,21 +128,23 @@ for itrial in xrange(1, args.ntrials+1):
                                             normal_hierarchy=data_normal,
                                             nutau_norm_value=data_nutau_norm)
         )
+
+        # Get pseudo data map
         fmap = get_pseudo_data_fmap(template_maker=pseudo_data_template_maker,
                                     fiducial_params=fiducial_param_values,
                                     channel=channel,
                                     seed=results[data_tag]['seed'])
-        #fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
-        #                get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-        #                           normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
-        #                            chan=channel)
+
+        # Get true template 
+        #fmap = get_true_template(fiducial_param_values,template_maker)
 
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
         rnd.seed(get_seed())
-        init_nutau_norm = rnd.uniform(-0.7,3)
+        #init_nutau_norm = rnd.uniform(-0.7,3)
         #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True)]:
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False)]:
+        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',1.0, True)]:
+        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',0.0, True)]:
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start scan")
             hypo_params = change_nutau_norm_settings(
@@ -154,7 +156,7 @@ for itrial in xrange(1, args.ntrials+1):
                                      params=hypo_params,
                                      grid_settings=grid_settings,
                                      save_steps=args.save_steps,
-                                    normal_hierarchy=hypo_normal)
+                                     normal_hierarchy=hypo_normal)
             profile.info("stop scan")
 
             # Store the LLH data
