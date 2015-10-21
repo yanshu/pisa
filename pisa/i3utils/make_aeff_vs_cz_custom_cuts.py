@@ -62,14 +62,14 @@ def SaveAeff(aeff,aeff_err,egy_bin_edges,flavor,out_dir):
     splinefit = splrep(ecen,aeff,w=1./np.array(aeff_err), k=3, s=100)
     fit_aeff = splev(ecen,splinefit)
 
-    outfile = os.path.join(out_dir,"a_eff_"+flavor+".dat")
+    outfile = os.path.join(out_dir,"a_eff_vs_cz_"+flavor+".dat")
     print "Saving spline fit to file: "+outfile
     fh = open(outfile,'w')
     for i,energy in enumerate(ecen):
         fh.write(str(energy)+' '+str(fit_aeff[i])+'\n')
     fh.close()
 
-    outfile_data = os.path.join(out_dir,"a_eff_"+flavor+"_data.dat")
+    outfile_data = os.path.join(out_dir,"a_eff_vs_cz_"+flavor+"_data.dat")
     print "Saving data to file: "+outfile_data
     fh = open(outfile_data,'w')
     for i,energy in enumerate(ecen):

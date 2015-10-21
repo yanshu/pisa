@@ -73,9 +73,9 @@ if args.logx: plt.xscale('log')
 plt.legend(loc='upper left',fontsize=10)
 print "Saving fig nu..."
 if args.all_cz:
-    fig_nu.savefig(args.geometry+'_aeff_nu_all_sky.png',dpi=170)
+    fig_nu.savefig(args.geometry+'_aeff_nu_vs_E_all_sky.png',dpi=170)
 else:
-    fig_nu.savefig(args.geometry+'_aeff_nu_only_up.png',dpi=170)
+    fig_nu.savefig(args.geometry+'_aeff_nu_vs_E_only_up.png',dpi=170)
 fig_nu.show()
 
 fig_nubar = plt.figure(figsize=(6,5),dpi=150)
@@ -97,9 +97,9 @@ if args.logx: plt.xscale('log')
 plt.legend(loc='upper left',fontsize=10)
 print "Saving fig nubar..."
 if args.all_cz:
-    fig_nubar.savefig(args.geometry+'_aeff_nubar_all_sky.png',dpi=170)
+    fig_nubar.savefig(args.geometry+'_aeff_nubar_vs_E_all_sky.png',dpi=170)
 else:
-    fig_nubar.savefig(args.geometry+'_aeff_nubar_only_up.png',dpi=170)
+    fig_nubar.savefig(args.geometry+'_aeff_nubar_vs_E_only_up.png',dpi=170)
 fig_nubar.show()
 
 

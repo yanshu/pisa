@@ -16,7 +16,7 @@ parser.add_argument('--all_cz',action='store_true',default=False,help='if use al
 parser.add_argument('--path_to_aeff',default=None,type=str,help="Path to aeff files if not located in standard place.")
 parser.add_argument('--czmax',default=1.0,type=float,help="max coszen to plot on x axis [GeV]")
 parser.add_argument('--czmin',default=-1.0,type=float,help="min coszen to plot on x axis [GeV]")
-parser.add_argument('--ymax',default=1.0e-2,type=float,help="Max on y axis.")
+parser.add_argument('--ymax',default=1.0e-1,type=float,help="Max on y axis.")
 parser.add_argument('--logx',action='store_true',help="log scale for x axis.")
 args = parser.parse_args()
 
@@ -25,32 +25,32 @@ path_to_aeff = os.getenv("FISHER")+'/resources/a_eff/'+args.geometry+'/'+args.cu
 
 
 def plotEffAreaGeom(path_to_aeff,i,flavor,error_bar):
-    dataFile = os.path.join(path_to_aeff,"a_eff_"+flavor+".dat")
+    dataFile = os.path.join(path_to_aeff,"a_eff_vs_cz_"+flavor+".dat")
     lineOpt = colorList[i]+'-'
 
     fh = open(dataFile,'r')
-    egyList = []; aeffList = []
+    czList = []; aeffList = []
     for line in fh.readlines():
         line = line.rstrip()
         line_split = line.split()
-        egyList.append(line_split[0])
+        czList.append(line_split[0])
         aeffList.append(line_split[1])
     fh.close()    
-    plt.plot(egyList,aeffList,lineOpt,label=flavor,lw=2)
+    plt.plot(czList,aeffList,lineOpt,label=flavor,lw=2)
     print "min aeffList = ", min(aeffList)
 
     if error_bar:
-        dataFile = os.path.join(path_to_aeff,"a_eff_"+flavor+"_data.dat")
+        dataFile = os.path.join(path_to_aeff,"a_eff_vs_cz_"+flavor+"_data.dat")
         fh = open(dataFile,'r')
-        egyList = []; aeffList = []; aeff_errList = []
+        czList = []; aeffList = []; aeff_errList = []
         for line in fh.readlines():
             line = line.rstrip()
             line_split = line.split()
-            egyList.append(float(line_split[0]))
+            czList.append(float(line_split[0]))
             aeffList.append(float(line_split[1]))
             aeff_errList.append(float(line_split[2]))
         fh.close()
-        plt.errorbar(egyList,aeffList,color=colorList[i],yerr=aeff_errList,fmt='.',lw=2)
+        plt.errorbar(czList,aeffList,color=colorList[i],yerr=aeff_errList,fmt='.',lw=2)
     return
 
 
@@ -68,16 +68,16 @@ else:
 plt.xlabel(r'cos(zen)')
 plt.ylabel(r'Eff. Area [$m^2$]')
 plt.xlim(args.czmin,args.czmax)
-#plt.ylim(3.0e-7,args.ymax)
+plt.ylim(1.0e-4,args.ymax)
 plt.grid()
 plt.yscale('log')
 if args.logx: plt.xscale('log')
-plt.legend(loc='upper left',fontsize=10)
+plt.legend(loc='lower left',fontsize=10)
 print "Saving fig nu..."
 if args.all_cz:
-    fig_nu.savefig(args.geometry+'_aeff_nu_all_sky.png',dpi=170)
+    fig_nu.savefig(args.geometry+'_aeff_nu_vs_CZ_all_sky.png',dpi=170)
 else:
-    fig_nu.savefig(args.geometry+'_aeff_nu_only_up.png',dpi=170)
+    fig_nu.savefig(args.geometry+'_aeff_nu_vs_CZ_only_up.png',dpi=170)
 fig_nu.show()
 
 fig_nubar = plt.figure(figsize=(6,5),dpi=150)
@@ -92,16 +92,16 @@ else:
 plt.xlabel(r'cos(zen)')
 plt.ylabel(r'Eff. Area [$m^2$]')
 plt.xlim(args.czmin,args.czmax)
-#plt.ylim(3.0e-7,args.ymax)
+plt.ylim(1.0e-4,args.ymax)
 plt.grid()
 plt.yscale('log')
 if args.logx: plt.xscale('log')
-plt.legend(loc='upper left',fontsize=10)
+plt.legend(loc='lower left',fontsize=10)
 print "Saving fig nubar..."
 if args.all_cz:
-    fig_nubar.savefig(args.geometry+'_aeff_nubar_all_sky.png',dpi=170)
+    fig_nubar.savefig(args.geometry+'_aeff_nubar_vs_CZ_all_sky.png',dpi=170)
 else:
-    fig_nubar.savefig(args.geometry+'_aeff_nubar_only_up.png',dpi=170)
+    fig_nubar.savefig(args.geometry+'_aeff_nubar_vs_CZ_only_up.png',dpi=170)
 fig_nubar.show()
 
 
