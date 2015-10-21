@@ -68,7 +68,6 @@ template_maker_down = TemplateMaker(get_values(down_template_settings['params'])
 template_maker_up = TemplateMaker(get_values(up_template_settings['params']), **up_template_settings['binning'])
 template_maker = [template_maker_up,template_maker_down]
 
-true_templates = []
 results = {}
 slopes = {}
 
@@ -109,7 +108,7 @@ for data_tag, data_nutau_norm in [('data_tau',1.0)]:
         DH_template_maker_up = TemplateMaker(get_values(DH_up_template_settings['params']), **DH_up_template_settings['binning'])
    
         tmap_up = DH_template_maker_up.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
-        tmap_down = DH_template_maker_down.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
+        tmap_down = DH_template_maker_down.get_template(get_values(change_nutau_norm_settings(DH_down_template_settings['params'], 1.0 ,True)))
 
         template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel= channel)
         template_up = get_up_map(template_up_down_combined, channel= channel)
