@@ -934,6 +934,14 @@ class RecoServiceVBWKDE(RecoServiceBase):
 
             # TODO: test and/or visualize the shifting & re-binning process
             for czbin_n in range(self.n_czbins):
+
+                if self.DOWNGOING_MAP and czbin_n in range(0,self.n_czbins/2):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+                        continue
+                if self.DOWNGOING_MAP == False and czbin_n in range(self.n_czbins/2, self.n_czbins):
+                        kernel4d[ebin_n, czbin_n] = np.zeros((self.n_ebins, self.n_czbins))
+                        continue
+
                 czbin_mid = self.czbin_centers[czbin_n]
 
                 # Re-center distribution at the center of the current cz bin
