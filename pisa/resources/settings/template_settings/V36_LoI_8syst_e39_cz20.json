@@ -231,9 +231,7 @@
     "deltam31_ih": {
       "fixed": false,
       "prior": {
-        "fiducial": -0.00237,
-        "kind": "gaussian",
-        "sigma": 5e-05
+        "kind": "uniform"
       },
       "range": [
         -0.0025,
@@ -245,9 +243,7 @@
     "deltam31_nh": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.00246,
-        "kind": "gaussian",
-        "sigma": 5e-05
+        "kind": "uniform"
       },
       "range": [
         0.0023,
