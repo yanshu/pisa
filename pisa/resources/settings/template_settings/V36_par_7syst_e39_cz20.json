@@ -72,11 +72,11 @@
       "fixed": true
     },
     "reco_mc_wt_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_nuebar_cc_G_numu_numubar_cc_G_nutau_nutaubar_cc_G_nuall_nuallbar_nc.hdf5",
       "fixed": true
     },
     "reco_vbwkde_evts_file": {
-      "value": "events/V36_weighted_aeff_joined_nu_nubar.hdf5",
+      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_nuebar_cc_G_numu_numubar_cc_G_nutau_nutaubar_cc_G_nuall_nuallbar_nc.hdf5",
       "fixed": true
     },
     "reco_vbwkde_make_plots": {
