@@ -1,0 +1,58 @@
+{
+  "pingu": {
+    "388": {
+      "geom": "v36",
+      "all_gen_events_file": null,
+      "azimuth_max": "2*pi",
+      "azimuth_min": 0,
+      "energy_max": 80,
+      "energy_min": 1,
+      "genie_physical_factor": 0.8095,
+      "genie_prescale_factor": 1.2,
+      "kinds": "nutau,nutaubar",
+      "nu_to_total_fract": 0.5,
+      "num_events_per_file": 250000,
+      "num_i3_files": 195,
+      "sim_spectral_index": 1,
+      "xsec": "genie_2.6.4",
+      "zenith_max": "pi",
+      "zenith_min": 0
+    },
+    "389": {
+      "geom": "v36",
+      "all_gen_events_file": null,
+      "azimuth_max": "2*pi",
+      "azimuth_min": 0,
+      "energy_max": 80,
+      "energy_min": 1,
+      "genie_physical_factor": 0.8095,
+      "genie_prescale_factor": 1.2,
+      "kinds": "numu,numubar",
+      "nu_to_total_fract": 0.5,
+      "num_events_per_file": 250000,
+      "num_i3_files": 192,
+      "sim_spectral_index": 1,
+      "xsec": "genie_2.6.4",
+      "zenith_max": "pi",
+      "zenith_min": 0
+    },
+    "390": {
+      "geom": "v36",
+      "all_gen_events_file": null,
+      "azimuth_max": "2*pi",
+      "azimuth_min": 0,
+      "energy_max": 80,
+      "energy_min": 1,
+      "genie_physical_factor": 0.8095,
+      "genie_prescale_factor": 1.2,
+      "kinds": "nue,nuebar",
+      "nu_to_total_fract": 0.5,
+      "num_events_per_file": 250000,
+      "num_i3_files": 188,
+      "sim_spectral_index": 1,
+      "xsec": "genie_2.6.4",
+      "zenith_max": "pi",
+      "zenith_min": 0
+    }
+  }
+}
