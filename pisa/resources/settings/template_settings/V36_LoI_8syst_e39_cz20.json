@@ -350,7 +350,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_nuebar_cc_G_numu_numubar_cc_G_nutau_nutaubar_cc_G_nuall_nuallbar_nc.hdf5"
+      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -362,7 +362,7 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_nuebar_cc_G_numu_numubar_cc_G_nutau_nutaubar_cc_G_nuall_nuallbar_nc.hdf5"
+      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "theta12": {
       "fixed": true,
