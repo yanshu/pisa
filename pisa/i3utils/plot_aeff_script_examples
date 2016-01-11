@@ -1,0 +1,18 @@
+
+Aeff vs Egy:
+
+/make_aeff_vs_egy_custom_cuts.py ~/Desktop/Matt_data/DOMEff_HoleIce/ DC12 -o ~/pisa_analysis/Aeff_Study/aeff_vs_egy/ --ne 2700 --nmu 4000 --ntau 1400 --all_cz --mcnu="PrimaryNu" --ebins="np.linspace(5.0,80.0,20)" -vv --custom
+python plot_aeff_vs_egy_final.py DC12 --path_to_aeff /Users/feifeihuang/pisa_analysis/Aeff_Study/aeff_vs_egy/all_sky/ --emax 80 --all_cz --cuts_name='MattL6'
+
+./make_aeff_vs_egy_custom_cuts.py ~/Desktop/Matt_data/DOMEff_HoleIce/ DC12 -o ~/pisa_analysis/Aeff_Study/no_cut/aeff_vs_egy/all_sky/ --ne 2700 --nmu 4000 --ntau 1400 --all_cz --mcnu="PrimaryNu" --ebins="np.linspace(5.0,80.0,20)" -vv --nocuts
+python plot_aeff_vs_egy_final.py DC12 --path_to_aeff /Users/feifeihuang/pisa_analysis/Aeff_Study/no_cut/aeff_vs_egy/all_sky/ --emax 80 --all_cz --cuts_name='NoCuts' --ymax 0.001
+
+Aeff vs CZ:
+
+
+./make_aeff_vs_cz_custom_cuts.py ~/Desktop/Matt_data/DOMEff_HoleIce/ DC12 -o ~/pisa_analysis/Aeff_Study/aeff_vs_cz/all_sky/ --ne 2700 --nmu 4000 --ntau 1400 --mcnu="PrimaryNu" --czbins="np.linspace(-1,1,41)" -vv --custom --all_cz
+python plot_aeff_vs_cz_final.py DC12 --path_to_aeff /Users/feifeihuang/pisa_analysis/Aeff_Study/aeff_vs_cz/all_sky/ --all_cz --cuts_name='MattL6'
+
+
+./make_aeff_vs_cz_custom_cuts.py ~/Desktop/Matt_data/DOMEff_HoleIce/ DC12 -o ~/pisa_analysis/Aeff_Study/no_cut/aeff_vs_cz/all_sky/ --ne 2700 --nmu 4000 --ntau 1400 --mcnu="PrimaryNu" --czbins="np.linspace(-1,1,41)" -vv --nocuts --all_cz
+python plot_aeff_vs_cz_final.py DC12 --path_to_aeff /Users/feifeihuang/pisa_analysis/Aeff_Study/no_cut/aeff_vs_cz/all_sky/ --all_cz --cuts_name='NoCuts" 
