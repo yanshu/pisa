@@ -8,7 +8,7 @@
 #
 # date:   2014-01-27
 
-from utils import is_linear, is_logarithmic
+from utils import is_linear, is_logarithmic, get_bin_centers
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -89,7 +89,14 @@ def show_map(pmap, title=None, cbar = True,
 
     #Use pcolormesh to be able to show nonlinear spaces
     x,y = np.meshgrid(pmap['czbins'],pmap['ebins'])
-    plt.pcolormesh(x,y,cmap,vmin=vmin, vmax=vmax, **kwargs)
+    colormesh = plt.pcolormesh(x,y,cmap,vmin=vmin, vmax=vmax, **kwargs)
+    counts = colormesh.get_array()
+
+    cz_bin_centers = get_bin_centers(pmap['czbins'])
+    e_bin_centers = get_bin_centers(pmap['ebins'])
+    for i in range(0,len(e_bin_centers)):
+        for j in range(0,len(cz_bin_centers)):
+            plt.annotate('%.1f'%(counts[i*len(cz_bin_centers)+j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=5)
 
     #Add nice labels
     #if xlabel == None:
