@@ -73,6 +73,9 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
+        # if we want to recreate the same template, then use the input seed for both
+        #fmap_up = get_random_map(true_fmap_up, seed=seed)
+        #fmap_down = get_random_map(true_fmap_down, seed=seed)
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -177,7 +180,7 @@ def apply_reco_precisions(template, params):
         template_down = template[1]
         assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
         assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.8_2.0_data_tau.json')
+        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -202,7 +205,7 @@ def apply_reco_precisions(template, params):
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
         assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.8_2.0_data_tau.json')
+        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
@@ -284,6 +287,7 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
+        # add domeff and/or hole ice effects
         [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
         [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
@@ -291,6 +295,9 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
 
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
+        # if we want to recreate the same template, then use the input seed for both
+        #fmap_up = get_random_map(true_fmap_up, seed=seed)
+        #fmap_down = get_random_map(true_fmap_down, seed=seed)
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:

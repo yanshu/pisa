@@ -43,6 +43,9 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
+        # if we want to recreate the same template, then use the input seed for both
+        #fmap_up = get_random_map(true_fmap_up, seed=seed)
+        #fmap_down = get_random_map(true_fmap_down, seed=seed)
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -109,6 +112,9 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         true_fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
         fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
         fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
+        # if we want to recreate the same template, then use the input seed for both
+        #fmap_up = get_random_map(true_fmap_up, seed=seed)
+        #fmap_down = get_random_map(true_fmap_down, seed=seed)
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
