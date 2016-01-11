@@ -1,6 +1,11 @@
 #
 # Creates the pdfs of the reconstructed energy and coszen from the
 # true parameters. Provides reco event rate maps using these pdfs.
+# It has four reco precision parameters. Replace RecoServiceMC.py
+# with this script ONLY when we need to produce different templates
+# at different reco precision values ( and in order to get the cubic
+# fit coefficients), otherwise RecoServiceMC.py should not have 
+# reco precision parameters.
 #
 # author: Timothy C. Arlen
 #         tca3@psu.edu
