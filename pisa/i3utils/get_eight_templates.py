@@ -20,7 +20,7 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed, flatten_map
-from pisa.analysis.stats.Maps_nutau_noDOMIce import get_pseudo_data_fmap, get_true_template
+from pisa.analysis.stats.Maps_nutau_noRecoPrecisions_noDOMIce import get_pseudo_data_fmap, get_true_template
 from pisa.analysis.stats.Maps_nutau import get_flipped_map, get_combined_map, get_up_map, get_flipped_down_map
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError

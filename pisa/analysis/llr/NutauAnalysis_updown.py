@@ -131,7 +131,7 @@ for itrial in xrange(1,args.ntrials+1):
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             profile.info("start optimizer")
             llh_data = find_max_llh_bfgs(fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
-                                         hypo_nutau_norm,nutau_norm_fix),
+                                         hypo_nutau_norm,nutau_norm_fix,hypo_normal),
                                          minimizer_settings,args.save_steps,
                                          normal_hierarchy=hypo_normal,
                                          check_octant = args.check_octant)
