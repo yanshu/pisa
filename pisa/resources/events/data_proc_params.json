@@ -24,14 +24,14 @@
         "cuts_step_1": "NewestBgRejCutsStep1/value",
         "cuts_step_2": "NewestBgRejCutsStep2/value"
       },
-	  "nu_code_to_pdg_map": {
+      "nu_code_to_pdg_map": {
         "66": 12,
-		"67": -12,
-		"68": 14,
-		"69": -14,
-		"133": 16,
-		"134": -16
-	  },
+        "67": -12,
+        "68": 14,
+        "69": -14,
+        "133": 16,
+        "134": -16
+      },
       "cuts": {
         "bgrej": {
           "fields": [
@@ -109,6 +109,7 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid": "PINGU_PID_Score/PID_Train_V36_baseline_HE_CutsV4_BDTG.weights.xml",
         "cuts_step_1": "Cuts_V5_Step1/value",
         "cuts_step_2": "Cuts_V5_Step2/value"
       },
@@ -125,6 +126,20 @@
             "cuts_step_2"
           ],
           "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 0.15"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 0.15"
         }
       }
     }
