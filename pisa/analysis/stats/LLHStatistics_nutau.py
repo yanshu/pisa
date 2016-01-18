@@ -104,7 +104,7 @@ def get_binwise_llh(pseudo_data, template, template_params):
             totalLLH += np.sum(np.log(poisson.pmf(d_zero,t_zero)))
 
     else:
-        totalLLH = np.sum(LLHSTAT.generalized_ln_poisson(pseudo_data, template))
-        #totalLLH = np.sum( pseudo_data * np.log(template)- gammaln(pseudo_data+1) - template)
+        #totalLLH = np.sum(LLHSTAT.generalized_ln_poisson(pseudo_data, template))
+        totalLLH = np.sum( pseudo_data * np.log(template)- gammaln(pseudo_data+1) - template)     # avoid LLH = inf 
 
     return totalLLH
