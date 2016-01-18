@@ -15,6 +15,9 @@ from pisa.utils.log import logging
 from pisa.utils.jsons import from_json,to_json
 import pisa.analysis.stats.Maps as Maps
 
+# local PISA path
+path = '/Users/peller/PSU'
+#path =  '/Users/feifeihuang'
 
 def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
     if fiducial_params['residual_up_down'] or fiducial_params['simp_up_down'] or fiducial_params['ratio_up_down']:
@@ -114,7 +117,7 @@ def apply_domeff_holeice(template, params):
         for flav in flavs:
             assert(np.all(template_up[flav]['czbins']) <= 0)
             assert(np.all(template_down[flav]['czbins']) >= 0)
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
+        slope = from_json('%s/pisa/pisa/analysis/llr/DH_slopes_up_down.json'%path)
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -136,7 +139,7 @@ def apply_domeff_holeice(template, params):
     elif isinstance(template,dict):
         if flavs == ['trck', 'cscd']:
             assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
+        slope = from_json('%s/pisa/pisa/analysis/llr/DH_slopes_up_down.json'%path)
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
@@ -183,7 +186,7 @@ def apply_reco_precisions(template, params):
         for flav in flavs:
             assert(np.all(template_up[flav]['czbins']) <= 0)
             assert(np.all(template_down[flav]['czbins']) >= 0)
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
+        cubic_coeff = from_json('%s/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json'%path)
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -209,7 +212,7 @@ def apply_reco_precisions(template, params):
     elif isinstance(template,dict):
         if flavs == ['trck', 'cscd']:
             assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
+        cubic_coeff = from_json('%s/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json'%path)
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
