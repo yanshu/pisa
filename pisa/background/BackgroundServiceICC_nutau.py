@@ -54,27 +54,27 @@ class BackgroundServiceICC:
         reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
 
         # throw away delta LLH < -3:
-        reco_energy_all = reco_energy_all[dLLH>=-3]
-        reco_coszen_all = reco_coszen_all[dLLH>=-3]
-        dLLH = dLLH[dLLH>=-3]
+        reco_energy_all_cut1 = reco_energy_all[dLLH>=-3]
+        reco_coszen_all_cut1 = reco_coszen_all[dLLH>=-3]
+        dLLH_cut1 = dLLH[dLLH>=-3]
 
         if self.map_direction == 'up':
-            reco_coszen_all = reco_coszen_all[reco_coszen_all<=0.0]
-            reco_energy_all = reco_energy_all[reco_coszen_all<=0.0]
-            dLLH = dLLH[reco_coszen_all<=0.0]
+            reco_coszen_all_cut2 = reco_coszen_all_cut1[reco_coszen_all_cut1<=0.0]
+            reco_energy_all_cut2 = reco_energy_all_cut1[reco_coszen_all_cut1<=0.0]
+            dLLH_cut2 = dLLH_cut1[reco_coszen_all_cut1<=0.0]
         if self.map_direction == 'down':
-            reco_coszen_all = reco_coszen_all[reco_coszen_all>0.0]
-            reco_energy_all = reco_energy_all[reco_coszen_all>0.0]
-            dLLH = dLLH[reco_coszen_all>0.0]
+            reco_coszen_all_cut2 = reco_coszen_all_cut1[reco_coszen_all_cut1>0.0]
+            reco_energy_all_cut2 = reco_energy_all_cut1[reco_coszen_all_cut1>0.0]
+            dLLH_cut2 = dLLH_cut1[reco_coszen_all_cut1>0.0]
 
         # write to dictionary
         for flavor in ['cscd','trck']:
             if flavor == 'cscd':
-                cut = dLLH < 3.0 
+                cut = dLLH_cut2 < 3.0 
             if flavor == 'trck':
-                cut = dLLH >= 3.0 
-            reco_energy = reco_energy_all[cut]*energy_scale
-            reco_coszen = reco_coszen_all[cut]
+                cut = dLLH_cut2 >= 3.0 
+            reco_energy = reco_energy_all_cut2[cut]*energy_scale
+            reco_coszen = reco_coszen_all_cut2[cut]
 
             flavor_dict = {}
             logging.debug("Working on %s background"%flavor)
