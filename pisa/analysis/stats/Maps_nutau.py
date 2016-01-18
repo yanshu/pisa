@@ -16,7 +16,6 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-
 def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
     if fiducial_params['residual_up_down'] or fiducial_params['simp_up_down'] or fiducial_params['ratio_up_down']:
         template_maker_up = template_maker[0]
@@ -68,7 +67,6 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
         # add domeff and/or hole ice effects
-        print "fiducial_params = ", fiducial_params
         [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
         [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
