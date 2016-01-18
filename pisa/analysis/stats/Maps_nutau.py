@@ -13,6 +13,7 @@ import numpy as np
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 from pisa.utils.jsons import from_json,to_json
+from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
 
@@ -67,6 +68,7 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
         # add domeff and/or hole ice effects
+        print "fiducial_params = ", fiducial_params
         [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
         [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
@@ -96,6 +98,7 @@ def apply_domeff_holeice(template, params):
     channel=params['channel']
     dom_eff_val = params['dom_eff']
     hole_ice_val = params['hole_ice']
+    slope = from_json(find_resource(params['domeff_holeice_slope_file']))
     if channel=='all':
         flavs=['trck', 'cscd']
     elif channel=='trck':
@@ -114,7 +117,6 @@ def apply_domeff_holeice(template, params):
         for flav in flavs:
             assert(np.all(template_up[flav]['czbins']) <= 0)
             assert(np.all(template_down[flav]['czbins']) >= 0)
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -136,7 +138,6 @@ def apply_domeff_holeice(template, params):
     elif isinstance(template,dict):
         if flavs == ['trck', 'cscd']:
             assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
@@ -163,6 +164,7 @@ def apply_reco_precisions(template, params):
     e_precision_down_val = params['e_reco_precision_down']
     cz_precision_up_val = params['cz_reco_precision_up']
     cz_precision_down_val = params['cz_reco_precision_down']
+    cubic_coeff = from_json(find_resource(params['reco_prcs_coeff_file']))
     if e_precision_up_val == 1.0 and e_precision_down_val == 1.0 and cz_precision_up_val == 1.0 and cz_precision_down_val == 1.0:
         return template
     if channel=='all':
@@ -183,7 +185,6 @@ def apply_reco_precisions(template, params):
         for flav in flavs:
             assert(np.all(template_up[flav]['czbins']) <= 0)
             assert(np.all(template_down[flav]['czbins']) >= 0)
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -209,7 +210,6 @@ def apply_reco_precisions(template, params):
     elif isinstance(template,dict):
         if flavs == ['trck', 'cscd']:
             assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
