@@ -111,8 +111,9 @@ def apply_domeff_holeice(template, params):
     if isinstance(template,list) and len(template)==2:
         template_up = template[0]
         template_down = template[1]
-        assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
-        assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
+        for flav in flavs:
+            assert(np.all(template_up[flav]['czbins']) <= 0)
+            assert(np.all(template_down[flav]['czbins']) >= 0)
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         output_map_up = {}
         output_map_down = {}
@@ -133,7 +134,8 @@ def apply_domeff_holeice(template, params):
                                     'czbins': template_down[flav]['czbins'] }
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
-        assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
+        if flavs == ['trck', 'cscd']:
+            assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
         slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
@@ -178,8 +180,9 @@ def apply_reco_precisions(template, params):
     if isinstance(template,list) and len(template)==2:
         template_up = template[0]
         template_down = template[1]
-        assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
-        assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
+        for flav in flavs:
+            assert(np.all(template_up[flav]['czbins']) <= 0)
+            assert(np.all(template_down[flav]['czbins']) >= 0)
         cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         output_map_up = {}
         output_map_down = {}
@@ -204,7 +207,8 @@ def apply_reco_precisions(template, params):
                                               'czbins': template_down[flav]['czbins'] }
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
-        assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
+        if flavs == ['trck', 'cscd']:
+            assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
         cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
@@ -357,7 +361,7 @@ def get_flipped_down_map(map, channel):
     return {flav:{
         'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
         'ebins':map[flav]['ebins'],
-        'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
+        'czbins': np.sort(-map[flav]['czbins'][czbin_mid_idx:]) }
             for flav in flavs}
 
 def get_flipped_map(map, channel):
