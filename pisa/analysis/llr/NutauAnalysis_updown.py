@@ -116,8 +116,7 @@ for itrial in xrange(1,args.ntrials+1):
 
         results[data_tag] = {}
         # 0) get a random seed and store with the data
-        #results[data_tag]['seed'] = get_seed()
-        results[data_tag]['seed'] = 101
+        results[data_tag]['seed'] = get_seed()
         logging.info("  RNG seed: %ld"%results[data_tag]['seed'])
         # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
