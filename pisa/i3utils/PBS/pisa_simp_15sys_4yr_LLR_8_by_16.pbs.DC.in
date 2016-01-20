@@ -1,0 +1,33 @@
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=3gb
+#PBS -l walltime=20:00:00
+#PBS -q dfc13-reco
+#PBS -j oe
+#PBS -o @@LOG_FILE@@_Run@@RUN@@.log
+#PBS -N @@JOB_NAME@@_@@RUN@@
+#PBS -m n
+
+echo "Job ${PBS_JOBNAME} running on ${HOSTNAME}"
+
+export PROJECT=@@PROJECT@@
+
+# Workaround go avoid globbing...
+#export PATH="/gpfs/home/fxh140/local/anaconda/bin:$PATH"
+export LD_LIBRARY_PATH=@@LD_LIBRARY_PATH@@
+export DYLD_LIBRARY_PATH=@@DYLD_LIBRARY_PATH@@
+export PYTHONPATH=@@PYTHONPATH@@
+export SRC_SCRIPT_DIR=@@SRC_SCRIPT_DIR@@
+export I3_SHELL=python
+
+set noglob
+
+cd @@SRC_SCRIPT_DIR@@
+
+./NutauAnalysis_updown_LLR.py -t ~/work/pisa/pisa/resources/settings/template_settings/DC12_mc_15syst_4yr_LLR_e8_cz16_simp_nufit_prior.json -m ~/work/pisa/pisa/resources/settings/minimizer_settings/bfgs_settings_fac1e9_eps1e-4_mi100.json -o @@OUTPUT_DIR@@/llh_data_@@RUN@@.json --check_octant -n 4
+st=$?
+
+[ ${st} != 0 ] && exit ${st}
+
+echo "Job ${PBS_JOBNAME} completed on ${HOSTNAME}"
+
+# vim: syntax=sh
