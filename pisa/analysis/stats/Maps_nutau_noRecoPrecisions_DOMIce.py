@@ -13,6 +13,7 @@ import numpy as np
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 from pisa.utils.jsons import from_json,to_json
+from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
 
@@ -92,6 +93,7 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
 def apply_domeff_holeice(template, params):
     # Apply DOMeff and HoleIce changes to template 
     channel=params['channel']
+    slope = from_json(find_resource(params['domeff_holeice_slope_file']))
     if channel=='all':
         flavs=['trck', 'cscd']
     elif channel=='trck':
@@ -111,7 +113,6 @@ def apply_domeff_holeice(template, params):
         assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
         dom_eff_val = params['dom_eff']
         hole_ice_val = params['hole_ice']
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -134,7 +135,6 @@ def apply_domeff_holeice(template, params):
         dom_eff_val = params['dom_eff']
         hole_ice_val = params['hole_ice']
         assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        slope = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/DH_slopes_up_down.json')
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:

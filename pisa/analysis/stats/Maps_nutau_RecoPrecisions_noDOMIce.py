@@ -13,6 +13,7 @@ import numpy as np
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 from pisa.utils.jsons import from_json,to_json
+from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
 
@@ -96,6 +97,7 @@ def apply_reco_precisions(template, params):
     e_precision_down_val = params['e_reco_precision_down']
     cz_precision_up_val = params['cz_reco_precision_up']
     cz_precision_down_val = params['cz_reco_precision_down']
+    cubic_coeff = from_json(find_resource(params['reco_prcs_coeff_file']))
     if e_precision_up_val == 1.0 and e_precision_down_val == 1.0 and cz_precision_up_val == 1.0 and cz_precision_down_val == 1.0:
         return template
     if channel=='all':
@@ -113,9 +115,9 @@ def apply_reco_precisions(template, params):
     if isinstance(template,list) and len(template)==2:
         template_up = template[0]
         template_down = template[1]
-        assert(np.all(template_up['cscd']['czbins']) <= 0 and np.all(template_up['trck']['czbins']) <= 0)
-        assert(np.all(template_down['cscd']['czbins']) >= 0 and np.all(template_down['trck']['czbins']) >= 0)
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
+        for flav in flavs:
+            assert(np.all(template_up[flav]['czbins']) <= 0)
+            assert(np.all(template_down[flav]['czbins']) >= 0)
         output_map_up = {}
         output_map_down = {}
         for flav in flavs:
@@ -139,8 +141,8 @@ def apply_reco_precisions(template, params):
                                               'czbins': template_down[flav]['czbins'] }
         return [output_map_up,output_map_down]
     elif isinstance(template,dict):
-        assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
-        cubic_coeff = from_json('/Users/feifeihuang/pisa/pisa/analysis/llr/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau.json')
+        if flavs == ['trck', 'cscd']:
+            assert(np.all(template['cscd']['czbins'] == template['trck']['czbins']))
         if np.all(template['cscd']['czbins']) <= 0:
             direction = 'up'
         elif np.all(template['cscd']['czbins']) >= 0:
@@ -271,13 +273,13 @@ def get_flipped_down_map(map, channel):
     len_czbin_edges = len(map['cscd']['czbins'])
     assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
     czbin_mid_idx = (len_czbin_edges-1)/2
-    if  channel=='all':
+    if channel=='all':
         flavs=['trck', 'cscd']
-    elif  channel=='trck':
+    elif channel=='trck':
         flavs=['trck']
-    elif  channel=='cscd':
+    elif channel=='cscd':
         flavs=['cscd']
-    elif  channel == 'no_pid':
+    elif channel == 'no_pid':
         return {'no_pid':{
             'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
             'ebins':map['trck']['ebins'],
@@ -287,7 +289,7 @@ def get_flipped_down_map(map, channel):
     return {flav:{
         'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
         'ebins':map[flav]['ebins'],
-        'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }
+        'czbins': np.sort(-map[flav]['czbins'][czbin_mid_idx:]) }
             for flav in flavs}
 
 def get_flipped_map(map, channel):

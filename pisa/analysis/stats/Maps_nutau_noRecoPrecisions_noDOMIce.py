@@ -13,7 +13,6 @@ import numpy as np
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 import pisa.analysis.stats.Maps as Maps
-from pisa.analysis.stats.Maps_nutau import get_up_map, get_combined_map, get_flipped_down_map
 
 def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
     """
@@ -126,3 +125,97 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         true_fmap = Maps.flatten_map(true_template, channel=channel)
         fmap = get_random_map(true_fmap, seed=seed)
     return fmap
+
+def get_up_map(map, channel):
+    ''' Gets the upgoing map from a full sky map.'''
+    if channel =='all':
+        flavs=['trck', 'cscd']
+    elif channel =='trck':
+        flavs=['trck']
+    elif channel =='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': map['trck']['map'][:,0:czbin_mid_idx]+map['cscd']['map'][:,0:czbin_mid_idx],
+            'ebins':map['trck']['ebins'],
+            'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
+    else:
+        raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
+    return {flav:{
+        'map': map[flav]['map'][:,0:czbin_mid_idx],
+        'ebins':map[flav]['ebins'],
+        'czbins': map[flav]['czbins'][0:czbin_mid_idx+1] }
+            for flav in flavs}
+
+def get_flipped_down_map(map, channel):
+    ''' Gets the downgoing map from a full sky map and flip it around cz = 0.'''
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
+            'ebins':map['trck']['ebins'],
+            'czbins': np.sort(-map['trck']['czbins'][czbin_mid_idx:]) }}
+    else:
+        raise ValueError(" channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    return {flav:{
+        'map': np.fliplr(map[flav]['map'][:,czbin_mid_idx:]),
+        'ebins':map[flav]['ebins'],
+        'czbins': np.sort(-map[flav]['czbins'][czbin_mid_idx:]) }
+            for flav in flavs}
+
+def get_flipped_map(map, channel):
+    ''' Flip the down-going map around cz = 0'''
+    if not np.alltrue(map['cscd']['czbins']>=0):
+        raise ValueError("This map has to be down-going!")
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': np.fliplr(map['trck']['map']+map['cscd']['map']),
+            'ebins':map['trck']['ebins'],
+            'czbins': np.sort(-map['cscd']['czbins']) }}
+    else:
+        raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    return {flav:{
+        'map': np.fliplr(map[flav]['map']),
+        'ebins':map[flav]['ebins'],
+        'czbins': np.sort(-map[flav]['czbins']) }
+            for flav in flavs}
+
+def get_combined_map(amap, bmap, channel):
+    ''' Sum the up-going and the down-going map.'''
+    if not (np.all(amap['cscd']['czbins'] == bmap['cscd']['czbins']) and np.all(amap['trck']['czbins'] == bmap['trck']['czbins'])):
+        raise ValueError("These two maps should have the same cz binning!")
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': amap['trck']['map']+ amap['cscd']['map']+ bmap['trck']['map']+bmap['cscd']['map'],
+            'ebins':amap['trck']['ebins'],
+            'czbins': amap['cscd']['czbins'] }}
+    else:
+        raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    return {flav:{
+        'map': amap[flav]['map'] + bmap[flav]['map'],
+        'ebins':amap[flav]['ebins'],
+        'czbins': amap[flav]['czbins'] }
+            for flav in flavs}
