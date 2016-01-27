@@ -21,8 +21,7 @@ from copy import deepcopy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy, find_alt_hierarchy_fit
-from pisa.analysis.stats.LLHStatistics import get_random_map
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed, get_asimov_fmap
+from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed, get_random_map
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.log import logging, tprofile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
@@ -53,10 +52,7 @@ def getAsimovData(template_maker, params, data_normal):
 
     fiducial_param_vals = get_values(select_hierarchy(
         params, normal_hierarchy=data_normal))
-    return get_asimov_fmap(
-        template_maker=template_maker,
-        fiducial_params=fiducial_param_vals,
-        channel=fiducial_param_vals['channel'])
+    return template_maker.get_template(fiducial_param_vals)
 
 
 def getAltHierarchyBestFit(asimov_data, template_maker, params, minimizer_settings,
@@ -76,16 +72,17 @@ def getAltHierarchyBestFit(asimov_data, template_maker, params, minimizer_settin
         to the minimization of the LLH.
     """
 
-    llh_data = find_alt_hierarchy_fit(
+    llh_data, opt_flags = find_alt_hierarchy_fit(
         asimov_data, template_maker, params, hypo_normal,
         minimizer_settings, only_atm_params=True, check_octant=check_octant)
 
     alt_params = get_values(select_hierarchy(params, normal_hierarchy=hypo_normal))
+
     for key in llh_data.keys():
         if key == 'llh': continue
         alt_params[key] = llh_data[key][-1]
 
-    return alt_params, llh_data
+    return alt_params, llh_data, opt_flags
 
 
 def get_llh_hypothesis(
@@ -121,21 +118,23 @@ def get_llh_hypothesis(
         results['seed'] = get_seed()
         logging.info("  RNG seed: %ld"%results['seed'])
         # Get random map generated from asimov data (or from data_tag).
-        fmap = get_random_map(asimov_data, seed=results['seed'])
+        pd_map = get_random_map(asimov_data, seed=results['seed'])
 
-        for hypo_tag, hypo_normal in [('hypo_NMH',True),('hypo_IMH',False)]:
+        for hypo_tag, hypo_normal in [('hypo_NMH', True), ('hypo_IMH', False)]:
 
             physics.info(
-                "Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
+                "Finding best fit for %s under %s"%(data_tag, hypo_tag))
             with Timer() as t:
-                llh_data = find_opt_scipy(
-                    fmap, template_maker, template_params,
+                llh_data, opt_flags = find_opt_scipy(
+                    pd_map, template_maker, template_params,
                     minimizer_settings, save_steps,
                     normal_hierarchy=hypo_normal, check_octant=check_octant)
             tprofile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
-            # Store the LLH data
-            results[hypo_tag] = llh_data
+	    # Store the LLH data
+	    results[hypo_tag] = {}
+	    results[hypo_tag]['opt_data'] = llh_data
+	    results[hypo_tag]['opt_flags'] = opt_flags
 
         trials += [results]
         tprofile.info("stop trial %d"%itrial)
@@ -208,8 +207,8 @@ for data_tag, data_normal in [('true_NMH',True),('true_IMH',False)]:
     true_h_fiducial = {}
 
     # Get Asimov data set for assuming true: data_tag
-    asimov_data = getAsimovData(
-        template_maker, template_settings['params'], data_normal)
+    asimov_data = getAsimovData(template_maker, template_settings['params'],
+				data_normal)
 
     trials = get_llh_hypothesis(
         data_tag, asimov_data, args.ntrials, template_maker,
@@ -225,28 +224,26 @@ for data_tag, data_normal in [('true_NMH',True),('true_IMH',False)]:
     # hierarchy fiducial model.
 
     if not args.no_alt_fit:
-        logging.info("Running false hierarchy best fit...")
-        output[data_tag]["false_h_best_fit"] = {}
+	logging.info("Running false hierarchy best fit...")
+	output[data_tag]["false_h_best_fit"] = {}
 
-        false_h_params = fix_non_atm_params(template_settings['params'])
-        false_h_settings, llh_data = getAltHierarchyBestFit(
+	false_h_params = fix_non_atm_params(template_settings['params'])
+	false_h_settings, llh_data, alt_h_opt_flags = getAltHierarchyBestFit(
             asimov_data, template_maker, false_h_params, minimizer_settings,
             (not data_normal), check_octant)
 
-        asimov_data_null = get_asimov_fmap(
-            template_maker=template_maker,
-            fiducial_params=false_h_settings,
-            channel=false_h_settings['channel'])
+	asimov_data_null = template_maker.get_template(false_h_settings)
         
-        # Store all data tag related inputs:
-        output[data_tag]['false_h_best_fit']['false_h_settings'] = false_h_settings
-        output[data_tag]['false_h_best_fit']['llh_null'] = llh_data
+	# Store all data tag related inputs:
+	output[data_tag]['false_h_best_fit']['false_h_settings'] = false_h_settings
+	output[data_tag]['false_h_best_fit']['llh_null'] = llh_data
+	output[data_tag]['false_h_best_fit']['opt_flags'] = alt_h_opt_flags
 
-        trials = get_llh_hypothesis(
+	trials = get_llh_hypothesis(
             data_tag, asimov_data_null, args.ntrials, template_maker,
             template_settings["params"], minimizer_settings,
             args.save_steps, check_octant)
 
-        output[data_tag]['false_h_best_fit']['trials'] = trials
+	output[data_tag]['false_h_best_fit']['trials'] = trials
 
 to_json(output,args.outfile)

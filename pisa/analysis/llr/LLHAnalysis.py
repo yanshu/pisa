@@ -48,7 +48,7 @@ def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_norm
     hypo_params = select_hierarchy(hypo_params, normal_hierarchy=hypo_normal)
 
     with Timer() as t:
-        llh_data = find_opt_scipy(
+        llh_data, opt_flags = find_opt_scipy(
             fmap=asimov_data_set,
             template_maker=template_maker,
             params=hypo_params,
@@ -57,7 +57,7 @@ def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_norm
             check_octant=check_octant)
     tprofile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
-    return llh_data
+    return llh_data, opt_flags
 
 def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
                                minim_settings):

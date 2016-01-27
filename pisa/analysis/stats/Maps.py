@@ -99,6 +99,7 @@ def get_random_map(template, seed=None):
     """
     # Set the seed if given
     if not seed is None:
-        np.random.seed(seed=seed)
+	np.random.seed(seed=seed)
 
-    return poisson.rvs(template)
+    return { chan: {'map': poisson.rvs(tmplt['map'])}
+	for (chan, tmplt) in template.items() if chan in get_all_channel_names() }
