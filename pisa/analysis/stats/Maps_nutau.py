@@ -343,13 +343,13 @@ def get_flipped_down_map(map, channel):
     len_czbin_edges = len(map['cscd']['czbins'])
     assert(len_czbin_edges %2 == 1)    # length of cz_bin_edges has to be odd
     czbin_mid_idx = (len_czbin_edges-1)/2
-    if  channel=='all':
+    if channel=='all':
         flavs=['trck', 'cscd']
-    elif  channel=='trck':
+    elif channel=='trck':
         flavs=['trck']
-    elif  channel=='cscd':
+    elif channel=='cscd':
         flavs=['cscd']
-    elif  channel == 'no_pid':
+    elif channel == 'no_pid':
         return {'no_pid':{
             'map': np.fliplr(map['trck']['map'][:,czbin_mid_idx:]+map['cscd']['map'][:,czbin_mid_idx:]),
             'ebins':map['trck']['ebins'],
