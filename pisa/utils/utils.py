@@ -778,5 +778,25 @@ def hash_file(fname):
     return md5.hexdigest()
 
 
+def get_all_channel_names():
+    """Return all allowed channel keywords."""
+    return ['all', 'cscd', 'trck', 'no_pid']
+
+
+def get_channels(channel_name):
+    """Return list of analysis channel(s) for a specific channel name."""
+    if not isinstance(channel_name, basestring):
+        raise TypeError('Wrong type: %s. String required!'%type(channel_name))
+    channel_name = channel_name.lower()
+    allowed_channel_names = get_all_channel_names()
+    if not channel_name in allowed_channel_names:
+        raise ValueError(
+            "channel name: '%s' not implemented! Allowed: %s"
+            %(channel_name, allowed_channel_names))
+    if channel_name == 'all':
+      return ['cscd', 'trck']
+    return [channel_name]
+
+
 if __name__ == "__main__":
     test_recursiveEquality()
