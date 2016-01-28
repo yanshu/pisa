@@ -45,6 +45,7 @@ logging.config.dictConfig(logconfig)
 #In case they haven't been defined, this will just inherit from the root logger
 physics = logging.getLogger('physics')
 tprofile = logging.getLogger('profile')
+profile = logging.getLogger('profile')
 
 
 def set_verbosity(verbosity):

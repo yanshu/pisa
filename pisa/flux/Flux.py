@@ -28,7 +28,6 @@ from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import get_bin_centers
 
-<<<<<<< HEAD
 def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
     '''
     Applies the nu_nubar_ratio systematic to the event rate
@@ -52,8 +51,6 @@ def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
              flux_maps[flavour+'_bar']['map'] = scaled_nubar_rates
 
     return flux_maps
-=======
->>>>>>> 88ad6f6ec69110bf7d7ae4d2e89a8fd09f4eecb4
 
 def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     """
