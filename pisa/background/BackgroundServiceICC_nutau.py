@@ -76,7 +76,6 @@ class BackgroundServiceICC:
             reco_energy = reco_energy_all_cut2[cut]*energy_scale
             reco_coszen = reco_coszen_all_cut2[cut]
 
-            flavor_dict = {}
             logging.debug("Working on %s background"%flavor)
 
             bins = (self.ebins,self.czbins)
