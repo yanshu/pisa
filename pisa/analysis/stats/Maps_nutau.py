@@ -10,11 +10,69 @@
 
 import os
 import numpy as np
+import h5py
 from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
+
+def get_burn_sample(burn_sample_file, ebins, czbins, get_map, get_array, channel):
+    burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
+
+    dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
+    L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
+    reco_energy_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
+    reco_coszen_all = np.array(np.cos(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
+
+    print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
+
+    dLLH_L6 = dLLH[L6_result==1]
+    reco_energy_L6 = reco_energy_all[L6_result==1]
+    reco_coszen_L6 = reco_coszen_all[L6_result==1]
+    print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
+   
+    # throw away dLLH < -3
+    #reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
+    #reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
+    #dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
+    # don't throw away dLLH < -3
+    reco_energy_L6_cut1 = reco_energy_L6
+    reco_coszen_L6_cut1 = reco_coszen_L6
+    dLLH_L6_cut1 = dLLH_L6
+
+    # write burn sample data to dictionary
+    burn_sample_dict = {}
+    for flavor in ['cscd','trck']:
+        if flavor == 'cscd':
+            cut = dLLH_L6_cut1 < 3.0 
+        if flavor == 'trck':
+            cut = dLLH_L6_cut1 >= 3.0 
+        reco_energy_L6_final = reco_energy_L6_cut1[cut]
+        reco_coszen_L6_final = reco_coszen_L6_cut1[cut]
+
+        bins = (ebins, czbins)
+        burn_sample_hist,_,_ = np.histogram2d(reco_energy_L6_final,reco_coszen_L6_final,bins=bins)
+        burn_sample_dict[flavor] = burn_sample_hist
+
+    # get the burn sample maps (cz in [-1, 1])
+    burn_sample_maps={}
+    for flav in ['trck','cscd']:
+        burn_sample_maps[flav] = {'map':burn_sample_dict[flav],
+                                 'ebins':ebins,
+                                 'czbins':czbins}
+    if get_map:
+        return burn_sample_maps
+
+    if get_array:
+        # return a 1D array (used for the fit in the LLR analysis)
+        burn_sample_map_up = get_up_map(burn_sample_maps, channel=channel)
+        burn_sample_map_flipped_down = get_flipped_down_map(burn_sample_maps, channel=channel)
+        flattend_burn_sample_map_up = Maps.flatten_map(burn_sample_map_up, channel=channel)
+        flattend_burn_sample_map_flipped_down = Maps.flatten_map(burn_sample_map_flipped_down, channel=channel)
+        burn_sample_in_array = np.append(flattend_burn_sample_map_up, flattend_burn_sample_map_flipped_down)
+        return burn_sample_in_array
+
 
 def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
     if fiducial_params['residual_up_down'] or fiducial_params['simp_up_down'] or fiducial_params['ratio_up_down']:
