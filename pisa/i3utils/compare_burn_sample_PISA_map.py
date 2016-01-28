@@ -6,7 +6,6 @@
 # date: 20 Jan 2016
 #
 #   Compare maps of the burn sample in the form of the PISA final stage output with PISA MC expectation.
-#    python compare_burn_sample_PISA_map_range_fix.py DC12_mc_0syst_1yr_LLR_e8_cz16_simp_nufit_prior_new_aeff_range_fix.json --title IC86_range_fix --save -o new_aeff_2_to_4_background_in_mc_0.4/ -logE --bg_scale 0.4 -y 0.045
 #
 
 import copy
@@ -48,7 +47,7 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     hist_BS,_= np.histogram(x_bin_centers,weights=BS_data,bins=x_bin_edges)
     ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
     ax1.legend(loc='upper right',ncol=1, frameon=False)
-    plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (Nevts: \, %.1f \, bg \, scale \, %s) }$'%(channel, np.sum(burn_sample_maps['cscd']['map']), args.bg_scale), fontsize='large')
+    plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (background \, scale \, %s) }$'%(channel, args.bg_scale), fontsize='large')
     min_hist = min(np.min(hist_BS), np.min(hist_MC_notau), np.min(hist_MC_tau))
     max_hist = max(np.max(hist_BS), np.max(hist_MC_notau), np.max(hist_MC_tau))
     ax1.set_ylim(min_hist - min_hist*0.4,max_hist + 0.4*max_hist)
