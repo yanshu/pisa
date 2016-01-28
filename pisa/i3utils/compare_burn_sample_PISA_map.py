@@ -16,6 +16,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from scipy import stats
+from matplotlib.offsetbox import AnchoredText
 
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
@@ -40,7 +42,7 @@ def get_1D_projection(map_2d, axis):
     return output_array
 
 def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name, MC_no_nutau_name, BS_name, x_bin_centers, x_bin_edges, channel, x_label):
-    fig = plt.figure(figsize=(8,10))
+    fig = plt.figure(figsize=(8,8))
     ax1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
     hist_MC_tau,_,_ = ax1.hist(x_bin_centers,weights= MC_nutau,bins=x_bin_edges,histtype='step',lw=2,color='b',label= MC_nutau_name,linestyle='solid',normed=args.norm)
     hist_MC_notau,_,_ = ax1.hist(x_bin_centers,weights=MC_no_nutau,bins=x_bin_edges,histtype='step',lw=2,color='g',label= MC_no_nutau_name,linestyle='dashed',normed=args.norm)
@@ -50,24 +52,31 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     #ax1.errorbar(x_bin_centers,hist_MC_notau,yerr=np.sqrt(hist_MC_notau),fmt='.g')
     ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
     #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
-    ax1.legend(loc='upper right',ncol=1, frameon=False)
+    ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1)
     #else:
     #    ax1.legend(loc='upper center',ncol=2, frameon=False)
     ax1.set_ylim(min(min(min(hist_BS),min(hist_MC_notau)),min(hist_MC_tau))-10,max(max(max(hist_BS),max(hist_MC_notau)),max(hist_MC_tau))+40)
     ax1.set_ylabel("$\#$ events")
     ax1.grid()
 
+    x2,_ = stats.chisquare(BS_data, f_exp=MC_nutau)
+    x2_nutau = x2/len(BS_data)
+    x2,_ = stats.chisquare(BS_data, f_exp=MC_no_nutau)
+    x2_no_nutau = x2/len(BS_data)
+
     ax2 = plt.subplot2grid((3,1), (2,0),sharex=ax1)
-    hist_ratio_BS_to_MC_tau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_tau,bins=x_bin_edges,histtype='step',lw=2,color='b', linestyle='solid', label='Burn Sample/MC tau')
-    hist_ratio_BS_to_MC_notau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_notau, bins=x_bin_edges,histtype='step',lw=2,color='g', linestyle='dashed', label = 'Burn Sample/ MC notau')
+    hist_ratio_BS_to_MC_tau = ax2.hist(x_bin_centers, weights=hist_MC_tau/hist_BS,bins=x_bin_edges,histtype='step',lw=2,color='b', linestyle='solid', label='MC tau/data')
+    hist_ratio_BS_to_MC_notau = ax2.hist(x_bin_centers, weights=hist_MC_notau/hist_BS, bins=x_bin_edges,histtype='step',lw=2,color='g', linestyle='dashed', label = 'MC notau/data')
     if x_label == 'energy':
         ax2.set_xlabel('energy [GeV]')
     if x_label == 'coszen':
         ax2.set_xlabel('coszen')
-    ax2.set_ylabel("Burn Sample / MC")
-    ax2.set_ylim(min(hist_BS/hist_MC_notau)-0.1,max(hist_BS/hist_MC_notau)+0.1)
+    ax2.set_ylabel("ratio (MC/data)")
+    ax2.set_ylim(min(min(hist_MC_notau/hist_BS),min(hist_MC_tau/hist_BS))-0.1,max(max(hist_MC_notau/hist_BS),max(hist_MC_tau/hist_BS))+0.1)
     ax2.axhline(y=1,linewidth=1, color='r')
-    ax2.legend(loc='upper center',ncol=2, frameon=False)
+    #ax2.legend(loc='upper center',ncol=1, frameon=False)
+    a_text = AnchoredText('nutau x2/NDF=%.2f\nno nutau x2/NDF=%.2f'%(x2_nutau,x2_no_nutau), loc=2)
+    ax2.add_artist(a_text)
     ax2.grid()
     fig.subplots_adjust(hspace=0)
     plt.setp(ax1.get_xticklabels(), visible=False)
