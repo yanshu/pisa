@@ -12,6 +12,8 @@ import copy
 import numpy as np
 import os
 import h5py
+import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -39,21 +41,23 @@ def get_1D_projection(map_2d, axis):
 
 def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name, MC_no_nutau_name, BS_name, x_bin_centers, x_bin_edges, channel, x_label):
     fig = plt.figure(figsize=(8,10))
-    ax1 = fig.add_subplot(2,1,1)
+    ax1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
     hist_MC_tau,_,_ = ax1.hist(x_bin_centers,weights= MC_nutau,bins=x_bin_edges,histtype='step',lw=2,color='b',label= MC_nutau_name,linestyle='solid',normed=args.norm)
     hist_MC_notau,_,_ = ax1.hist(x_bin_centers,weights=MC_no_nutau,bins=x_bin_edges,histtype='step',lw=2,color='g',label= MC_no_nutau_name,linestyle='dashed',normed=args.norm)
-    hist_BS,_,_ = ax1.hist(x_bin_centers,weights=BS_data,bins=x_bin_edges,histtype='step',lw=2,color='r',label= BS_name,normed=args.norm)
-    ax1.errorbar(x_bin_centers,hist_MC_tau,yerr=np.sqrt(hist_MC_tau),fmt='.b')
-    ax1.errorbar(x_bin_centers,hist_MC_notau,yerr=np.sqrt(hist_MC_notau),fmt='.g')
-    ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='.r')
-    if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
-        ax1.legend(loc='upper right',ncol=1)
-    else:
-        ax1.legend(loc='upper center',ncol=2)
+    #hist_BS,_,_ = ax1.hist(x_bin_centers,weights=BS_data,bins=x_bin_edges,histtype='step',lw=2,color='r',label= BS_name,normed=args.norm)
+    hist_BS,_= np.histogram(x_bin_centers,weights=BS_data,bins=x_bin_edges)
+    #ax1.errorbar(x_bin_centers,hist_MC_tau,yerr=np.sqrt(hist_MC_tau),fmt='.b')
+    #ax1.errorbar(x_bin_centers,hist_MC_notau,yerr=np.sqrt(hist_MC_notau),fmt='.g')
+    ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
+    #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
+    ax1.legend(loc='upper right',ncol=1, frameon=False)
+    #else:
+    #    ax1.legend(loc='upper center',ncol=2, frameon=False)
     ax1.set_ylim(min(min(min(hist_BS),min(hist_MC_notau)),min(hist_MC_tau))-10,max(max(max(hist_BS),max(hist_MC_notau)),max(hist_MC_tau))+40)
+    ax1.set_ylabel("$\#$ events")
     ax1.grid()
 
-    ax2 = fig.add_subplot(2,1,2)
+    ax2 = plt.subplot2grid((3,1), (2,0),sharex=ax1)
     hist_ratio_BS_to_MC_tau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_tau,bins=x_bin_edges,histtype='step',lw=2,color='b', linestyle='solid', label='Burn Sample/MC tau')
     hist_ratio_BS_to_MC_notau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_notau, bins=x_bin_edges,histtype='step',lw=2,color='g', linestyle='dashed', label = 'Burn Sample/ MC notau')
     if x_label == 'energy':
@@ -62,9 +66,11 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
         ax2.set_xlabel('coszen')
     ax2.set_ylabel("Burn Sample / MC")
     ax2.set_ylim(min(hist_BS/hist_MC_notau)-0.1,max(hist_BS/hist_MC_notau)+0.1)
-    ax2.axhline(y=1,linewidth=1, color='k')
-    ax2.legend(loc='upper center',ncol=2)
+    ax2.axhline(y=1,linewidth=1, color='r')
+    ax2.legend(loc='upper center',ncol=2, frameon=False)
     ax2.grid()
+    fig.subplots_adjust(hspace=0)
+    plt.setp(ax1.get_xticklabels(), visible=False)
     plt.savefig(args.outdir+"BurnSample_MC_%s_%s_distribution.png" % (channel, x_label),dpi=150)
     #plt.show()
     plt.clf()
@@ -345,11 +351,14 @@ settings file. ''')
 
 
     ################## PLOT MC/Data comparison ##################
-
+    
+    # cut out original bins: 
+    E_bin_centers = E_bin_centers[2:-4]
+    ebins = ebins[2:-4]
     # reco_energy_L6_final: the burn sample reco. energy
 
-    burn_sample_up_and_down_cscd_map = burn_sample_maps['cscd']['map']
-    burn_sample_up_and_down_trck_map = burn_sample_maps['trck']['map']
+    burn_sample_up_and_down_cscd_map = burn_sample_maps['cscd']['map'][2:-4][:]
+    burn_sample_up_and_down_trck_map = burn_sample_maps['trck']['map'][2:-4][:]
 
     ##### Plot energy distribution #####
     BurnSample_RecoEnergy_up_and_down_cscd = get_1D_projection(burn_sample_up_and_down_cscd_map, 'energy')
@@ -387,7 +396,9 @@ settings file. ''')
     #print "\n"
     #print "MC_RecoEnergy_nominal_no_nutau_up_and_down_trck = ", MC_RecoEnergy_nominal_no_nutau_up_and_down_trck
     #print "BurnSample_RecoEnergy_up_and_down_trck : ", BurnSample_RecoEnergy_up_and_down_trck
-    
+
+
+
     plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_up_and_down_cscd, MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd, BurnSample_RecoEnergy_up_and_down_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', E_bin_centers, ebins, 'cscd', 'energy')
 
     plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_up_and_down_cscd, MC_RecoCoszen_nominal_no_nutau_up_and_down_cscd, BurnSample_RecoCoszen_up_and_down_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', 'coszen')
