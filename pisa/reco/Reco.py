@@ -34,7 +34,7 @@ from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
 from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 
 
-def get_reco_maps(true_event_maps, reco_service=None, **kwargs):
+def get_reco_maps(true_event_maps, anlys_ebins, reco_service=None, **kwargs):
     """
     Primary function for this stage, which returns the reconstructed
     event rate maps from the true event rate maps. The returned maps will
@@ -56,6 +56,14 @@ def get_reco_maps(true_event_maps, reco_service=None, **kwargs):
 
     # Check binning
     ebins, czbins = get_binning(true_event_maps)
+
+    # Get the analysis ebins (smaller than ebins)
+    anlys_elements = []
+    assert(len(anlys_ebins) <= len(ebins))
+    for i in range(0,len(ebins)):
+        if ebins[i] in anlys_ebins:
+            anlys_elements.append(i)
+    anlys_elements.pop()
 
     # Retrieve all reconstruction kernels
     reco_kernel_dict = reco_service.get_reco_kernels( **kwargs)
@@ -82,11 +90,12 @@ def get_reco_maps(true_event_maps, reco_service=None, **kwargs):
             kernels = reco_kernel_dict[flavor][int_type]
             r0 = np.tensordot(true_event_rate, kernels, axes=([0,1],[0,1]))
             reco_event_rate += r0
-        reco_maps[baseflavor+'_'+int_type] = {'map': reco_event_rate,
-                                              'ebins': ebins,
+        reco_event_rate_anlys = reco_event_rate[:][anlys_elements]
+        reco_maps[baseflavor+'_'+int_type] = {'map': reco_event_rate_anlys,
+                                              'ebins': anlys_ebins,
                                               'czbins': czbins}
         msg = "after RECO: counts for (%s + %s) %s: %.2f" \
-            % (baseflavor, baseflavor+'_bar', int_type, np.sum(reco_event_rate))
+            % (baseflavor, baseflavor+'_bar', int_type, np.sum(reco_event_rate_anlys))
         logging.debug(msg)
 
     # Finally sum up all the NC contributions
@@ -96,9 +105,9 @@ def get_reco_maps(true_event_maps, reco_service=None, **kwargs):
          if key.endswith('_nc')], axis=0
     )
     reco_maps['nuall_nc'] = {'map':reco_event_rate,
-                             'ebins':ebins,
+                             'ebins':anlys_ebins,
                              'czbins':czbins}
-    logging.debug("Total counts for nuall nc: %.2f" % np.sum(reco_event_rate))
+    logging.debug("Total counts for nuall nc: %.2f" % np.sum(reco_event_rate_anlys))
     return reco_maps
 
 

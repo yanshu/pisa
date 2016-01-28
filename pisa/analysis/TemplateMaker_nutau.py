@@ -61,7 +61,7 @@ class TemplateMaker:
     initialization process, make them members of the class, then use
     them later when needed.
     '''
-    def __init__(self, template_settings, ebins, czbins,
+    def __init__(self, template_settings, ebins, czbins, anlys_ebins,
                  oversample_e=None, oversample_cz=None, **kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
@@ -76,6 +76,7 @@ class TemplateMaker:
         
         self.ebins = ebins
         self.czbins = czbins
+        self.anlys_ebins = anlys_ebins
         self.oversample_e = oversample_e
         self.oversample_cz = oversample_cz
         logging.debug("Using %u bins in energy from %.2f to %.2f GeV"%
@@ -124,16 +125,16 @@ class TemplateMaker:
         reco_mode = template_settings['reco_mode']
         if reco_mode == 'MC':
             self.reco_service = RecoServiceMC(self.ebins, self.czbins,
-                                              **template_settings)
+                                                **template_settings)
         elif reco_mode == 'param':
             self.reco_service = RecoServiceParam(self.ebins, self.czbins,
-                                                 **template_settings)
+                                                **template_settings)
         elif reco_mode == 'stored':
             self.reco_service = RecoServiceKernelFile(self.ebins, self.czbins,
-                                                      **template_settings)
+                                                **template_settings)
         elif reco_mode == 'vbwkde':
             self.reco_service = RecoServiceVBWKDE(self.ebins, self.czbins,
-                                                  **template_settings)
+                                                **template_settings)
         else:
             error_msg = "reco_mode: %s is not implemented! "%reco_mode
             error_msg+=" Please choose among: ['MC', 'param', 'stored','vbwkde']"
@@ -142,10 +143,10 @@ class TemplateMaker:
         # PID Service:
         pid_mode = template_settings['pid_mode']
         if pid_mode == 'param':
-            self.pid_service = PIDServiceParam(self.ebins, self.czbins,
-                                               **template_settings)
+            self.pid_service = PIDServiceParam( self.anlys_ebins, self.czbins,
+                                                 **template_settings)
         elif pid_mode == 'stored':
-            self.pid_service = PIDServiceKernelFile(self.ebins, self.czbins,
+            self.pid_service = PIDServiceKernelFile(self.anlys_ebins, self.czbins,
                                                     **template_settings)
         else:
             error_msg = "pid_mode: %s is not implemented! "%pid_mode
@@ -153,8 +154,8 @@ class TemplateMaker:
             raise NotImplementedError(error_msg)
 
         # background service
-        self.background_service = BackgroundServiceICC(self.ebins, self.czbins,
-                                                    **template_settings)
+        self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
+                                                     **template_settings)
         return
 
     def get_template(self, params, return_stages=False):
@@ -185,7 +186,7 @@ class TemplateMaker:
 
         logging.info("STAGE 4: Getting event rate reco maps...")
         with Timer() as t:
-            event_rate_reco_maps = get_reco_maps(event_rate_maps,
+            event_rate_reco_maps = get_reco_maps(event_rate_maps, self.anlys_ebins,
                                                  self.reco_service,
                                                  **params)
         profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
