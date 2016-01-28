@@ -22,7 +22,7 @@ from matplotlib.offsetbox import AnchoredText
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
 import pisa.analysis.stats.Maps as Maps
-from pisa.analysis.stats.Maps_nutau import get_up_map, get_flipped_down_map
+from pisa.analysis.stats.Maps_nutau import get_up_map, get_flipped_down_map, get_burn_sample
 from pisa.utils.log import set_verbosity,logging,profile
 from pisa.resources.resources import find_resource
 from pisa.utils.utils import Timer, is_linear, is_logarithmic, get_bin_centers
@@ -46,16 +46,14 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     ax1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
     hist_MC_tau,_,_ = ax1.hist(x_bin_centers,weights= MC_nutau,bins=x_bin_edges,histtype='step',lw=2,color='b',label= MC_nutau_name,linestyle='solid',normed=args.norm)
     hist_MC_notau,_,_ = ax1.hist(x_bin_centers,weights=MC_no_nutau,bins=x_bin_edges,histtype='step',lw=2,color='g',label= MC_no_nutau_name,linestyle='dashed',normed=args.norm)
-    #hist_BS,_,_ = ax1.hist(x_bin_centers,weights=BS_data,bins=x_bin_edges,histtype='step',lw=2,color='r',label= BS_name,normed=args.norm)
     hist_BS,_= np.histogram(x_bin_centers,weights=BS_data,bins=x_bin_edges)
-    #ax1.errorbar(x_bin_centers,hist_MC_tau,yerr=np.sqrt(hist_MC_tau),fmt='.b')
-    #ax1.errorbar(x_bin_centers,hist_MC_notau,yerr=np.sqrt(hist_MC_notau),fmt='.g')
     ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
     #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
     ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1)
-    #else:
-    #    ax1.legend(loc='upper center',ncol=2, frameon=False)
-    ax1.set_ylim(min(min(min(hist_BS),min(hist_MC_notau)),min(hist_MC_tau))-10,max(max(max(hist_BS),max(hist_MC_notau)),max(hist_MC_tau))+40)
+    plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (background \, scale \, %s) }$'%(channel, args.bg_scale), fontsize='large')
+    min_hist = min(np.min(hist_BS), np.min(hist_MC_notau), np.min(hist_MC_tau))
+    max_hist = max(np.max(hist_BS), np.max(hist_MC_notau), np.max(hist_MC_tau))
+    ax1.set_ylim(min_hist - min_hist*0.4,max_hist + 0.4*max_hist)
     ax1.set_ylabel("$\#$ events")
     ax1.grid()
 
@@ -81,7 +79,6 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     fig.subplots_adjust(hspace=0)
     plt.setp(ax1.get_xticklabels(), visible=False)
     plt.savefig(args.outdir+"BurnSample_MC_%s_%s_distribution.png" % (channel, x_label),dpi=150)
-    #plt.show()
     plt.clf()
 
 
@@ -101,10 +98,14 @@ settings file. ''')
                         default='background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
+    parser.add_argument('-y','--y',type=float,
+                        help='No. of livetime[ unit: Julian year]')
     parser.add_argument('--bg_scale',type=float,
                         help="atmos background scale value")
     parser.add_argument('-logE','--logE',action='store_true',default=False,
                         help='Energy in log scale.')
+    parser.add_argument('--plot_background',action='store_true',default=False,
+                        help='Plot background(from ICC data)')
     parser.add_argument('-norm','--norm',action='store_true',default=False,
                         help='Normalize the histogram.')
     parser.add_argument('-a','--all',action='store_true',default=False,
@@ -123,97 +124,37 @@ settings file. ''')
     template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
     template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
+    template_settings['params']['livetime']['value'] = args.y
 
     ebins = template_settings['binning']['ebins']
+    anlys_ebins = template_settings['binning']['anlys_ebins']
     czbins = template_settings['binning']['czbins']
 
     print "ebins = ", ebins
     print "czbins = ", czbins
     CZ_bin_centers = get_bin_centers(czbins)
-    E_bin_centers = get_bin_centers(ebins)
+    E_bin_centers = get_bin_centers(anlys_ebins)
     print "E_bin_centers = ", E_bin_centers
     print "CZ_bin_centers = ", CZ_bin_centers
 
-    burn_sample_file = h5py.File(find_resource(args.burn_sample_file),'r')
+    burn_sample_maps = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= True, get_array=False,channel=template_settings['params']['channel']['value'])
 
-    dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
-    L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
-    reco_energy_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
-    reco_coszen_all = np.array(np.cos(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
-
-    print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
-
-    dLLH_L6 = dLLH[L6_result==1]
-    reco_energy_L6 = reco_energy_all[L6_result==1]
-    reco_coszen_L6 = reco_coszen_all[L6_result==1]
-   
-    # throw away dLLH < -3
-    #reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
-    #reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
-    #dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
-    reco_energy_L6_cut1 = reco_energy_L6
-    reco_coszen_L6_cut1 = reco_coszen_L6
-    dLLH_L6_cut1 = dLLH_L6
-    print "after L6 cut, no. of burn sample = ", len(dLLH_L6_cut1)
-
-    #if self.map_direction == 'up':
-    #    reco_coszen_all_cut2 = reco_coszen_L6[reco_coszen_L6<=0.0]
-    #    reco_energy_all_cut2 = reco_energy_L6[reco_coszen_L6<=0.0]
-    #    dLLH_cut2 = dLLH_cut1[reco_coszen_L6<=0.0]
-    #if self.map_direction == 'down':
-    #    reco_coszen_all_cut2 = reco_coszen_L6[reco_coszen_L6>0.0]
-    #    reco_energy_all_cut2 = reco_energy_L6[reco_coszen_L6>0.0]
-    #    dLLH_cut2 = dLLH_cut1[reco_coszen_L6>0.0]
-
-    # write burn sample data to dictionary
-    burn_sample_dict = {}
-    for flavor in ['cscd','trck']:
-        if flavor == 'cscd':
-            cut = dLLH_L6_cut1 < 3.0 
-        if flavor == 'trck':
-            cut = dLLH_L6_cut1 >= 3.0 
-        reco_energy_L6_final = reco_energy_L6_cut1[cut]
-        reco_coszen_L6_final = reco_coszen_L6_cut1[cut]
-
-        bins = (ebins, czbins)
-        burn_sample_hist,_,_ = np.histogram2d(reco_energy_L6_final,reco_coszen_L6_final,bins=bins)
-        #print flavor, " burn_sample_hist = ", burn_sample_hist
-        burn_sample_dict[flavor] = burn_sample_hist
-
-    # get the burn sample maps (cz in [-1, 1])
-    burn_sample_maps={}
-    for flav in ['trck','cscd']:
-        burn_sample_maps[flav] = {'map':burn_sample_dict[flav],
-                                 'ebins':ebins,
-                                 'czbins':czbins}
-
-    burn_sample_map_up = get_up_map(burn_sample_maps, channel=template_settings['params']['channel']['value'])
-    burn_sample_map_flipped_down = get_flipped_down_map(burn_sample_maps, channel=template_settings['params']['channel']['value'])
-    flattend_burn_sample_map_up = Maps.flatten_map(burn_sample_map_up, channel=template_settings['params']['channel']['value'])
-    flattend_burn_sample_map_flipped_down = Maps.flatten_map(burn_sample_map_flipped_down, channel=template_settings['params']['channel']['value'])
-    burn_sample_in_array = np.append(flattend_burn_sample_map_up, flattend_burn_sample_map_flipped_down)
-
-    #print "burn_sample_map_flipped_down = ", burn_sample_map_flipped_down
-    #print "flattend_burn_sample_map_up = ", flattend_burn_sample_map_up
-    #print "flattend_burn_sample_map_flipped_down = ", flattend_burn_sample_map_flipped_down
-    #print "burn_sample_in_array = ", burn_sample_in_array
-    print "     no. of events in upgoing burn sample: ", np.sum(flattend_burn_sample_map_up)
-    print "     no. of events in downgoing burn sample: ", np.sum(flattend_burn_sample_map_flipped_down)
-    print "     total no. of events in burn sample :", np.sum(burn_sample_in_array) 
+    #burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= False, get_array=True, channel=template_settings['params']['channel']['value'])
+    #print "     total no. of events in burn sample :", np.sum(burn_sample_in_array) 
 
     plt.figure()
     show_map(burn_sample_maps['cscd'],vmax=15,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_burn_sample_up_down_combined_'+ 'cscd_5.6_56GeV.png')
-        plt.title(r'${\rm 0.05 \, yr \, burn \, sample \, cscd \, (Nevts: \, %.1f) }$'%(np.sum(burn_sample_maps['cscd']['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_burn_sample_cscd_5.6_56GeV.png')
+        plt.title(r'${\rm %s \, yr \, burn \, sample \, cscd \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps['cscd']['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
     plt.figure()
     show_map(burn_sample_maps['trck'],vmax=10,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_burn_sample_up_down_combined_'+ 'trck_5.6_56GeV.png')
-        plt.title(r'${\rm 0.05 \, yr \, burn \, sample \, trck \, (Nevts: \, %.1f) }$'%(np.sum(burn_sample_maps['trck']['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_burn_sample_trck_5.6_56GeV.png')
+        plt.title(r'${\rm %s \, yr \, burn \, sample \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps['trck']['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
@@ -249,176 +190,122 @@ settings file. ''')
         nominal_no_nutau_down = nominal_template_maker_down.get_template(get_values(nominal_no_nutau_down_params),return_stages=args.all)
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
-    #print 'nominal nutau_up = ',   nominal_nutau_up
-    #print 'nominal nutau_down = ', nominal_nutau_down
+    # combine up and down maps to one
+    nominal_nutau_cscd = sum_map(nominal_nutau_up['cscd'], nominal_nutau_down['cscd'])
+    nominal_nutau_trck = sum_map(nominal_nutau_up['trck'], nominal_nutau_down['trck'])
+    nominal_no_nutau_cscd = sum_map(nominal_no_nutau_up['cscd'], nominal_no_nutau_down['cscd'])
+    nominal_no_nutau_trck = sum_map(nominal_no_nutau_up['trck'], nominal_no_nutau_down['trck'])
 
-    nominal_nutau_up_and_down_cscd = sum_map(nominal_nutau_up['cscd'], nominal_nutau_down['cscd'])
-    #print "nominal_nutau_up_and_down_cscd = ", nominal_nutau_up_and_down_cscd
-    nominal_nutau_up_and_down_trck = sum_map(nominal_nutau_up['trck'], nominal_nutau_down['trck'])
-    #print "nominal_nutau_up_and_down_trck = ", nominal_nutau_up_and_down_trck
-    nominal_no_nutau_up_and_down_cscd = sum_map(nominal_no_nutau_up['cscd'], nominal_no_nutau_down['cscd'])
-    nominal_no_nutau_up_and_down_trck = sum_map(nominal_no_nutau_up['trck'], nominal_no_nutau_down['trck'])
-
-
-
-    #### Plot nutau_up , nutau_down, etc. ####
-    #for channel in ['trck','cscd']:
-    #    plt.figure()
-    #    show_map(nominal_nutau_up[channel],vmax=25 if channel=='cscd' else 10,logE=args.logE)
-    #    print 'no. of upgoing ' ,channel , ' ', np.sum(nominal_nutau_up[channel]['map'])
-    #    if args.save:
-    #        print 'Saving %s channel...'%channel
-    #        filename = os.path.join(args.outdir,args.title+ '_f_1_up_'+channel+'.png')
-    #        plt.title(channel + ' (up) Nevts: %.1f '%(np.sum(nominal_nutau_up[channel]['map'])))
-    #        plt.savefig(filename,dpi=150)
-    #        plt.clf()
-
-    #    show_map(nominal_nutau_down[channel],vmax=10 if channel=='cscd' else 10,logE=args.logE)
-    #    print 'no. of downgoing ', channel , ' ', np.sum(nominal_nutau_down[channel]['map'])
-    #    if args.save:
-    #        print 'Saving %s channel...'%channel
-    #        filename = os.path.join(args.outdir,args.title+ '_f_1_down_'+channel+'.png')
-    #        plt.title(channel + ' (down) Nevts: %.1f '%(np.sum(nominal_nutau_down[channel]['map'])))
-    #        plt.savefig(filename,dpi=150)
-    #        plt.clf()
-
+    # Plot nominal PISA template (cscd and trck separately)
     plt.figure()
-    show_map(nominal_nutau_up_and_down_cscd,vmax=15,logE=args.logE)
+    show_map(nominal_nutau_cscd,vmax=15,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_NutauCCNorm_1_up_down_combined_'+ 'cscd_5.6_56GeV.png')
-        plt.title(r'${\rm 0.05 \, yr \, cscd \, (Nevts: \, %.1f) }$'%(np.sum(nominal_nutau_up_and_down_cscd['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_cscd_5.6_56GeV.png' % (args.y, args.bg_scale))
+        plt.title(r'${\rm %s \, yr \, cscd \, (Nevts: \, %.1f) }$'%(args.y, np.sum(nominal_nutau_cscd['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
     plt.figure()
-    show_map(nominal_nutau_up_and_down_trck,vmax=10,logE=args.logE)
+    show_map(nominal_nutau_trck,vmax=10,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_NutauCCNorm_1_up_down_combined_'+ 'trck_5.6_56GeV.png')
-        plt.title(r'${\rm 0.05 \, yr \, trck \, (Nevts: \, %.1f) }$'%(np.sum(nominal_nutau_up_and_down_trck['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_trck_5.6_56GeV.png' % (args.y, args.bg_scale))
+        plt.title(r'${\rm %s \, yr \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(nominal_nutau_trck['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
-    print "no. of nominal_nutau_up_and_down_cscd = ", np.sum(nominal_nutau_up_and_down_cscd['map'])
-    print "no. of nominal_nutau_up_and_down_trck = ", np.sum(nominal_nutau_up_and_down_trck['map'])
-    print " total of the above two : ", np.sum(nominal_nutau_up_and_down_cscd['map'])+np.sum(nominal_nutau_up_and_down_trck['map'])
+    print "no. of nominal_nutau_cscd = ", np.sum(nominal_nutau_cscd['map'])
+    print "no. of nominal_nutau_trck = ", np.sum(nominal_nutau_trck['map'])
+    print " total of the above two : ", np.sum(nominal_nutau_cscd['map'])+np.sum(nominal_nutau_trck['map'])
     print " \n"
-    print "no. of nominal_no_nutau_up_and_down_cscd = ", np.sum(nominal_no_nutau_up_and_down_cscd['map'])
-    print "no. of nominal_no_nutau_up_and_down_trck = ", np.sum(nominal_no_nutau_up_and_down_trck['map'])
-    print " total of the above two : ", np.sum(nominal_no_nutau_up_and_down_cscd['map'])+np.sum(nominal_no_nutau_up_and_down_trck['map'])
+    print "no. of nominal_no_nutau_cscd = ", np.sum(nominal_no_nutau_cscd['map'])
+    print "no. of nominal_no_nutau_trck = ", np.sum(nominal_no_nutau_trck['map'])
+    print " total of the above two : ", np.sum(nominal_no_nutau_cscd['map'])+np.sum(nominal_no_nutau_trck['map'])
     print " \n"
-    #print "max no. of evts in nutau_up_cscd: ", np.amax(nominal_nutau_up['cscd']['map'])
-    #print "max no. of evts in nutau_up_trck: ", np.amax(nominal_nutau_up['trck']['map'])
-    #print "max no. of evts in nutau_down_cscd: ", np.amax(nominal_nutau_down['cscd']['map'])
-    #print "max no. of evts in nutau_down_trck: ", np.amax(nominal_nutau_down['trck']['map'])
-    #print "max no. of evts in nominal_nutau_up_and_down_cscd: ", np.amax(nominal_nutau_up_and_down_cscd['map'])
-    #print "max no. of evts in nominal_nutau_up_and_down_trck: ", np.amax(nominal_nutau_up_and_down_trck['map'])
-    no_of_up = np.sum(nominal_nutau_up['trck']['map']) + np.sum(nominal_nutau_up['cscd']['map'])
-    no_of_down = np.sum(nominal_nutau_down['trck']['map']) + np.sum(nominal_nutau_down['cscd']['map'])
-    print 'no. of upgoing events= ' , no_of_up 
-    print 'no. of downgoing events = ' , no_of_down 
-    print 'Total no. of events = ' , no_of_up + no_of_down
-    no_of_up_and_down = np.sum(nominal_nutau_up_and_down_trck['map']) + np.sum(nominal_nutau_up_and_down_cscd['map'])
-    print 'From map_up_down, Total no. of events = ' , no_of_up_and_down
    
 
     ################ Plot background ##################
     # get background
-    czbins = nominal_up_template_settings['binning']['czbins']
-    up_background_service = BackgroundServiceICC(nominal_up_template_settings['binning']['ebins'],czbins[czbins<=0],**get_values(nominal_nutau_up_params))
-    up_background_dict = up_background_service.get_icc_bg()
-    #print "up_background_dict = ", up_background_dict
-    down_background_service = BackgroundServiceICC(nominal_down_template_settings['binning']['ebins'],czbins[czbins>=0],**get_values(nominal_nutau_down_params))
-    down_background_dict = down_background_service.get_icc_bg()
-    #print "down_background_dict = ", down_background_dict
+    if args.plot_background:
+        up_background_service = BackgroundServiceICC(nominal_up_template_settings['binning']['anlys_ebins'],czbins[czbins<=0],**get_values(nominal_nutau_up_params))
+        up_background_dict = up_background_service.get_icc_bg()
+        down_background_service = BackgroundServiceICC(nominal_down_template_settings['binning']['anlys_ebins'],czbins[czbins>=0],**get_values(nominal_nutau_down_params))
+        down_background_dict = down_background_service.get_icc_bg()
 
-    up_background_maps = {'params': nominal_nutau_up['params']}
-    for flav in ['trck','cscd']:
-        up_background_maps[flav] = {'map':up_background_dict[flav],
-                                 'ebins':nominal_up_template_settings['binning']['ebins'],
-                                 'czbins':czbins[czbins<=0]}
-    down_background_maps = {'params': nominal_nutau_down['params']}
-    for flav in ['trck','cscd']:
-        down_background_maps[flav] = {'map':down_background_dict[flav],
-                                 'ebins':nominal_down_template_settings['binning']['ebins'],
-                                 'czbins':czbins[czbins>=0]}
+        up_background_maps = {'params': nominal_nutau_up['params']}
+        for flav in ['trck','cscd']:
+            up_background_maps[flav] = {'map':up_background_dict[flav],
+                                     'ebins':nominal_up_template_settings['binning']['anlys_ebins'],
+                                     'czbins':czbins[czbins<=0]}
+        down_background_maps = {'params': nominal_nutau_down['params']}
+        for flav in ['trck','cscd']:
+            down_background_maps[flav] = {'map':down_background_dict[flav],
+                                     'ebins':nominal_down_template_settings['binning']['anlys_ebins'],
+                                     'czbins':czbins[czbins>=0]}
 
-    #for channel in ['trck','cscd']:
-    #    plt.figure()
-    #    show_map(up_background_maps[channel],logE=args.logE)
-    #    if args.save:
-    #        filename = os.path.join(args.outdir,args.title+'_upgoing_background_'+channel+'.png')
-    #        plt.title(args.title+'_upgoing_background_'+channel)
-    #        plt.savefig(filename,dpi=150)
-    #        plt.clf()
-    #    plt.figure()
-    #    show_map(down_background_maps[channel],logE=args.logE)
-    #    if args.save:
-    #        filename = os.path.join(args.outdir,args.title+'_downgoing_background_'+channel+'.png')
-    #        plt.title(args.title+'_downgoing_background_'+channel)
-    #        plt.savefig(filename,dpi=150)
-    #        plt.clf()
+        for channel in ['trck','cscd']:
+            plt.figure()
+            show_map(up_background_maps[channel],logE=args.logE)
+            if args.save:
+                filename = os.path.join(args.outdir,args.title+'_upgoing_background_'+channel+'.png')
+                plt.title(args.title+'_upgoing_background_'+channel)
+                plt.savefig(filename,dpi=150)
+                plt.clf()
+            plt.figure()
+            show_map(down_background_maps[channel],logE=args.logE)
+            if args.save:
+                filename = os.path.join(args.outdir,args.title+'_downgoing_background_'+channel+'.png')
+                plt.title(args.title+'_downgoing_background_'+channel)
+                plt.savefig(filename,dpi=150)
+                plt.clf()
 
 
     ################## PLOT MC/Data comparison ##################
-    
-    # cut out original bins: 
-    E_bin_centers = E_bin_centers[2:-4]
-    ebins = ebins[2:-4]
-    # reco_energy_L6_final: the burn sample reco. energy
 
-    burn_sample_up_and_down_cscd_map = burn_sample_maps['cscd']['map'][2:-4][:]
-    burn_sample_up_and_down_trck_map = burn_sample_maps['trck']['map'][2:-4][:]
+    burn_sample_cscd_map = burn_sample_maps['cscd']['map']
+    burn_sample_trck_map = burn_sample_maps['trck']['map']
 
-    ##### Plot energy distribution #####
-    BurnSample_RecoEnergy_up_and_down_cscd = get_1D_projection(burn_sample_up_and_down_cscd_map, 'energy')
-    BurnSample_RecoEnergy_up_and_down_trck = get_1D_projection(burn_sample_up_and_down_trck_map, 'energy')
-    BurnSample_RecoCoszen_up_and_down_cscd = get_1D_projection(burn_sample_up_and_down_cscd_map, 'coszen')
-    BurnSample_RecoCoszen_up_and_down_trck = get_1D_projection(burn_sample_up_and_down_trck_map, 'coszen')
+    # get 1D energy (coszen) distribution
+    BurnSample_RecoEnergy_cscd = get_1D_projection(burn_sample_cscd_map, 'energy')
+    BurnSample_RecoEnergy_trck = get_1D_projection(burn_sample_trck_map, 'energy')
+    BurnSample_RecoCoszen_cscd = get_1D_projection(burn_sample_cscd_map, 'coszen')
+    BurnSample_RecoCoszen_trck = get_1D_projection(burn_sample_trck_map, 'coszen')
 
-    nominal_nutau_up_and_down_cscd_map = nominal_nutau_up_and_down_cscd['map']
-    MC_RecoEnergy_nominal_nutau_up_and_down_cscd = get_1D_projection(nominal_nutau_up_and_down_cscd_map, 'energy')
-    MC_RecoCoszen_nominal_nutau_up_and_down_cscd = get_1D_projection(nominal_nutau_up_and_down_cscd_map, 'coszen')
-    nominal_nutau_up_and_down_trck_map = nominal_nutau_up_and_down_trck['map']
-    MC_RecoEnergy_nominal_nutau_up_and_down_trck = get_1D_projection(nominal_nutau_up_and_down_trck_map, 'energy')
-    MC_RecoCoszen_nominal_nutau_up_and_down_trck = get_1D_projection(nominal_nutau_up_and_down_trck_map, 'coszen')
+    nominal_nutau_cscd_map = nominal_nutau_cscd['map']
+    MC_RecoEnergy_nominal_nutau_cscd = get_1D_projection(nominal_nutau_cscd_map, 'energy')
+    MC_RecoCoszen_nominal_nutau_cscd = get_1D_projection(nominal_nutau_cscd_map, 'coszen')
+    nominal_nutau_trck_map = nominal_nutau_trck['map']
+    MC_RecoEnergy_nominal_nutau_trck = get_1D_projection(nominal_nutau_trck_map, 'energy')
+    MC_RecoCoszen_nominal_nutau_trck = get_1D_projection(nominal_nutau_trck_map, 'coszen')
 
-    nominal_no_nutau_up_and_down_cscd_map = nominal_no_nutau_up_and_down_cscd['map']
-    MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd = get_1D_projection(nominal_no_nutau_up_and_down_cscd_map, 'energy')
-    MC_RecoCoszen_nominal_no_nutau_up_and_down_cscd = get_1D_projection(nominal_no_nutau_up_and_down_cscd_map, 'coszen')
-    nominal_no_nutau_up_and_down_trck_map = nominal_no_nutau_up_and_down_trck['map']
-    MC_RecoEnergy_nominal_no_nutau_up_and_down_trck = get_1D_projection(nominal_no_nutau_up_and_down_trck_map, 'energy')
-    MC_RecoCoszen_nominal_no_nutau_up_and_down_trck = get_1D_projection(nominal_no_nutau_up_and_down_trck_map, 'coszen')
+    nominal_no_nutau_cscd_map = nominal_no_nutau_cscd['map']
+    MC_RecoEnergy_nominal_no_nutau_cscd = get_1D_projection(nominal_no_nutau_cscd_map, 'energy')
+    MC_RecoCoszen_nominal_no_nutau_cscd = get_1D_projection(nominal_no_nutau_cscd_map, 'coszen')
+    nominal_no_nutau_trck_map = nominal_no_nutau_trck['map']
+    MC_RecoEnergy_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'energy')
+    MC_RecoCoszen_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'coszen')
 
-    #print "MC_RecoEnergy_nominal_nutau_up_and_down_cscd = ", MC_RecoEnergy_nominal_nutau_up_and_down_cscd
-    #print "MC_RecoEnergy_nominal_nutau_up_and_down_trck = ", MC_RecoEnergy_nominal_nutau_up_and_down_trck
-    MC_RecoEnergy_nominal_nutau_up_and_down_all_chan = MC_RecoEnergy_nominal_nutau_up_and_down_cscd + MC_RecoEnergy_nominal_nutau_up_and_down_trck
-    MC_RecoCoszen_nominal_nutau_up_and_down_all_chan = MC_RecoCoszen_nominal_nutau_up_and_down_cscd + MC_RecoCoszen_nominal_nutau_up_and_down_trck
+    MC_RecoEnergy_nominal_nutau_all_chan = MC_RecoEnergy_nominal_nutau_cscd + MC_RecoEnergy_nominal_nutau_trck
+    MC_RecoCoszen_nominal_nutau_all_chan = MC_RecoCoszen_nominal_nutau_cscd + MC_RecoCoszen_nominal_nutau_trck
 
-    MC_RecoEnergy_nominal_no_nutau_up_and_down_all_chan = MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd + MC_RecoEnergy_nominal_no_nutau_up_and_down_trck
-    MC_RecoCoszen_nominal_no_nutau_up_and_down_all_chan = MC_RecoCoszen_nominal_no_nutau_up_and_down_cscd + MC_RecoCoszen_nominal_no_nutau_up_and_down_trck
+    MC_RecoEnergy_nominal_no_nutau_all_chan = MC_RecoEnergy_nominal_no_nutau_cscd + MC_RecoEnergy_nominal_no_nutau_trck
+    MC_RecoCoszen_nominal_no_nutau_all_chan = MC_RecoCoszen_nominal_no_nutau_cscd + MC_RecoCoszen_nominal_no_nutau_trck
 
-    BurnSample_RecoEnergy_up_and_down_all_chan = BurnSample_RecoEnergy_up_and_down_cscd + BurnSample_RecoEnergy_up_and_down_trck
-    BurnSample_RecoCoszen_up_and_down_all_chan = BurnSample_RecoCoszen_up_and_down_cscd + BurnSample_RecoCoszen_up_and_down_trck
+    BurnSample_RecoEnergy_all_chan = BurnSample_RecoEnergy_cscd + BurnSample_RecoEnergy_trck
+    BurnSample_RecoCoszen_all_chan = BurnSample_RecoCoszen_cscd + BurnSample_RecoCoszen_trck
 
-    #print "MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd = ", MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd
-    #print "BurnSample_RecoEnergy_up_and_down_cscd : ", BurnSample_RecoEnergy_up_and_down_cscd
-    #print "\n"
-    #print "MC_RecoEnergy_nominal_no_nutau_up_and_down_trck = ", MC_RecoEnergy_nominal_no_nutau_up_and_down_trck
-    #print "BurnSample_RecoEnergy_up_and_down_trck : ", BurnSample_RecoEnergy_up_and_down_trck
+    # plot 1D energy (coszen) distribution
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_cscd, MC_RecoEnergy_nominal_no_nutau_cscd, BurnSample_RecoEnergy_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', E_bin_centers, anlys_ebins, 'cscd', 'energy')
 
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_cscd, MC_RecoCoszen_nominal_no_nutau_cscd, BurnSample_RecoCoszen_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', 'coszen')
 
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_trck, MC_RecoEnergy_nominal_no_nutau_trck, BurnSample_RecoEnergy_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', E_bin_centers, anlys_ebins, 'trck', 'energy')
 
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_up_and_down_cscd, MC_RecoEnergy_nominal_no_nutau_up_and_down_cscd, BurnSample_RecoEnergy_up_and_down_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', E_bin_centers, ebins, 'cscd', 'energy')
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_trck, MC_RecoCoszen_nominal_no_nutau_trck, BurnSample_RecoCoszen_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', 'coszen')
 
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_up_and_down_cscd, MC_RecoCoszen_nominal_no_nutau_up_and_down_cscd, BurnSample_RecoCoszen_up_and_down_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', 'coszen')
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_all_chan, MC_RecoEnergy_nominal_no_nutau_all_chan, BurnSample_RecoEnergy_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', E_bin_centers, anlys_ebins, 'cscd+trck', 'energy')
 
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_up_and_down_trck, MC_RecoEnergy_nominal_no_nutau_up_and_down_trck, BurnSample_RecoEnergy_up_and_down_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', E_bin_centers, ebins, 'trck', 'energy')
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_all_chan, MC_RecoCoszen_nominal_no_nutau_all_chan, BurnSample_RecoCoszen_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', 'coszen')
 
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_up_and_down_trck, MC_RecoCoszen_nominal_no_nutau_up_and_down_trck, BurnSample_RecoCoszen_up_and_down_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', 'coszen')
-
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_up_and_down_all_chan, MC_RecoEnergy_nominal_no_nutau_up_and_down_all_chan, BurnSample_RecoEnergy_up_and_down_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', E_bin_centers, ebins, 'cscd+trck', 'energy')
-
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_up_and_down_all_chan, MC_RecoCoszen_nominal_no_nutau_up_and_down_all_chan, BurnSample_RecoCoszen_up_and_down_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', 'coszen')
     if not args.save: plt.show()
     else: print '\n-->>Saved all files to: ',args.outdir
 
