@@ -10,19 +10,19 @@ import sys
 import numpy as np
 from itertools import product
 
-from pisa.utils.log import logging, physics, profile
+from pisa.utils.log import logging, physics, tprofile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.analysis.stats.Maps import flatten_map
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
 
 def calc_steps(params, settings):
-    '''
+    """
     Get the actual grid values for each key. If settings is a list of
     values, use these directly as steps. If settings has single value,
-    generate this many steps within the bounds given for the parameter.
-    Parameters are identified by names, or "*" which is the default for all
-    parameters
-    '''
+    generate this many steps within the bounds given for the
+    parameter.  Parameters are identified by names, or "*" which is
+    the default for all parameters
+    """
 
     # Collect the steps settings for each parameter
     for key in params:
@@ -104,9 +104,9 @@ def find_max_grid(fmap, template_maker, params, grid_settings, save_steps=True,
         #    except: continue
 
         # Now get true template
-        profile.info('start template calculation')
+        tprofile.info('start template calculation')
         true_template = template_maker.get_template(template_params)
-        profile.info('stop template calculation')
+        tprofile.info('stop template calculation')
         true_fmap = flatten_map(true_template)
 
         # and calculate the likelihood

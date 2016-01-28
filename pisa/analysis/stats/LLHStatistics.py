@@ -46,13 +46,24 @@ def get_binwise_llh(pseudo_data,template,template_params):
     Computes the log-likelihood (llh) of the pseudo_data from the
     template, where each input is expected to be a 2d numpy array
     """
-
     if not np.alltrue(template >= 0.0):
         raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
 
     totalLLH = np.sum(generalized_ln_poisson(pseudo_data,template))
 
     return totalLLH
+
+def get_binwise_chisquare(pseudo_data, template):
+    '''
+    Computes the chisquare between the pseudo_data
+    and the template, where each input is expected to be a 2d numpy array
+    '''
+    if not np.alltrue(template >= 0.0):
+        raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
+
+    total_chisquare = np.sum(np.divide(np.power((pseudo_data - template), 2), pseudo_data))
+
+    return total_chisquare
 
 def get_random_map(template, seed=None):
     """

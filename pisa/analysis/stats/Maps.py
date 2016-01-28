@@ -68,6 +68,7 @@ def get_asimov_fmap(template_maker, fiducial_params, channel=None):
     """Creates a true template from fiducial_params"""
 
     true_template = template_maker.get_template(fiducial_params)
+    #print "  params in asimov: ",fiducial_params.items()
     return flatten_map(true_template, channel=channel)
 
 def flatten_map(template, channel='all'):
@@ -98,7 +99,9 @@ def flatten_map(template, channel='all'):
         #fmap = np.array(fmap)[np.nonzero(fmap)]
     else:
         raise ValueError(
-            "channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+            "channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"
+            %channel)
+
 
     fmap = np.array(fmap)[np.nonzero(fmap)]
     return fmap

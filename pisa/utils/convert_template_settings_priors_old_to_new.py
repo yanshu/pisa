@@ -17,17 +17,20 @@ args = parser.parse_args()
 
 import sys, os, re, traceback, time, warnings, itertools
 import copy
-from pisa.utils import utils as putils
+#from pisa.utils import utils as putils
+from pisa.utils.fileio import from_file, to_file
 from pisa.utils import params as ppars
+from pisa.utils import utils as putils
 
-ts0 = putils.from_file(args.infile)
+ts0 = from_file(args.infile)
 ts1 = copy.deepcopy(ts0)
 for paramname, param in sorted(ts0['params'].iteritems()):
-    new_prior = ppars.Prior.from_old_style_param_dict(param_dict=param)
+    new_prior = ppars.Prior.from_param(param)
     if new_prior is None:
         continue
+    print 'Converting prior for param `' + paramname + '`'
     new_param = copy.deepcopy(param)
     new_param.update(new_prior.build_dict())
     ts1['params'][paramname] = new_param
 
-putils.to_file(ts1, args.outfile)
+to_file(ts1, args.outfile)
