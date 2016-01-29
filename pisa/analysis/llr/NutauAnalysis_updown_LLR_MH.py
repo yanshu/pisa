@@ -1,0 +1,155 @@
+#! /usr/bin/env python
+#
+# NutauAnalysis.py
+#
+# Runs the LLR optimizer-based analysis for a nutau appearance search
+#
+# author: Feifei Huang - fxh140@psu.edu
+#         Tim Arlen - tca3@psu.edu
+#
+# date:   31-March-2015
+#
+
+import numpy as np
+import copy
+import random as rnd
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
+from pisa.utils.log import logging, profile, physics, set_verbosity
+from pisa.utils.jsons import from_json,to_json
+from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
+from pisa.analysis.stats.Maps import get_seed
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
+from pisa.utils.params_MH import change_nutau_norm_settings
+
+parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
+defined in settings.json file and saves the likelihood values for all
+combination of hierarchies.''',
+                        formatter_class=ArgumentDefaultsHelpFormatter)
+parser.add_argument('-t','--template_settings',type=str,
+                    metavar='JSONFILE', required = True,
+                    help='''Settings related to the template generation and systematics.''')
+parser.add_argument('-m','--minimizer_settings',type=str,
+                    metavar='JSONFILE', required = True,
+                    help='''Settings related to the optimizer used in the LLR analysis.''')
+parser.add_argument('-pd','--pseudo_data_settings',type=str,
+                    metavar='JSONFILE',default=None,
+                    help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
+parser.add_argument('-n','--ntrials',type=int, default = 1,
+                    help="Number of trials to run")
+parser.add_argument('-s','--save-steps',action='store_true',default=False,
+                    dest='save_steps',
+                    help="Save all steps the optimizer takes.")
+parser.add_argument('-o','--outfile',type=str,default='llh_data.json',metavar='JSONFILE',
+                    help="Output filename.")
+parser.add_argument('-v', '--verbose', action='count', default=None,
+                    help='set verbosity level')
+parser.add_argument('--check_octant',action='store_true',default=False,
+                    help="When theta23 LLH is multi-modal, check both octants for global minimum.")
+
+args = parser.parse_args()
+
+set_verbosity(args.verbose)
+
+#Read in the settings
+template_settings = from_json(args.template_settings)
+czbins = template_settings['binning']['czbins']
+
+up_template_settings = copy.deepcopy(template_settings)
+up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
+up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
+
+down_template_settings = copy.deepcopy(template_settings)
+down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
+down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
+down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
+
+minimizer_settings  = from_json(args.minimizer_settings)
+pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
+
+#Workaround for old scipy versions
+import scipy
+if scipy.__version__ < '0.12.0':
+    logging.warn('Detected scipy version %s < 0.12.0'%scipy.__version__)
+    if 'maxiter' in minimizer_settings:
+      logging.warn('Optimizer settings for \"maxiter\" will be ignored')
+      minimizer_settings.pop('maxiter')
+
+
+# make sure that both pseudo data and template are using the same
+# channel. Raise Exception and quit otherwise
+channel = template_settings['params']['channel']['value']
+if channel != pseudo_data_settings['params']['channel']['value']:
+    error_msg = "Both template and pseudo data must have same channel!\n"
+    error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
+    raise ValueError(error_msg)
+
+
+template_maker_down = TemplateMaker(get_values(down_template_settings['params']),
+                                 **down_template_settings['binning'])
+template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
+                               **up_template_settings['binning'])
+template_maker = [template_maker_up,template_maker_down]
+pseudo_data_template_maker = [template_maker_up,template_maker_down]
+
+#store results from all the trials
+trials = []
+for itrial in xrange(1,args.ntrials+1):
+    profile.info("start trial %d"%itrial)
+    logging.info(">"*10 + "Running trial: %05d"%itrial + "<"*10)
+
+
+    # //////////////////////////////////////////////////////////////////////
+    # For each trial, generate two pseudo-data experiemnts (one for each
+    # hierarchy), and for each find the best matching template in each of the
+    # hierarchy hypothesis.
+    # //////////////////////////////////////////////////////////////////////
+    results = {}
+    for data_MH_tag, data_normal in [('data_N', True), ('data_I', False)]:
+        results[data_MH_tag] = {}
+        for data_tag, data_nutau_norm in [('data_tau',1.0),('data_notau',0.0)]:
+            results[data_MH_tag][data_tag] = {}
+            # 0) get a random seed and store with the data
+            results[data_MH_tag][data_tag]['seed'] = get_seed()
+            logging.info("  RNG seed: %ld"%results[data_MH_tag][data_tag]['seed'])
+            # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
+            fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
+                            get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
+                                       normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
+                                        seed=results[data_MH_tag][data_tag]['seed'],channel=channel)
+
+            # 2) find max llh (and best fit free params) from matching pseudo data
+            #    to templates.
+            for hypo_MH_tag, hypo_normal in [('hypo_I', False), ('hypo_N', True)]:
+                results[data_MH_tag][data_tag][hypo_MH_tag] = {}
+                for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_notau',0, True),('hypo_tau',1, True)]:
+
+                    physics.info("Finding best fit for %s %s under %s %s assumption"%(data_MH_tag, data_tag, hypo_MH_tag, hypo_tag))
+                    profile.info("start optimizer")
+                    llh_data = find_max_llh_bfgs(fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
+                                                 hypo_nutau_norm,nutau_norm_fix,hypo_normal),
+                                                 minimizer_settings,args.save_steps,
+                                                 normal_hierarchy=hypo_normal,
+                                                 check_octant = args.check_octant)
+                    profile.info("stop optimizer")
+
+                    #Store the LLH data
+                    results[data_MH_tag][data_tag][hypo_MH_tag][hypo_tag] = llh_data
+
+
+    #Store this trial
+    trials += [results]
+    profile.info("stop trial %d"%itrial)
+
+#Assemble output dict
+output = {'trials' : trials,
+          'template_settings_up' : up_template_settings,
+          'template_settings_down' : down_template_settings,
+          'minimizer_settings' : minimizer_settings}
+if args.pseudo_data_settings is not None:
+    output['pseudo_data_settings'] = pseudo_data_settings
+
+    #And write to file
+to_json(output,args.outfile)
