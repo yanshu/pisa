@@ -150,7 +150,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/1X60_aeff_mc.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__unjoined.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -330,7 +330,7 @@
     },
     "flux_file": {
       "fixed": true,
-      "value": "flux/frj-solmin-mountain-aa.d"
+      "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
     },
     "hole_ice": {
       "fixed": false,
@@ -348,7 +348,7 @@
     },
     "icc_bg_file": {
       "fixed": true,
-      "value": "background/IC86_3yr_ICC.hdf5"
+      "value": "background/Matt_L5b_icc_data_IC86_2_3_4.hdf5"
     },
     "livetime": {
       "fixed": true,
@@ -424,7 +424,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "events/1X60_weighted_aeff_joined_nu_nubar.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -436,7 +436,7 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "events/1X60_weighted_aeff_joined_nu_nubar.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "domeff_holeice_slope_file": {
       "fixed": true,
