@@ -780,7 +780,7 @@ def hash_file(fname):
 
 def get_all_channel_names():
     """Return all allowed channel keywords."""
-    return ['all', 'cscd', 'trck', 'no_pid']
+    return ['all', 'cscd', 'trck']
 
 
 def get_channels(channel_name):
@@ -794,7 +794,7 @@ def get_channels(channel_name):
             "channel name: '%s' not implemented! Allowed: %s"
             %(channel_name, allowed_channel_names))
     if channel_name == 'all':
-      return ['cscd', 'trck']
+        return ['cscd', 'trck']
     return [channel_name]
 
 

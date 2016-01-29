@@ -72,13 +72,8 @@ def get_channel_template(template, channel='all'):
     channels = get_channels(channel)
     logging.trace("Creating map of channel: %s"%channel)
     channel_template = {}
-    if channels == ['no_pid']:
-        channel_template['no_pid'] = \
-		np.sum([ template[chan]['map'].flatten()
-                          for chan in get_channels('all') ], axis=0)
-    else:
-        for chan in channels:
-            channel_template[chan] = template[chan]['map'].flatten()
+    for chan in channels:
+        channel_template[chan] = template[chan]['map'].flatten()
 
     return channel_template
 
