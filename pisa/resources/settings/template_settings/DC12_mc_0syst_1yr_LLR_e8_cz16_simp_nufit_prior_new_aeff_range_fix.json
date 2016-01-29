@@ -446,6 +446,14 @@
       "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_8_by_16.json"
     },
     },
+    "domeff_holeice_slope_file": {
+      "fixed": true,
+      "value": "domeff_holeice/DH_slopes_up_down_8_by_16.json"
+    },
+    "reco_prcs_coeff_file": {
+      "fixed": true,
+      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_8_by_16.json"
+    },
     "residual_up_down": {
       "fixed": true,
       "value": false
