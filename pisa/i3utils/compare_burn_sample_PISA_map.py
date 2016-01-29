@@ -98,7 +98,7 @@ settings file. ''')
                         default='background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
-    parser.add_argument('-y','--y',type=float,
+    parser.add_argument('-y','--y',default=0.045,type=float,
                         help='No. of livetime[ unit: Julian year]')
     parser.add_argument('--bg_scale',type=float,
                         help="atmos background scale value")
@@ -130,13 +130,17 @@ settings file. ''')
     anlys_ebins = template_settings['binning']['anlys_ebins']
     czbins = template_settings['binning']['czbins']
 
+    print "ebins = ", ebins
+    print "czbins = ", czbins
     CZ_bin_centers = get_bin_centers(czbins)
     E_bin_centers = get_bin_centers(anlys_ebins)
+    print "E_bin_centers = ", E_bin_centers
+    print "CZ_bin_centers = ", CZ_bin_centers
 
     burn_sample_maps = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= True, get_array=False,channel=template_settings['params']['channel']['value'])
 
-    #burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= False, get_array=True, channel=template_settings['params']['channel']['value'])
-    #print "     total no. of events in burn sample :", np.sum(burn_sample_in_array) 
+    burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= False, get_array=True, channel=template_settings['params']['channel']['value'])
+    print "     total no. of events in burn sample :", np.sum(burn_sample_in_array) 
 
     plt.figure()
     show_map(burn_sample_maps['cscd'],vmax=15,logE=args.logE)
@@ -153,6 +157,8 @@ settings file. ''')
         plt.title(r'${\rm %s \, yr \, burn \, sample \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps['trck']['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
+
+
 
     ##################### Plot MC expectation #######################
 
@@ -206,20 +212,15 @@ settings file. ''')
         plt.title(r'${\rm %s \, yr \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(nominal_nutau_trck['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
-    
-    print "\n-------------------"
+
     print "no. of nominal_nutau_cscd = ", np.sum(nominal_nutau_cscd['map'])
     print "no. of nominal_nutau_trck = ", np.sum(nominal_nutau_trck['map'])
     print " total of the above two : ", np.sum(nominal_nutau_cscd['map'])+np.sum(nominal_nutau_trck['map'])
-    print "-------------------"
+    print " \n"
     print "no. of nominal_no_nutau_cscd = ", np.sum(nominal_no_nutau_cscd['map'])
     print "no. of nominal_no_nutau_trck = ", np.sum(nominal_no_nutau_trck['map'])
     print " total of the above two : ", np.sum(nominal_no_nutau_cscd['map'])+np.sum(nominal_no_nutau_trck['map'])
-    print "-------------------"
-    print "observed no. of cscd = ", np.sum(burn_sample_maps['cscd']['map'])
-    print "observed no. of trck = ", np.sum(burn_sample_maps['trck']['map'])
-    print "total observed = ", np.sum(burn_sample_maps['trck']['map'])+np.sum(burn_sample_maps['cscd']['map'])
-    print "-------------------\n"
+    print " \n"
    
 
     ################ Plot background ##################
@@ -257,36 +258,7 @@ settings file. ''')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
 
-    # data / mc maps
-    nutau_mc_data_ratio_cscd =  ratio_map(burn_sample_maps['cscd'], nominal_nutau_cscd)
-    plt.figure()
-    show_map(nutau_mc_data_ratio_cscd,logE=args.logE)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+'_nutau_mc_data_ratio_cscd.png')
-        plt.title(args.title+'_nutau_mc_data_ratio_cscd')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
-    
-    nutau_mc_data_ratio_trck =  ratio_map(burn_sample_maps['trck'], nominal_nutau_trck)
-    plt.figure()
-    show_map(nutau_mc_data_ratio_trck,logE=args.logE)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+'_nutau_mc_data_ratio_trck.png')
-        plt.title(args.title+'_nutau_mc_data_ratio_trck')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
 
-    burn_sample_total = sum_map(burn_sample_maps['cscd'], burn_sample_maps['trck'])
-    nominal_nutau_total = sum_map(nominal_nutau_cscd, nominal_nutau_trck)
-
-    nutau_mc_data_ratio_total =  ratio_map(burn_sample_total, nominal_nutau_total)
-    plt.figure()
-    show_map(nutau_mc_data_ratio_total,logE=args.logE)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+'_nutau_mc_data_ratio_total.png')
-        plt.title(args.title+'_nutau_mc_data_ratio_total')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
     ################## PLOT MC/Data comparison ##################
 
     burn_sample_cscd_map = burn_sample_maps['cscd']['map']

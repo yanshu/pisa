@@ -25,17 +25,18 @@ def get_burn_sample(burn_sample_file, ebins, czbins, get_map, get_array, channel
     reco_energy_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
     reco_coszen_all = np.array(np.cos(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
 
-    print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
+    #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
-    print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
+    #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # throw away dLLH < -3
     #reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
     #reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
     #dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
+
     # don't throw away dLLH < -3
     reco_energy_L6_cut1 = reco_energy_L6
     reco_coszen_L6_cut1 = reco_coszen_L6
