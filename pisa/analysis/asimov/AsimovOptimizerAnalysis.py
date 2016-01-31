@@ -22,6 +22,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy
+from pisa.analysis.stats.Maps import getAsimovData
 
 parser = ArgumentParser(description='''Runs the Asimov optimizer-based analysis varying a number of systematic parameters
 defined in settings.json file and saves the likelihood (or chisquare) values for all
@@ -82,10 +83,10 @@ if channel != pseudo_data_settings['params']['channel']['value']:
 template_maker = TemplateMaker(get_values(template_settings['params']),
                                **template_settings['binning'])
 if args.pseudo_data_settings:
-    pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
+    pd_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
                                                **pseudo_data_settings['binning'])
 else:
-    pseudo_data_template_maker = template_maker
+    pd_template_maker = template_maker
 
 
 # //////////////////////////////////////////////////////////////////////
@@ -97,8 +98,9 @@ results = {}
 for data_tag, data_normal in [('data_NMH', True), ('data_IMH', False)]:
     results[data_tag] = {}
     # 1) get "Asimov" average fiducial template:
-    pseudo_data_params = select_hierarchy(pseudo_data_settings['params'], data_normal)
-    pseudo_data_set = pseudo_data_template_maker.get_template(get_values(pseudo_data_params))
+    asimov_data = getAsimovData(pd_template_maker,
+				pseudo_data_settings['params'],
+				data_normal)
 
     # 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
     #    to templates.
@@ -107,7 +109,7 @@ for data_tag, data_normal in [('data_NMH', True), ('data_IMH', False)]:
 	tprofile.info("start optimizer")
 	tprofile.info("Using %s"%metric_name)
 
-	opt_data, opt_flags = find_opt_scipy(pseudo_data_set,template_maker,
+	opt_data, opt_flags = find_opt_scipy(asimov_data, template_maker,
 			        template_settings['params'], minimizer_settings,
 			        args.save_steps, normal_hierarchy=hypo_normal,
 				check_octant=args.check_octant,

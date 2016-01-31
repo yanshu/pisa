@@ -12,6 +12,7 @@ from scipy.stats import poisson
 
 from pisa.utils.log import logging
 from pisa.utils.utils import get_all_channel_names, get_channels
+from pisa.utils.params import get_values, select_hierarchy
 
 def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_type=None):
     """
@@ -45,24 +46,6 @@ def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_typ
 
     return scaled_map1, scaled_map2
 
-def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
-    """
-    Creates a true template from fiducial_params, then uses Poisson statistics
-    to vary the expected counts per bin to create a pseudo data set.
-    If seed is provided, the random state is seeded with seed before the map is
-    created.
-
-    IMPORTANT: returns a SINGLE flattened map of trck/cscd combined
-    \params:
-      * channel = channel of flattened fmap to use.
-        if 'all': returns a single flattened map of trck/cscd combined.
-        if 'cscd' or 'trck' only returns the channel requested.
-    """
-
-    true_template = template_maker.get_template(fiducial_params)
-    true_fmap = flatten_map(true_template, channel=channel)
-    fmap = get_random_map(true_fmap, seed=seed)
-    return fmap
 
 def get_channel_template(template, channel='all'):
     """
@@ -77,6 +60,21 @@ def get_channel_template(template, channel='all'):
 
     return channel_template
 
+def getAsimovData(template_maker, params, data_normal):
+    """
+    Generates the asimov data set (expected counts distribution) at
+    parameters assuming hierarchy of data_normal
+
+    \Params:
+      * template_maker - instance of class TemplateMaker service.
+      * params - parameters with values, fixed, range, etc. of systematics
+      * data_normal - bool for Mass hierarchy being Normal (True)
+        or inverted (False)
+    """
+
+    fiducial_param_vals = get_values(select_hierarchy(
+        params, normal_hierarchy=data_normal))
+    return template_maker.get_template(fiducial_param_vals)
 
 def get_seed():
     """

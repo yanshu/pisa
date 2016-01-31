@@ -21,7 +21,7 @@ from copy import deepcopy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy, find_alt_hierarchy_fit
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed, get_random_map
+from pisa.analysis.stats.Maps import getAsimovData, get_seed, get_random_map
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.log import logging, tprofile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
@@ -37,23 +37,6 @@ def check_scipy_version(minimizer_settings):
             logging.warn('Optimizer settings for \"maxiter\" will be ignored')
             minimizer_settings.pop('maxiter')
     return
-
-def getAsimovData(template_maker, params, data_normal):
-    """
-    Generates the asimov data set (expected counts distribution) at
-    parameters assuming hierarchy of data_normal
-
-    \Params:
-      * template_maker - instance of class TemplateMaker service.
-      * params - parameters with values, fixed, range, etc. of systematics
-      * data_normal - bool for Mass hierarchy being Normal (True)
-        or inverted (False)
-    """
-
-    fiducial_param_vals = get_values(select_hierarchy(
-        params, normal_hierarchy=data_normal))
-    return template_maker.get_template(fiducial_param_vals)
-
 
 def getAltHierarchyBestFit(asimov_data, template_maker, params, minimizer_settings,
                            hypo_normal, check_octant):
