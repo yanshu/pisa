@@ -24,6 +24,8 @@ def show_map(pmap, title=None, cbar = True,
              ylabel='Energy [GeV]',
              zlabel=None,
              zlabel_size='large',
+             annotate_no_evts=True,
+             annotate_prcs=1,
              **kwargs):
     '''Plot the given map with proper axis labels using matplotlib.
        The axis orientation follows the PINGU convention:
@@ -94,9 +96,13 @@ def show_map(pmap, title=None, cbar = True,
 
     cz_bin_centers = get_bin_centers(pmap['czbins'])
     e_bin_centers = get_bin_centers(pmap['ebins'])
-    for i in range(0,len(e_bin_centers)):
-        for j in range(0,len(cz_bin_centers)):
-            plt.annotate('%.1f'%(counts[i*len(cz_bin_centers)+j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=5)
+    if annotate_no_evts:
+        for i in range(0,len(e_bin_centers)):
+            for j in range(0,len(cz_bin_centers)):
+                if annotate_prcs == 1:
+                    plt.annotate('%.1f'%(counts[i*len(cz_bin_centers)+j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=5)
+                if annotate_prcs == 2:
+                    plt.annotate('%.2f'%(counts[i*len(cz_bin_centers)+j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=5)
 
     #Add nice labels
     #if xlabel == None:
