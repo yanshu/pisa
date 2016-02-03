@@ -351,6 +351,32 @@ def fix_osc_params(params):
 
     return new_params
 
+def fix_param(params,param):
+    """
+    returns dict with param set to 'fixed'=True
+    """
+    new_params = {}
+    # or initialize with new copy by dict(params)
+    for key,value in params.items():
+        new_params[key] = deepcopy(value)
+        if param in key:
+            new_params[key]['fixed'] = True
+
+    return new_params
+     
+def fix_all_param(params,param):
+    """
+    returns dict with param set to 'fixed'=True
+    """
+    new_params = {}
+    # or initialize with new copy by dict(params)
+    for key,value in params.items():
+        new_params[key] = deepcopy(value)
+        if param[key].has_key('fixed'):
+            new_params[key]['fixed'] = True
+
+    return new_params
+
 
 def fix_atm_params(params):
     """

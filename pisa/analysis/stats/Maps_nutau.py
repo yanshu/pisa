@@ -86,8 +86,10 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
         template_up = get_up_map(template_up_down_combined, channel=fiducial_params['channel'])
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel=fiducial_params['channel'])
 
-        fmap_up = Maps.flatten_map(template_up, channel=fiducial_params['channel'])
-        fmap_down = Maps.flatten_map(reflected_template_down, channel=fiducial_params['channel'])
+        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],fiducial_params)
+        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
+        fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
+        fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
         #fmap_up = np.int32(true_fmap_up+0.5)
         #fmap_down = np.int32(true_fmap_down+0.5)
         if fiducial_params['residual_up_down']:

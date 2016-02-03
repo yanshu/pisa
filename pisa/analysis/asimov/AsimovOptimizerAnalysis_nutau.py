@@ -23,7 +23,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps_nutau import get_asimov_data_fmap_up_down
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings, fix_param, fix_all_params
 
 parser = ArgumentParser(description='''Runs the Asimov optimizer-based analysis varying a number of systematic parameters
 defined in settings.json file and saves the likelihood (or chisquare) values for all
@@ -47,12 +47,19 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
                     help='set verbosity level')
 parser.add_argument('--check_octant',action='store_true',default=False,
                     help="When theta23 LLH is multi-modal, check both octants for global minimum.")
+parser.add_argument('-f', default='',help='parameter to be fixed',dest='f_param')
 args = parser.parse_args()
 
 set_verbosity(args.verbose)
 
 #Read in the settings
 template_settings = from_json(args.template_settings)
+
+if not args.f_param == '':
+    template_settings['params'] = fix_param(template_settings['params'], args.f_param)
+    print 'fixed param %s'%args.f_param
+    logging.info('fixed param %s'%args.f_param)
+
 czbins = template_settings['binning']['czbins']
 
 up_template_settings = copy.deepcopy(template_settings)
@@ -103,36 +110,42 @@ pseudo_data_template_maker = [template_maker_up,template_maker_down]
 results = {}
 data_normal = True
 hypo_normal = True
-#for data_tag, data_normal in [('data_NMH',True),('data_IMH',False)]:
-for data_tag, data_nutau_norm in [('data_tau',1.0),('data_notau',0.0)]:
+data_tag, data_nutau_norm = ('data_tau',1.0)
 
-    results[data_tag] = {}
-    # 1) get "Asimov" average fiducial template:
-    asimov_fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
-                                get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
-                                channel=channel)
+results[data_tag] = {}
+# 1) get "Asimov" average fiducial template:
+asimov_fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
+                            get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
+                            normal_hierarchy=data_normal,nutau_norm_value=data_nutau_norm)),
+                            channel=channel)
 
-    #asimov_fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
-    #                                get_values(select_hierarchy(pseudo_data_settings['params'],
-    #                                normal_hierarchy=data_normal)),
-    #                                channel=channel)
+# 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
+#    to templates, fixing mu to 0
+hypo_tag, hypo_nutau_norm, nutau_norm_fix = ('hypo_notau',0, True)
 
-    # 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
-    #    to templates.
-    for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_notau',0, True),('hypo_tau',1, True)]:
+physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
+tprofile.info("start optimizer")
+llh_data = find_max_llh_bfgs(asimov_fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
+                             hypo_nutau_norm,nutau_norm_fix, hypo_normal),
+                             minimizer_settings,args.save_steps,
+                             normal_hierarchy=hypo_normal,
+                             check_octant = args.check_octant)
+tprofile.info("stop optimizer")
 
-        physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
-        tprofile.info("start optimizer")
-        llh_data = find_max_llh_bfgs(asimov_fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
-                                     hypo_nutau_norm,nutau_norm_fix, hypo_normal),
-                                     minimizer_settings,args.save_steps,
-                                     normal_hierarchy=hypo_normal,
-                                     check_octant = args.check_octant)
-        tprofile.info("stop optimizer")
+#Store the LLH data
+results[data_tag][hypo_tag] = llh_data
 
-        #Store the LLH data
-        results[data_tag][hypo_tag] = llh_data
+# just calculate llh for denominator which doesnt require a minimization, because the input values of the nuisance paras are equal to their best fit value
+hypo_tag, hypo_nutau_norm, nutau_norm_fix = ('hypo_tau',1, True)
+physics.info("Calculating llh without fitting for ")
+template_settings['params'] = fix_all_params(template_settings['params'])
+llh_data = find_max_llh_bfgs(asimov_fmap,template_maker,change_nutau_norm_settings(template_settings['params'],
+                             hypo_nutau_norm,nutau_norm_fix, hypo_normal),
+                             minimizer_settings,args.save_steps,
+                             normal_hierarchy=hypo_normal,
+                             check_octant = args.check_octant)
+#Store the LLH data
+results[data_tag][hypo_tag] = llh_data
 
 # Assemble output dict
 output = {'results' : results,
@@ -146,7 +159,7 @@ if args.pseudo_data_settings is not None:
 # And write to file
 to_json(output,args.outfile)
 
+print results
 # Finally, report on what we have
-llr_tau = -(np.min(results['data_tau']['hypo_notau']) - np.min(results['data_tau']['hypo_tau']))
-llr_notau = -(np.min(results['data_notau']['hypo_notau']) - np.min(results['data_notau']['hypo_tau']))
-logging.info('(hypo notau is numerator): llr_tau: %.4f, llr_notau: %.4f'%(llr_tau,llr_notau))
+q0 = 2*(np.min(results['data_tau']['hypo_notau']['llh']) - np.min(results['data_tau']['hypo_tau']))
+print 'sqrt(q0) = %.4f'%(np.sqrt(q0))
