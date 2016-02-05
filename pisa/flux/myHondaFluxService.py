@@ -69,8 +69,6 @@ class myHondaFluxService():
     def get_flux(self, ebins, czbins, prim):
         """Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary."""
-        print ebins
-        print czbins
         N = 100
         small_ebins = []
         small_czbins = []
