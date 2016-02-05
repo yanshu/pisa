@@ -22,7 +22,8 @@ from pisa.utils.params import get_fixed_params, get_free_params, get_values, sel
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.utils import Timer
 
-from pisa.flux.HondaFluxService import HondaFluxService
+from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
+#from pisa.flux.HondaFluxService import HondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
