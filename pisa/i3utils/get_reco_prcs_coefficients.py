@@ -20,7 +20,6 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed, flatten_map
-from pisa.analysis.stats.Maps_nutau_noDOMIce import get_pseudo_data_fmap, get_true_template
 from pisa.analysis.stats.Maps_nutau import get_flipped_map, get_combined_map, get_up_map, get_flipped_down_map
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
@@ -36,7 +35,7 @@ parser.add_argument('-t','--template_settings',type=str,
                     help='''Settings related to the template generation and systematics.''')
 parser.add_argument('--reco_prcs_vals',type=str,
                     metavar='reco_prcs_vals',
-                    default = 'np.linspace(0.95,1.05,15)', help = '''The reco. precision values to use.''')
+                    default = 'np.linspace(0.7,2.0,14)', help = '''The reco. precision values to use.''')
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
@@ -111,8 +110,8 @@ for data_tag, data_nutau_norm in [('data_notau', 0.0)]:
             template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
 
-            tmap_up = template_maker_up.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True)))
-            tmap_down = template_maker_down.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True)))
+            tmap_up = template_maker_up.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
+            tmap_down = template_maker_down.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
 
             template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel= channel)
             template_up = get_up_map(template_up_down_combined, channel= channel)
