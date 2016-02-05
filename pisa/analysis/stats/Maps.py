@@ -102,8 +102,7 @@ def flatten_map(template, channel='all'):
             "channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"
             %channel)
 
-
-    fmap = np.array(fmap)[np.nonzero(fmap)]
+    #fmap = np.array(fmap)[np.nonzero(fmap)]
     return fmap
 
 def get_seed():
