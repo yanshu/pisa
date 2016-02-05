@@ -88,9 +88,7 @@ MCmaps = {}
 
 reco_prcs_vals = eval(args.reco_prcs_vals)
 print "reco_prcs_vals = ", reco_prcs_vals
-#for data_tag, data_nutau_norm in [('data_tau', 1.0), ('data_notau', 0.0)]:
-for data_tag, data_nutau_norm in [('data_notau', 0.0)]:
-#for data_tag, data_nutau_norm in [('data_tau', 1.0)]:
+for data_tag, data_nutau_norm in [('data_tau', 1.0)]:
 
     tmaps[data_tag] = {}
     MCmaps[data_tag] = {}
@@ -122,8 +120,8 @@ for data_tag, data_nutau_norm in [('data_notau', 0.0)]:
             tmaps[data_tag][precision_tag][str(reco_prcs_val)]['trck']['down'] = reflected_template_down['trck']['map']
             tmaps[data_tag][precision_tag][str(reco_prcs_val)]['cscd']['down'] = reflected_template_down['cscd']['map']
 
-            MCMap_up = GetMCError(get_values(template_settings_Reco['params']), up_template_settings['binning']['ebins'], up_template_settings['binning']['czbins'], reco_mc_file_up)
-            MCMap_down = GetMCError(get_values(template_settings_Reco['params']), down_template_settings['binning']['ebins'], down_template_settings['binning']['czbins'], reco_mc_file_down)
+            MCMap_up = GetMCError(get_values(template_settings_Reco['params']), up_template_settings['binning']['anlys_ebins'], up_template_settings['binning']['czbins'], reco_mc_file_up)
+            MCMap_down = GetMCError(get_values(template_settings_Reco['params']), down_template_settings['binning']['anlys_ebins'], down_template_settings['binning']['czbins'], reco_mc_file_down)
             tmap_MC_up = MCMap_up.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file_up)
             tmap_MC_down = MCMap_down.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file_down)
             #print "tmap_MC_up = ", tmap_MC_up
