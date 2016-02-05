@@ -17,7 +17,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_burn_sample(burn_sample_file, ebins, czbins, get_map, get_array, channel):
+def get_burn_sample(burn_sample_file, ebins, czbins, output_form, channel):
     burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
 
     dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
@@ -42,19 +42,26 @@ def get_burn_sample(burn_sample_file, ebins, czbins, get_map, get_array, channel
     reco_coszen_L6_cut1 = reco_coszen_L6
     dLLH_L6_cut1 = dLLH_L6
 
+    # get cscd array and trck array
+    reco_energy = {}
+    reco_coszen = {}
+
     # write burn sample data to dictionary
     burn_sample_dict = {}
-    for flavor in ['cscd','trck']:
-        if flavor == 'cscd':
+    for flav in ['cscd','trck']:
+        if flav == 'cscd':
             cut = dLLH_L6_cut1 < 3.0 
-        if flavor == 'trck':
+        if flav == 'trck':
             cut = dLLH_L6_cut1 >= 3.0 
         reco_energy_L6_final = reco_energy_L6_cut1[cut]
         reco_coszen_L6_final = reco_coszen_L6_cut1[cut]
 
+        reco_energy[flav] = reco_energy_L6_final
+        reco_coszen[flav] = reco_coszen_L6_final
+
         bins = (ebins, czbins)
         burn_sample_hist,_,_ = np.histogram2d(reco_energy_L6_final,reco_coszen_L6_final,bins=bins)
-        burn_sample_dict[flavor] = burn_sample_hist
+        burn_sample_dict[flav] = burn_sample_hist
 
     # get the burn sample maps (cz in [-1, 1])
     burn_sample_maps={}
@@ -62,10 +69,32 @@ def get_burn_sample(burn_sample_file, ebins, czbins, get_map, get_array, channel
         burn_sample_maps[flav] = {'map':burn_sample_dict[flav],
                                  'ebins':ebins,
                                  'czbins':czbins}
-    if get_map:
+
+    if output_form == 'map':
         return burn_sample_maps
 
-    if get_array:
+    if output_form == 'side_map':
+        f_select = from_json('sgnl_side_region_selection.json')
+        burn_sample_maps_side = {}
+        for flav in ['trck','cscd']:
+            burn_sample_maps_side[flav] = {'map':burn_sample_dict[flav]* f_select['side'][flav],
+                                     'ebins':ebins,
+                                     'czbins':czbins}
+        return burn_sample_maps_side
+
+    if output_form == 'sgnl_map':
+        f_select = from_json('sgnl_side_region_selection.json')
+        burn_sample_maps_sgnl = {}
+        for flav in ['trck','cscd']:
+            burn_sample_maps_sgnl[flav] = {'map':burn_sample_dict[flav]* f_select['sgnl'][flav],
+                                     'ebins':ebins,
+                                     'czbins':czbins}
+        return burn_sample_maps_sgnl
+
+    if output_form == 'MC':
+        return reco_energy, reco_coszen
+
+    if output_form == 'array':
         # return a 1D array (used for the fit in the LLR analysis)
         burn_sample_map_up = get_up_map(burn_sample_maps, channel=channel)
         burn_sample_map_flipped_down = get_flipped_down_map(burn_sample_maps, channel=channel)
