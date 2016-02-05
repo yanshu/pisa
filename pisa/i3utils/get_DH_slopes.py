@@ -19,7 +19,7 @@ from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed, flatten_map
 from pisa.analysis.stats.Maps_nutau import get_flipped_down_map, get_combined_map, get_up_map
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings, select_hierarchy
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings, select_hierarchy
 from pisa.utils.plot import show_map
 import os
 
@@ -53,6 +53,8 @@ def dom_eff_linear_through_point(x,k):
 #Read in the settings
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
+ebins = template_settings['binning']['ebins']
+anlys_ebins = template_settings['binning']['anlys_ebins']
 channel = template_settings['params']['channel']['value']
 
 up_template_settings = copy.deepcopy(template_settings)
@@ -108,8 +110,8 @@ for data_tag, data_nutau_norm in [('data_tau',1.0)]:
         DH_template_maker_down = TemplateMaker(get_values(DH_down_template_settings['params']), **DH_down_template_settings['binning'])
         DH_template_maker_up = TemplateMaker(get_values(DH_up_template_settings['params']), **DH_up_template_settings['binning'])
    
-        tmap_up = DH_template_maker_up.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
-        tmap_down = DH_template_maker_down.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True)))
+        tmap_up = DH_template_maker_up.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True, normal_hierarchy=True)))
+        tmap_down = DH_template_maker_down.get_template(get_values(change_nutau_norm_settings(DH_up_template_settings['params'], 1.0 ,True, normal_hierarchy=True)))
 
         template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel= channel)
         template_up = get_up_map(template_up_down_combined, channel= channel)
@@ -121,6 +123,7 @@ for data_tag, data_nutau_norm in [('data_tau',1.0)]:
         results[data_tag][str(run_num)]['cscd']['up'] = template_up['cscd']['map']
         results[data_tag][str(run_num)]['trck']['down'] = reflected_template_down['trck']['map']
         results[data_tag][str(run_num)]['cscd']['down'] = reflected_template_down['cscd']['map']
+        print "shape of reflected_template_down['cscd']['map'] = ", np.shape(reflected_template_down['cscd']['map'])
         if run_num == 50:
             for chan in ['trck','cscd']:
                 plt.figure()
