@@ -45,7 +45,9 @@
       23.71373706,
       31.6227766,
       42.16965034,
-      56.23413252
+      56.23413252,
+      74.98942093,
+      100.0
     ],
     "oversample_cz": 10,
     "oversample_e": 10
@@ -352,7 +354,7 @@
     },
     "livetime": {
       "fixed": true,
-      "value": 4.0
+      "value": 0.045
     },
     "nu_nubar_ratio": {
       "fixed": false,
@@ -440,11 +442,11 @@
     },
     "domeff_holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/DH_slopes_up_down_8_by_16.json"
+      "value": "domeff_holeice/DH_slopes_up_down_10_by_16.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_8_by_16.json"
+      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
     },
     "residual_up_down": {
       "fixed": true,
