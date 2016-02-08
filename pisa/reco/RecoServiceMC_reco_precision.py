@@ -68,6 +68,8 @@ class RecoServiceMC(RecoServiceBase):
                 true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
                 reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
                 reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                reco_zen = np.arccos(reco_coszen)
+                true_zen = np.arccos(true_coszen)
 
                 if e_reco_precision_up != 1:
                     reco_energy[true_coszen<=0] *= e_reco_precision_up
@@ -78,13 +80,14 @@ class RecoServiceMC(RecoServiceBase):
                     reco_energy[true_coszen>0] -= (e_reco_precision_down - 1) * true_energy[true_coszen>0]
 
                 if cz_reco_precision_up != 1:
-                    reco_coszen[true_coszen<=0] *= cz_reco_precision_up
-                    reco_coszen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_coszen[true_coszen<=0]
+                    reco_zen[true_coszen<=0] *= cz_reco_precision_up
+                    reco_zen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_zen[true_coszen<=0]
 
                 if cz_reco_precision_down != 1:
-                    reco_coszen[true_coszen>0] *= cz_reco_precision_down
-                    reco_coszen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_coszen[true_coszen>0]
+                    reco_zen[true_coszen>0] *= cz_reco_precision_down
+                    reco_zen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_zen[true_coszen>0]
 
+                reco_coszen = np.cos(reco_zen)
                 while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
                     reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
                     reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
