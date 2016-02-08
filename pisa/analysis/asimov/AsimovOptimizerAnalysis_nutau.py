@@ -62,14 +62,16 @@ if not args.f_param == '':
 
 czbins = template_settings['binning']['czbins']
 
+PISA = '~/pisa/'
+
 up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
+up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': PISA+'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
+up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': PISA+'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
 
 down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': 'pisa/resources/pid/1X60_pid_down.json'}
-down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
+down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': PISA+'pisa/resources/pid/1X60_pid_down.json'}
+down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': PISA+'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
+down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': PISA+'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
@@ -156,10 +158,13 @@ output = {'results' : results,
 if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings
 
-# And write to file
-to_json(output,args.outfile)
 
 print results
 # Finally, report on what we have
 q0 = 2*(np.min(results['data_tau']['hypo_notau']['llh']) - np.min(results['data_tau']['hypo_tau']))
+output['sqrt_q0'] = np.sqrt(q0)
 print 'sqrt(q0) = %.4f'%(np.sqrt(q0))
+
+# And write to file
+to_json(output,args.outfile)
+
