@@ -122,9 +122,6 @@ for itrial in xrange(1,args.ntrials+1):
 
         # 2) find max llh (and best fit free params) from matching pseudo data
         #    to templates.
-        rnd.seed(get_seed())
-        init_nutau_norm = rnd.uniform(-1.5,2.5)
-        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True),('hypo_tau',1, True)]:
         for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_notau',0, True),('hypo_tau',1, True)]:
 
             physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
@@ -134,7 +131,6 @@ for itrial in xrange(1,args.ntrials+1):
                                          minimizer_settings,args.save_steps,
                                          normal_hierarchy=hypo_normal,
                                          check_octant = args.check_octant)
-            print "injected initial nutau_norm: ",init_nutau_norm
             profile.info("stop optimizer")
 
             #Store the LLH data
