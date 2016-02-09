@@ -23,15 +23,14 @@ import numpy as np
 from scipy.constants import Julian_year
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.utils import check_binning, get_binning
-from pisa.utils.jsons import from_json, to_json
-from pisa.utils.proc import report_params, get_params, add_params
 from pisa.resources.resources import find_resource
+from pisa.utils.jsons import from_json, to_json
+from pisa.utils.log import logging, set_verbosity
+from pisa.utils.proc import report_params, get_params, add_params
+from pisa.utils.utils import check_binning, get_binning
 
 from pisa.aeff.AeffServiceMC import AeffServiceMC
 from pisa.aeff.AeffServicePar import AeffServicePar
-from pisa.analysis.stats.Maps import apply_ratio_scale
 
 def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
                     aeff_scale=None,nutau_norm=None,**kwargs):
