@@ -48,6 +48,7 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
 parser.add_argument('--check_octant',action='store_true',default=False,
                     help="When theta23 LLH is multi-modal, check both octants for global minimum.")
 parser.add_argument('-f', default='',help='parameter to be fixed',dest='f_param')
+parser.add_argument('-n', default=0.0,help='nutau normalization for H0 hypothesis',dest='nutau_hypo_norm')
 args = parser.parse_args()
 
 set_verbosity(args.verbose)
@@ -121,7 +122,7 @@ asimov_fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
 
 # 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
 #    to templates, fixing mu to 0
-hypo_tag, hypo_nutau_norm, nutau_norm_fix = ('hypo_notau',0, True)
+hypo_tag, hypo_nutau_norm, nutau_norm_fix = ('hypo_notau',float(args.nutau_hypo_norm), True)
 
 physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
 tprofile.info("start optimizer")
