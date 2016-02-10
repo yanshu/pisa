@@ -117,7 +117,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
         physics.debug("LLH is %.2f "%neg_llh)
-        return neg_llh
+        return {'llh': [neg_llh]}
 
 
     # Scale init-vals and bounds to work with bfgs opt:
