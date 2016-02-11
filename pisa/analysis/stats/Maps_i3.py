@@ -123,12 +123,9 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
     deltaLLH['numu'] = MC_file_numu['IC86_Dunkman_L6']['delta_LLH']
     deltaLLH['nutau'] = MC_file_nutau['IC86_Dunkman_L6']['delta_LLH']
 
-    print "len MC_true_energy['nue'] ", len(MC_true_energy['nue'] )
-    print "len MC_true_energy['numu'] ", len(MC_true_energy['numu'] )
-    print "len MC_true_energy['nutau'] ", len(MC_true_energy['nutau'] )
-    print "totl = ", len(MC_true_energy['nue'] )+ len(MC_true_energy['numu'])+ len(MC_true_energy['nutau'])
-    x = len(MC_true_energy['nue'][L6_result['nue'] ==1] )+ len(MC_true_energy['numu'][L6_result['numu'] ==1])+ len(MC_true_energy['nutau'][L6_result['nutau'] ==1])
-    print "L6 totl = ", x
+    #print "totl = ", len(MC_true_energy['nue'] )+ len(MC_true_energy['numu'])+ len(MC_true_energy['nutau'])
+    #x = len(MC_true_energy['nue'][L6_result['nue'] ==1] )+ len(MC_true_energy['numu'][L6_result['numu'] ==1])+ len(MC_true_energy['nutau'][L6_result['nutau'] ==1])
+    #print "L6 totl = ", x
 
     nuDict = {'nue':12,'numu':14,'nutau':16,'nue_bar':-12,'numu_bar':-14,'nutau_bar':-16}
     inttypeDict = {'cc':1, 'nc':2}
@@ -231,7 +228,6 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
             oscillated_rate_pid = np.array([]) 
             for flavor in ['nue', 'numu', 'nutau']:
                 oscillated_rate = ExpectedNumber[flavor][cut_pid[flavor][channel]]/2
-                print "len(oscillated_rate) = ", len(oscillated_rate)
                 reco_energy = MN_reco_energy[flavor][cut_pid[flavor][channel]] 
                 reco_coszen = MN_reco_coszen[flavor][cut_pid[flavor][channel]]
                 oscillated_rate_pid = np.concatenate([oscillated_rate_pid, oscillated_rate])
