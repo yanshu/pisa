@@ -47,13 +47,17 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
 parser.add_argument('--check_octant',action='store_true',default=False,
                     help="When theta23 LLH is multi-modal, check both octants for global minimum.")
 parser.add_argument('-ts', '--test-statistics',choices=['llr', 'profile', 'asimov'], default='llr', dest='t_stat')
-parser.add_argument('--mu-data', default=1, dest='mu_data')
-parser.add_argument('--mu-hypo', default=0, dest='mu_hypo')
+parser.add_argument('--mu-data', default=1.0, dest='mu_data')
+parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo')
 parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data')
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo')
 parser.add_argument('-f', default='',help='parameter to be fixed',dest='f_param')
 args = parser.parse_args()
 set_verbosity(args.verbose)
+
+# in the below two cases, it does not make much sense to set the value to something else than the default, therefor complain if the user tries to redefine them
+if args.t_stat == 'asimov': assert(args.mu_data == 1.0)
+if args.t_stat == 'llr': assert(args.mu_hypo == 0.0)
 
 # Read in the settings
 template_settings = from_json(args.template_settings)
@@ -122,7 +126,7 @@ for itrial in xrange(1,args.ntrials+1):
         fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
                                                 get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
                                                             normal_hierarchy=not(args.inv_h_data),
-                                                            nutau_norm_value=1.0)
+                                                            nutau_norm_value=float(args.mu_data))
                                                 ),
                                                 channel=channel
                                             )
@@ -141,7 +145,6 @@ for itrial in xrange(1,args.ntrials+1):
 
     fit_results = []
     # did the optimizer set mu < 0?
-    negative_mu = False
     if args.t_stat == 'llr':
         # perfomr two fits, for H0 and H1 (background only and signal + background hypothese)
         for mu_hypo in [0.0, 1.0]:    
@@ -192,8 +195,7 @@ for itrial in xrange(1,args.ntrials+1):
                                                                         float(args.mu_hypo),
                                                                         # mu fixed
                                                                         False,
-                                                                        not(args.inv_h_hypo),
-                                                                        pos_def = False
+                                                                        not(args.inv_h_hypo)
                                                                       ),
                                             minimizer_settings,
                                             args.save_steps,
@@ -201,7 +203,6 @@ for itrial in xrange(1,args.ntrials+1):
                                             check_octant = args.check_octant
                                          ))
             profile.info("stop optimizer")
-            if fit_results[1]['nutau_norm'][0] < 0: negative_mu = True
         # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
         elif args.t_stat == 'asimov':
             profile.info("clculate llh without fitting")
@@ -226,10 +227,7 @@ for itrial in xrange(1,args.ntrials+1):
     # store the value of interest, q = -2log(lh[0]/lh[1]) , llh here is already negative, so no need for the minus sign
     results['llh'] = llh
     # truncate the cases with negative mu in case of profile llh
-    if not(negative_mu):
-        results['q'] = 2*(llh[0]-llh[1])
-    else:
-        results['q'] = 0
+    results['q'] = 2*(llh[0]-llh[1])
     physics.info('found q value %.2f'%results['q'])
 
     # Store this trial
