@@ -17,19 +17,34 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_burn_sample(burn_sample_file, ebins, czbins, output_form, channel):
+def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_level, year, channel):
+
     burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
 
     dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
     L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
+
+    reco_x_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['x']
+    reco_y_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['y']
+    reco_z_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['z']
+    reco_t_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['time']
+
     reco_energy_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
     reco_coszen_all = np.array(np.cos(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
+    reco_trck_len_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Track']['length'])
 
     #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
+
+    reco_x_L6 = reco_x_all[L6_result==1]
+    reco_y_L6 = reco_y_all[L6_result==1]
+    reco_z_L6 = reco_z_all[L6_result==1]
+    reco_t_L6 = reco_t_all[L6_result==1]
+    reco_trck_len_L6 = reco_trck_len_all[L6_result==1]
+
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # throw away dLLH < -3
@@ -50,35 +65,38 @@ def get_burn_sample(burn_sample_file, ebins, czbins, output_form, channel):
     burn_sample_dict = {}
     for flav in ['cscd','trck']:
         if flav == 'cscd':
-            cut = dLLH_L6_cut1 < 3.0 
+            cut_pid = dLLH_L6_cut1 < 3.0 
         if flav == 'trck':
-            cut = dLLH_L6_cut1 >= 3.0 
-        reco_energy_L6_final = reco_energy_L6_cut1[cut]
-        reco_coszen_L6_final = reco_coszen_L6_cut1[cut]
+            cut_pid = dLLH_L6_cut1 >= 3.0 
+        reco_energy_L6_pid = reco_energy_L6_cut1[cut_pid]
+        reco_coszen_L6_pid = reco_coszen_L6_cut1[cut_pid]
 
-        reco_energy[flav] = reco_energy_L6_final
-        reco_coszen[flav] = reco_coszen_L6_final
+        reco_energy[flav] = reco_energy_L6_pid
+        reco_coszen[flav] = reco_coszen_L6_pid
 
-        bins = (ebins, czbins)
-        burn_sample_hist,_,_ = np.histogram2d(reco_energy_L6_final,reco_coszen_L6_final,bins=bins)
+        bins = (anlys_ebins, czbins)
+        burn_sample_hist,_,_ = np.histogram2d(reco_energy_L6_pid,reco_coszen_L6_pid,bins=bins)
         burn_sample_dict[flav] = burn_sample_hist
 
     # get the burn sample maps (cz in [-1, 1])
     burn_sample_maps={}
     for flav in ['trck','cscd']:
         burn_sample_maps[flav] = {'map':burn_sample_dict[flav],
-                                 'ebins':ebins,
+                                 'ebins':anlys_ebins,
                                  'czbins':czbins}
 
     if output_form == 'map':
         return burn_sample_maps
+
+    if output_form == 'reco_info':
+        return (reco_x_L6, reco_y_L6, reco_z_L6, reco_t_L6, reco_energy_L6, reco_coszen_L6, reco_trck_len_L6)
 
     if output_form == 'side_map':
         f_select = from_json('sgnl_side_region_selection.json')
         burn_sample_maps_side = {}
         for flav in ['trck','cscd']:
             burn_sample_maps_side[flav] = {'map':burn_sample_dict[flav]* f_select['side'][flav],
-                                     'ebins':ebins,
+                                     'ebins':anlys_ebins,
                                      'czbins':czbins}
         return burn_sample_maps_side
 
@@ -87,12 +105,9 @@ def get_burn_sample(burn_sample_file, ebins, czbins, output_form, channel):
         burn_sample_maps_sgnl = {}
         for flav in ['trck','cscd']:
             burn_sample_maps_sgnl[flav] = {'map':burn_sample_dict[flav]* f_select['sgnl'][flav],
-                                     'ebins':ebins,
+                                     'ebins':anlys_ebins,
                                      'czbins':czbins}
         return burn_sample_maps_sgnl
-
-    if output_form == 'MC':
-        return reco_energy, reco_coszen
 
     if output_form == 'array':
         # return a 1D array (used for the fit in the LLR analysis)
