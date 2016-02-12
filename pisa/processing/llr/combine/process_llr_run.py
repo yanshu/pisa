@@ -74,6 +74,8 @@ parser = ArgumentParser(
 
 parser.add_argument('-d','--data_dir', metavar='DIR', type=str, required=True,
                     help='Directory where the llh analysis run data is stored.')
+parser.add_argument('-b','--basename', metavar='STR', type=str, required=True,
+		    default='llh_data', help='Common basename of llh files.')
 parser.add_argument('-l','--log_dir', metavar='DIR', type=str, required=False,
                     default=None,
                     help='Directory where the llh analysis run log info is.')
@@ -88,7 +90,7 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
 args = parser.parse_args()
 set_verbosity(args.verbose)
 
-llhfiles = glob(os.path.join(args.data_dir,'llh_data*'))
+llhfiles = glob(os.path.join(args.data_dir,args.basename+'*'))
 
 if args.log_dir is not None:
     logfiles = glob(os.path.join(args.log_dir,'log*'))
