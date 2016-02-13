@@ -176,11 +176,13 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],fiducial_params)
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
-        fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
-        fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         # if we want to recreate the same template, then use the input seed for both
-        #fmap_up = get_random_map(true_fmap_up, seed=seed)
-        #fmap_down = get_random_map(true_fmap_down, seed=seed)
+        if seed:
+            fmap_up = get_random_map(true_fmap_up, seed=seed)
+            fmap_down = get_random_map(true_fmap_down, seed=seed)
+        else:
+            fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
+            fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -193,7 +195,10 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         true_template_dh = apply_domeff_holeice(true_template, fiducial_params)
         true_template_dh_prcs = apply_reco_precisions(true_template_dh, fiducial_params)
         true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=channel)
-        fmap = get_random_map(true_fmap, seed=seed)
+        if seed:
+            fmap = get_random_map(true_fmap, seed=seed)
+        else:
+            fmap = get_random_map(true_fmap, seed=Maps.get_seed())
     return fmap
 
 def apply_domeff_holeice(template, params):
@@ -400,11 +405,13 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=fiducial_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=fiducial_params['channel'])
 
-        fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
-        fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         # if we want to recreate the same template, then use the input seed for both
-        #fmap_up = get_random_map(true_fmap_up, seed=seed)
-        #fmap_down = get_random_map(true_fmap_down, seed=seed)
+        if seed:
+            fmap_up = get_random_map(true_fmap_up, seed=seed)
+            fmap_down = get_random_map(true_fmap_down, seed=seed)
+        else:
+            fmap_up = get_random_map(true_fmap_up, seed=Maps.get_seed())
+            fmap_down = get_random_map(true_fmap_down, seed=Maps.get_seed())
         if fiducial_params['residual_up_down']:
             fmap = fmap_up-fmap_down
         elif fiducial_params['ratio_up_down']:
@@ -416,7 +423,10 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
         true_template_dh = apply_domeff_holeice(true_template,fiducial_params)
         true_template_dh_prcs = apply_reco_precisions(true_template_dh, fiducial_params)
         true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=channel)
-        fmap = get_random_map(true_fmap, seed=seed)
+        if seed:
+            fmap = get_random_map(true_fmap, seed=seed)
+        else:
+            fmap = get_random_map(true_fmap, seed=Maps.get_seed())
     return fmap
 
 def get_up_map(map, channel):
