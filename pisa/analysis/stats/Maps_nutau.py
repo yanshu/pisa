@@ -17,7 +17,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_level, year, channel):
+def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_level, channel):
 
     burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
 
