@@ -144,7 +144,10 @@ def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
             fmap = np.append(fmap_up, fmap_down)
     else:
         true_template = template_maker.get_template(fiducial_params)  
-        true_fmap = Maps.flatten_map(true_template, channel=channel)
+        # add domeff and/or hole ice effects
+        true_template_dh = apply_domeff_holeice(true_template, fiducial_params)
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, fiducial_params)
+        true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=channel)
     return fmap
 
 def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
