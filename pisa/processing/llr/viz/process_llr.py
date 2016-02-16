@@ -186,6 +186,13 @@ else:
 ### 2) Plot Posterior Distributions
 ################################################################
 
+if args.save_fig:
+
+    filestem=args.llh_file.split('/')[-1]
+    filename=(filestem.split('.')[0]+'_LLR.png')
+    logging.warn('Saving to file: %s'%filename)
+    plt.savefig(filename,dpi=150)
+
 if args.params:
 
     df = df_true_h if args.true_h else df_false_h
@@ -200,12 +207,5 @@ if args.params:
         for i,name in enumerate(fignames):
             figs[i].savefig(name,dpi=160)
 
-
-if args.save_fig:
-
-    filestem=args.llh_file.split('/')[-1]
-    filename=(filestem.split('.')[0]+'_LLR.png')
-    logging.warn('Saving to file: %s'%filename)
-    plt.savefig(filename,dpi=150)
 
 else: plt.show()
