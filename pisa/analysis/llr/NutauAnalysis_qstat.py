@@ -52,6 +52,7 @@ parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo')
 parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data')
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo')
 parser.add_argument('-f', default='',help='parameter to be fixed',dest='f_param')
+parser.add_argument('--seed', default='',help='fixed seed for pseudo data',dest='seed')
 args = parser.parse_args()
 set_verbosity(args.verbose)
 
@@ -131,7 +132,10 @@ for itrial in xrange(1,args.ntrials+1):
                                                 channel=channel
                                             )
     else:
-        results['seed'] = get_seed()
+        if args.seed:
+            results['seed'] = int(args.seed)
+        else:
+            results['seed'] = get_seed()
         # 1) get a pseudo data fmap, randomly sampled from a poisson distribution around the exact bin expecatations
         logging.info("  RNG seed: %ld"%results['seed'])
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
