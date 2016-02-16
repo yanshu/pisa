@@ -17,7 +17,7 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down, get_burn_sample
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings, fix_param, fix_all_params
 
@@ -35,6 +35,8 @@ parser.add_argument('-m','--minimizer_settings',type=str,
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
+parser.add_argument('-bs','--burn_sample_file',metavar='FILE',type=str, dest='bs',
+                    default='', help='HDF5 File containing burn sample.')
 parser.add_argument('-n','--ntrials',type=int, default = 1,
                     help="Number of trials to run")
 parser.add_argument('-s','--save-steps',action='store_true',default=False,
@@ -46,22 +48,35 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
                     help='set verbosity level')
 parser.add_argument('--check_octant',action='store_true',default=False,
                     help="When theta23 LLH is multi-modal, check both octants for global minimum.")
-parser.add_argument('-ts', '--test-statistics',choices=['llr', 'profile', 'asimov'], default='llr', dest='t_stat')
-parser.add_argument('--mu-data', default=1.0, dest='mu_data')
-parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo')
-parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data')
-parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo')
-parser.add_argument('-f', default='',help='parameter to be fixed',dest='f_param')
-parser.add_argument('--seed', default='',help='fixed seed for pseudo data',dest='seed')
+parser.add_argument('-ts', '--test-statistics',choices=['llr', 'profile', 'asimov'], default='llr', dest='t_stat', help='''Choose test statistics from llh, profile or asimov''')
+parser.add_argument('--mu-data', default=1.0, dest='mu_data', help='''nu tau normalization for the psudodata''')
+parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo', help='''nu tau normalization for the test hypothesis''')
+parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data', help='''invert mass hierarchy in psudodata''')
+parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
+parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter''')
+parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 args = parser.parse_args()
 set_verbosity(args.verbose)
+# -----------------------------------
 
-# in the below two cases, it does not make much sense to set the value to something else than the default, therefor complain if the user tries to redefine them
-if args.t_stat == 'asimov': assert(args.mu_data == 1.0)
-if args.t_stat == 'llr': assert(args.mu_hypo == 0.0)
+# --- do some checks and asseble all necessary parameters/settings
+
+# the below cases do not make much sense, therefor complain if the user tries to use them
+if args.t_stat == 'asimov':
+    assert(args.mu_data == 1.0)
+    assert(args.bs == '')
+if args.t_stat == 'llr': 
+    assert(args.mu_hypo == 0.0)
+if args.bs:
+    assert(args.pseudo_data_settings == None)
+    assert(args.mu_data == 1.0)
 
 # Read in the settings
 template_settings = from_json(args.template_settings)
+ebins = template_settings['binning']['ebins']
+anlys_ebins = template_settings['binning']['anlys_ebins']
+czbins = template_settings['binning']['czbins']
+anlys_bins = (anlys_ebins, czbins)
 
 # fix a nuisance parameter if requested
 if not args.f_param == '':
@@ -103,7 +118,11 @@ template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
 template_maker = [template_maker_up, template_maker_down]
 pseudo_data_template_maker = [template_maker_up, template_maker_down]
 
-# store results from all the trials
+# -----------------------------------
+
+
+
+# perform n trials
 trials = []
 for itrial in xrange(1,args.ntrials+1):
 
@@ -114,7 +133,7 @@ for itrial in xrange(1,args.ntrials+1):
     
     # save settings
     results['test_statistics'] = args.t_stat
-    if not args.t_stat == 'asimov':
+    if not args.t_stat == 'asimov' or args.bs:
         results['mu_data'] = float(args.mu_data)
     if not args.t_stat == 'llr':
         results['mu_hypo'] = float(args.mu_hypo)
@@ -122,8 +141,10 @@ for itrial in xrange(1,args.ntrials+1):
     results['hypo_mass_hierarchy'] = 'inverted' if args.inv_h_hypo else 'normal'
 
 
+    # --- Get the data, or psudeodata, and store it in fmap
+
+    # Asimov dataset (exact expecation values)
     if args.t_stat == 'asimov':
-        # 1) get "Asimov" data fmap, the exact bin expectations
         fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
                                                 get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
                                                             normal_hierarchy=not(args.inv_h_data),
@@ -131,12 +152,16 @@ for itrial in xrange(1,args.ntrials+1):
                                                 ),
                                                 channel=channel
                                             )
+    # Real data
+    elif args.bs:
+        logging.info('Running on real data! (%s)'%args.bs)
+        fmap = get_burn_sample(burn_sample_file=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', cut_level='L6', channel=channel)
+    # Randomly sampled (poisson) data
     else:
         if args.seed:
             results['seed'] = int(args.seed)
         else:
             results['seed'] = get_seed()
-        # 1) get a pseudo data fmap, randomly sampled from a poisson distribution around the exact bin expecatations
         logging.info("  RNG seed: %ld"%results['seed'])
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
                                     get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
@@ -146,83 +171,57 @@ for itrial in xrange(1,args.ntrials+1):
                                     channel=channel
                                     )
 
+    # -----------------------------------
+
+
+    # --- perform the fits for the LLR: first numerator, then denominator
 
     fit_results = []
-    # did the optimizer set mu < 0?
-    if args.t_stat == 'llr':
-        # perfomr two fits, for H0 and H1 (background only and signal + background hypothese)
-        for mu_hypo in [0.0, 1.0]:    
-            physics.info("Finding best fit for hypothesis mu_tau = %s"%mu_hypo)
-            profile.info("start optimizer")
-            fit_results.append(find_max_llh_bfgs(   fmap,
-                                            template_maker,
-                                            change_nutau_norm_settings( template_settings['params'],
-                                                                        mu_hypo,
-                                                                        # mu fixed
-                                                                        True,
-                                                                        not(args.inv_h_hypo)
-                                                                      ),
-                                            minimizer_settings,
-                                            args.save_steps,
-                                            normal_hierarchy=not(args.inv_h_hypo),
-                                            check_octant = args.check_octant
-                                         ))
-            profile.info("stop optimizer")
+    # common seetings
+    kwargs = {'normal_hierarchy':not(args.inv_h_hypo),'check_octant':args.check_octant, 'save_steps':args.save_steps}
+    largs = [fmap, template_maker, None , minimizer_settings]
 
-    # profile LLR/Asimov
+    # - numerator (first fir for ratio)
+    # LLH
+    if args.t_stat == 'llr':
+        physics.info("Finding best fit for hypothesis mu_tau = 0.0")
+        profile.info("start optimizer")
+        largs[2] = change_nutau_norm_settings( template_settings['params'], 0.0, True, not(args.inv_h_hypo))
+
+    # profile LLH/Asimov
     else:
-        # first perform a fit for fixed mu
         physics.info("Finding best fit for hypothesis mu_tau = %s"%args.mu_hypo)
         profile.info("start optimizer")
-        fit_results.append(find_max_llh_bfgs(   fmap,
-                                        template_maker,
-                                        change_nutau_norm_settings( template_settings['params'],
-                                                                    float(args.mu_hypo),
-                                                                    # mu fixed
-                                                                    True,
-                                                                    not(args.inv_h_hypo)
-                                                                  ),
-                                        minimizer_settings,
-                                        args.save_steps,
-                                        normal_hierarchy=not(args.inv_h_hypo),
-                                        check_octant = args.check_octant
-                                     ))
-        profile.info("stop optimizer")
+        largs[2] = change_nutau_norm_settings( template_settings['params'],float(args.mu_hypo),True, not(args.inv_h_hypo))
+    
+    # execute optimizer
+    fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+    profile.info("stop optimizer")
         
-        # now fit while profiling mu
-        if args.t_stat == 'profile':
-            physics.info("Finding best fit while profiling mu_tau")
-            profile.info("start optimizer")
-            fit_results.append(find_max_llh_bfgs(   fmap,
-                                            template_maker,
-                                            change_nutau_norm_settings( template_settings['params'],
-                                                                        float(args.mu_hypo),
-                                                                        # mu fixed
-                                                                        False,
-                                                                        not(args.inv_h_hypo)
-                                                                      ),
-                                            minimizer_settings,
-                                            args.save_steps,
-                                            normal_hierarchy=not(args.inv_h_hypo),
-                                            check_octant = args.check_octant
-                                         ))
-            profile.info("stop optimizer")
-        # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
-        elif args.t_stat == 'asimov':
-            profile.info("clculate llh without fitting")
-            fit_results.append(find_max_llh_bfgs(   fmap,
-                                            template_maker,
-                                            change_nutau_norm_settings( fix_all_params(template_settings['params']),
-                                                                        float(args.mu_data),
-                                                                        # mu fixed
-                                                                        True,
-                                                                        not(args.inv_h_hypo)
-                                                                      ),
-                                            minimizer_settings,
-                                            args.save_steps,
-                                            normal_hierarchy=not(args.inv_h_hypo),
-                                            check_octant = args.check_octant
-                                         ))
+    # - denominator (second fit for ratio)
+
+    # LLR method 
+    if args.t_stat == 'llr':
+        physics.info("Finding best fit for hypothesis mu_tau = 1.0")
+        profile.info("start optimizer")
+        largs[2] = change_nutau_norm_settings( template_settings['params'], 1.0, True, not(args.inv_h_hypo))
+    # profile LLH
+    elif args.t_stat == 'profile':
+        physics.info("Finding best fit while profiling mu_tau")
+        profile.info("start optimizer")
+        largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_hypo), False, not(args.inv_h_hypo))
+    # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
+    elif args.t_stat == 'asimov':
+        profile.info("clculate llh without fitting")
+        largs[2] = change_nutau_norm_settings( fix_all_params(template_settings['params']), float(args.mu_data), True, not(args.inv_h_hypo))
+
+    # execute optimizer
+    fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+    profile.info("stop optimizer")
+
+    # -----------------------------------
+
+
     # store fit results
     results['fit_results'] = fit_results
     llh = []
