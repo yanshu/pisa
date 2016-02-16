@@ -93,7 +93,7 @@ set_verbosity(args.verbose)
 llhfiles = glob(os.path.join(args.data_dir,args.basename+'*'))
 
 if args.log_dir is not None:
-    logfiles = glob(os.path.join(args.log_dir,'log*'))
+    logfiles = glob(os.path.join(args.log_dir,args.basename+'*'))
     # These MUST have the same number initialized if we are using the logging
     # information. Otherwise, perhaps one of the directories are incorrect.
     # Sometimes there are fewere llh files, since they crash before writing out.
@@ -134,10 +134,10 @@ for i,filename in enumerate(llhfiles):
     if args.log_dir is not None:
         # Now process corresponding log file:
         # ASSUMES that llh, log files are written to directory as:
-        #   llh_data_<#>, log_<#>
+        #   args.basename<#>(.json), args.basename<#>.log
         # where '#' in range(1, nfiles)
         logfilename = os.path.join(args.log_dir,
-                                   ('log_'+filename.split('_')[-1]))
+                                   (args.basename+filename.split('.')[0].split('_')[-1]+".log"))
         
         #print("File: ",logfilename)
         fh = open(logfilename, 'r')
@@ -150,7 +150,9 @@ for i,filename in enumerate(llhfiles):
 
             # First write timestamp if not yet recorded:
             try:
-                timestamp, iline = getTimeStamp(iline, all_lines)
+	        # not quite sure why we would need to increment iline here
+	        # remove for now
+		timestamp, _ = getTimeStamp(iline, all_lines)
             except:
                 print("File failed: \n    ",logfilename)
                 raise
@@ -167,7 +169,6 @@ for i,filename in enumerate(llhfiles):
                         output_data[k1][k2][k3]['task'] = []
                         output_data[k1][k2][k3]['nit'] = []
                         output_data[k1][k2][k3]['funcalls'] = []
-        
         # Now gather all log file information for this partial run:
         try:
             processLogFile(iline, all_lines, output_data)
