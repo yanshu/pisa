@@ -431,6 +431,9 @@ def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None
 
 def get_up_map(map, channel):
     ''' Gets the upgoing map from a full sky map.'''
+    len_czbin_edges = len(map['cscd']['czbins'])
+    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
+    czbin_mid_idx = (len_czbin_edges-1)/2
     if channel =='all':
         flavs=['trck', 'cscd']
     elif channel =='trck':
@@ -444,9 +447,6 @@ def get_up_map(map, channel):
             'czbins': map['trck']['czbins'][0:czbin_mid_idx+1] }}
     else:
         raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
-    len_czbin_edges = len(map['cscd']['czbins'])
-    assert(len_czbin_edges%2 == 1)    # length of cz_bin_edges has to be odd
-    czbin_mid_idx = (len_czbin_edges-1)/2
     return {flav:{
         'map': map[flav]['map'][:,0:czbin_mid_idx],
         'ebins':map[flav]['ebins'],
