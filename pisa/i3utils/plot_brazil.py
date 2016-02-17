@@ -79,6 +79,7 @@ def dist(data,name,hypos,params,trials):
                 params_value = params[name]['value']
                 ax.axvline(params_value, color='g',linewidth=2)
         ax.set_xlabel(name)
+        ax.set_ylim(ax.get_ylim()[0], ax.get_ylim()[1]*1.2)
         ax.set_title('profile likelihood, 4 years, %s trials'%trials)
         plt.show()
         plt.savefig('q%.1f_%s.png'%(hypo,name))
@@ -123,7 +124,10 @@ if __name__ == '__main__':
 
                 total += 1
                 for s in syslist:
-                    sys[s][mu] = np.append(sys[s][mu],float(file['trials'][0]['fit_results'][0][s][0]))
+                    if s == 'llh':
+                        sys[s][mu] = np.append(sys[s][mu],float(file['trials'][0]['q'])) 
+                    else:
+                        sys[s][mu] = np.append(sys[s][mu],float(file['trials'][0]['fit_results'][0][s][0]))
 
     total = int(round(float(total)/len(hypos)))
     if args.dist:

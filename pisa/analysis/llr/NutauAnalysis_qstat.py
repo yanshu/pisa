@@ -4,6 +4,20 @@
 #
 # Computes q for different test statistics for the nutau appearance search analysis
 #
+# the data is represented as b + s*mu_data
+# the hypo is represented as b + s*mu_hypo
+# theta denote nuisance parameters
+# ^ denotes quantities that are MLEs
+#
+# in case of the llh method, q is defined as:
+# q = -2*log(p(data|mu_hypo=0,theta^) / p(data|mu_hypo=1,theta^))
+#
+# in case of the profile llh method (including asimov), q is defined as:
+# q = -2*log(p(data|mu_hypo,theta^) / p(data|mu_hypo^,theta^))
+#
+# psudo data is produced by randomly sampling from a poisson deistribution with lambda = b + s*mu_data
+# the asimov dataset is the exact expecation values b + s*mu_data
+#
 # author: Philipp Eller - pde3@psu.edu
 #         Feifei Huang - fxh140@psu.edu
 #
@@ -55,6 +69,8 @@ parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='i
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
+parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
+parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
 args = parser.parse_args()
 set_verbosity(args.verbose)
 # -----------------------------------
@@ -155,6 +171,7 @@ for itrial in xrange(1,args.ntrials+1):
     # Real data
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
+        physics.info('Running on real data! (%s)'%args.bs)
         fmap = get_burn_sample(burn_sample_file=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', cut_level='L6', channel=channel)
     # Randomly sampled (poisson) data
     else:
@@ -182,42 +199,44 @@ for itrial in xrange(1,args.ntrials+1):
     largs = [fmap, template_maker, None , minimizer_settings]
 
     # - numerator (first fir for ratio)
-    # LLH
-    if args.t_stat == 'llr':
-        physics.info("Finding best fit for hypothesis mu_tau = 0.0")
-        profile.info("start optimizer")
-        largs[2] = change_nutau_norm_settings( template_settings['params'], 0.0, True, not(args.inv_h_hypo))
+    if not args.od:
+        # LLH
+        if args.t_stat == 'llr':
+            physics.info("Finding best fit for hypothesis mu_tau = 0.0")
+            profile.info("start optimizer")
+            largs[2] = change_nutau_norm_settings( template_settings['params'], 0.0, True, not(args.inv_h_hypo))
 
-    # profile LLH/Asimov
-    else:
-        physics.info("Finding best fit for hypothesis mu_tau = %s"%args.mu_hypo)
-        profile.info("start optimizer")
-        largs[2] = change_nutau_norm_settings( template_settings['params'],float(args.mu_hypo),True, not(args.inv_h_hypo))
-    
-    # execute optimizer
-    fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
-    profile.info("stop optimizer")
+        # profile LLH/Asimov
+        else:
+            physics.info("Finding best fit for hypothesis mu_tau = %s"%args.mu_hypo)
+            profile.info("start optimizer")
+            largs[2] = change_nutau_norm_settings( template_settings['params'],float(args.mu_hypo),True, not(args.inv_h_hypo))
         
+        # execute optimizer
+        fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+        profile.info("stop optimizer")
+            
     # - denominator (second fit for ratio)
 
     # LLR method 
-    if args.t_stat == 'llr':
-        physics.info("Finding best fit for hypothesis mu_tau = 1.0")
-        profile.info("start optimizer")
-        largs[2] = change_nutau_norm_settings( template_settings['params'], 1.0, True, not(args.inv_h_hypo))
-    # profile LLH
-    elif args.t_stat == 'profile':
-        physics.info("Finding best fit while profiling mu_tau")
-        profile.info("start optimizer")
-        largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_hypo), False, not(args.inv_h_hypo))
-    # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
-    elif args.t_stat == 'asimov':
-        profile.info("clculate llh without fitting")
-        largs[2] = change_nutau_norm_settings( fix_all_params(template_settings['params']), float(args.mu_data), True, not(args.inv_h_hypo))
+    if not args.on:
+        if args.t_stat == 'llr':
+            physics.info("Finding best fit for hypothesis mu_tau = 1.0")
+            profile.info("start optimizer")
+            largs[2] = change_nutau_norm_settings( template_settings['params'], 1.0, True, not(args.inv_h_hypo))
+        # profile LLH
+        elif args.t_stat == 'profile':
+            physics.info("Finding best fit while profiling mu_tau")
+            profile.info("start optimizer")
+            largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_hypo), False, not(args.inv_h_hypo))
+        # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
+        elif args.t_stat == 'asimov':
+            profile.info("clculate llh without fitting")
+            largs[2] = change_nutau_norm_settings( fix_all_params(template_settings['params']), float(args.mu_data), True, not(args.inv_h_hypo))
 
-    # execute optimizer
-    fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
-    profile.info("stop optimizer")
+        # execute optimizer
+        fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+        profile.info("stop optimizer")
 
     # -----------------------------------
 
@@ -229,9 +248,9 @@ for itrial in xrange(1,args.ntrials+1):
         llh.append(res['llh'][0])
     # store the value of interest, q = -2log(lh[0]/lh[1]) , llh here is already negative, so no need for the minus sign
     results['llh'] = llh
-    # truncate the cases with negative mu in case of profile llh
-    results['q'] = 2*(llh[0]-llh[1])
-    physics.info('found q value %.2f'%results['q'])
+    if not any([args.on, args.od]):
+        results['q'] = 2*(llh[0]-llh[1])
+        physics.info('found q value %.2f'%results['q'])
 
     # Store this trial
     trials += [results]

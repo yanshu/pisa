@@ -50,7 +50,7 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
     #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
     ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1)
-    plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (background \, scale \, %s) }$'%(channel, args.bg_scale), fontsize='large')
+    plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (background \, scale \, %s) }$'%(channel, template_settings['params']['atmos_mu_scale']['value']), fontsize='large')
     min_hist = min(np.min(hist_BS), np.min(hist_MC_notau), np.min(hist_MC_tau))
     max_hist = max(np.max(hist_BS), np.max(hist_MC_notau), np.max(hist_MC_tau))
     ax1.set_ylim(min_hist - min_hist*0.4,max_hist + 0.4*max_hist)
@@ -91,17 +91,13 @@ settings file. ''')
     parser.add_argument('template_settings',metavar='JSON',
                         help='Settings file to use for template generation')
     parser.add_argument('--burn_sample_file',metavar='FILE',type=str,
-                        default='burn_sample/Matt_L5b_burn_sample_IC86_2_to_4.hdf5',
+                        default='pisa/resources/burn_sample/Matt_L5b_burn_sample_IC86_2_to_4.hdf5',
                         help='''HDF5 File containing burn sample.'
                         inverted corridor cut data''')
     parser.add_argument('--background_file',metavar='FILE',type=str,
-                        default='background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
+                        default='pisa/resources/background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
-    parser.add_argument('-y','--y',default=0.045,type=float,
-                        help='No. of livetime[ unit: Julian year]')
-    parser.add_argument('--bg_scale',type=float,
-                        help="atmos background scale value")
     parser.add_argument('-logE','--logE',action='store_true',default=False,
                         help='Energy in log scale.')
     parser.add_argument('--plot_background',action='store_true',default=False,
@@ -118,35 +114,43 @@ settings file. ''')
                         help='Directory to save the output figures.')
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help='set verbosity level')
+    parser.add_argument('-f', '--fit-results', default=None, dest='fit_file',
+                        help='use post fit parameters from fit result json file')
     args = parser.parse_args()
     set_verbosity(args.verbose)
 
     template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
-    template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
-    template_settings['params']['livetime']['value'] = args.y
+
+    if args.fit_file:
+        # replace with parameters determ,ined in fit
+        fit_file = from_json(args.fit_file)
+        syslist = fit_file['trials'][0]['fit_results'][0].keys()
+        for sys in syslist:
+            if not sys == 'llh':
+                val = fit_file['trials'][0]['fit_results'][0][sys][0]
+                if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                    sys += '_nh'
+                print '%s at %.4f'%(sys,val)
+                template_settings['params'][sys]['value'] = val
 
     ebins = template_settings['binning']['ebins']
     anlys_ebins = template_settings['binning']['anlys_ebins']
     czbins = template_settings['binning']['czbins']
 
-    print "ebins = ", ebins
-    print "czbins = ", czbins
     CZ_bin_centers = get_bin_centers(czbins)
     E_bin_centers = get_bin_centers(anlys_ebins)
-    print "E_bin_centers = ", E_bin_centers
-    print "CZ_bin_centers = ", CZ_bin_centers
 
-    burn_sample_maps = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= True, get_array=False,channel=template_settings['params']['channel']['value'])
+    burn_sample_maps = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, 'map', 'L6',channel=template_settings['params']['channel']['value'])
 
-    burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, get_map= False, get_array=True, channel=template_settings['params']['channel']['value'])
+    burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, 'array', 'L6',channel=template_settings['params']['channel']['value'])
     print "     total no. of events in burn sample :", np.sum(burn_sample_in_array) 
 
     plt.figure()
     show_map(burn_sample_maps['cscd'],vmax=15,logE=args.logE)
     if args.save:
         filename = os.path.join(args.outdir,args.title+ '_burn_sample_cscd_5.6_56GeV.png')
-        plt.title(r'${\rm %s \, yr \, burn \, sample \, cscd \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps['cscd']['map'])), fontsize='large')
+        plt.title(r'${\rm %s \, yr \, burn \, sample \, cscd \, (Nevts: \, %.1f) }$'%(template_settings['params']['livetime']['value'], np.sum(burn_sample_maps['cscd']['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
@@ -154,7 +158,7 @@ settings file. ''')
     show_map(burn_sample_maps['trck'],vmax=10,logE=args.logE)
     if args.save:
         filename = os.path.join(args.outdir,args.title+ '_burn_sample_trck_5.6_56GeV.png')
-        plt.title(r'${\rm %s \, yr \, burn \, sample \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps['trck']['map'])), fontsize='large')
+        plt.title(r'${\rm %s \, yr \, burn \, sample \, trck \, (Nevts: \, %.1f) }$'%(template_settings['params']['livetime']['value'], np.sum(burn_sample_maps['trck']['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
@@ -200,16 +204,16 @@ settings file. ''')
     plt.figure()
     show_map(nominal_nutau_cscd,vmax=15,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_cscd_5.6_56GeV.png' % (args.y, args.bg_scale))
-        plt.title(r'${\rm %s \, yr \, cscd \, (Nevts: \, %.1f) }$'%(args.y, np.sum(nominal_nutau_cscd['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_cscd_5.6_56GeV.png' % (template_settings['params']['livetime']['value'], template_settings['params']['atmos_mu_scale']['value']))
+        plt.title(r'${\rm %s \, yr \, cscd \, (Nevts: \, %.1f) }$'%(template_settings['params']['livetime']['value'], np.sum(nominal_nutau_cscd['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
     plt.figure()
     show_map(nominal_nutau_trck,vmax=10,logE=args.logE)
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_trck_5.6_56GeV.png' % (args.y, args.bg_scale))
-        plt.title(r'${\rm %s \, yr \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(nominal_nutau_trck['map'])), fontsize='large')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_trck_5.6_56GeV.png' % (template_settings['params']['livetime']['value'], template_settings['params']['atmos_mu_scale']['value']))
+        plt.title(r'${\rm %s \, yr \, trck \, (Nevts: \, %.1f) }$'%(template_settings['params']['livetime']['value'], np.sum(nominal_nutau_trck['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
