@@ -18,11 +18,13 @@ from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy import stats
 from matplotlib.offsetbox import AnchoredText
+from scipy.special import gammaln
+from scipy.stats import poisson
 
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
 import pisa.analysis.stats.Maps as Maps
-from pisa.analysis.stats.Maps_nutau import get_up_map, get_flipped_down_map, get_burn_sample
+from pisa.analysis.stats.Maps_nutau import get_up_map, get_flipped_down_map, get_burn_sample, get_true_template
 from pisa.utils.log import set_verbosity,logging,profile
 from pisa.resources.resources import find_resource
 from pisa.utils.utils import Timer, is_linear, is_logarithmic, get_bin_centers
@@ -47,7 +49,10 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     hist_MC_tau,_,_ = ax1.hist(x_bin_centers,weights= MC_nutau,bins=x_bin_edges,histtype='step',lw=2,color='b',label= MC_nutau_name,linestyle='solid',normed=args.norm)
     hist_MC_notau,_,_ = ax1.hist(x_bin_centers,weights=MC_no_nutau,bins=x_bin_edges,histtype='step',lw=2,color='g',label= MC_no_nutau_name,linestyle='dashed',normed=args.norm)
     hist_BS,_= np.histogram(x_bin_centers,weights=BS_data,bins=x_bin_edges)
-    ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
+    #ax1.errorbar(x_bin_centers,hist_BS,yerr=np.sqrt(hist_BS),fmt='o',color='black',label='data')
+    upperE = .5 + np.sqrt(hist_BS + .25)
+    lowerE = -.5 + np.sqrt(hist_BS + .25)
+    ax1.errorbar(x_bin_centers,hist_BS,yerr=[lowerE,upperE],fmt='o',color='black',label='data')
     #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
     ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1)
     plt.title(r'${\rm 0.045 \, yr \, MC \, %s \, (background \, scale \, %s) }$'%(channel, template_settings['params']['atmos_mu_scale']['value']), fontsize='large')
@@ -57,23 +62,26 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     ax1.set_ylabel("$\#$ events")
     ax1.grid()
 
+    poisson_llh = np.sum( hist_BS * np.log(hist_MC_tau)- gammaln(hist_BS+1) - hist_MC_tau)
+    print poisson_llh
+
     x2,_ = stats.chisquare(BS_data, f_exp=MC_nutau)
     x2_nutau = x2/len(BS_data)
     x2,_ = stats.chisquare(BS_data, f_exp=MC_no_nutau)
     x2_no_nutau = x2/len(BS_data)
 
     ax2 = plt.subplot2grid((3,1), (2,0),sharex=ax1)
-    hist_ratio_BS_to_MC_tau = ax2.hist(x_bin_centers, weights=hist_MC_tau/hist_BS,bins=x_bin_edges,histtype='step',lw=2,color='b', linestyle='solid', label='MC tau/data')
-    hist_ratio_BS_to_MC_notau = ax2.hist(x_bin_centers, weights=hist_MC_notau/hist_BS, bins=x_bin_edges,histtype='step',lw=2,color='g', linestyle='dashed', label = 'MC notau/data')
+    hist_ratio_BS_to_MC_tau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_tau,bins=x_bin_edges,histtype='step',lw=2,color='b', linestyle='solid', label='MC tau/data')
+    hist_ratio_BS_to_MC_notau = ax2.hist(x_bin_centers, weights=hist_BS/hist_MC_notau, bins=x_bin_edges,histtype='step',lw=2,color='g', linestyle='dashed', label = 'MC notau/data')
     if x_label == 'energy':
         ax2.set_xlabel('energy [GeV]')
     if x_label == 'coszen':
         ax2.set_xlabel('coszen')
-    ax2.set_ylabel("ratio (MC/data)")
-    ax2.set_ylim(min(min(hist_MC_notau/hist_BS),min(hist_MC_tau/hist_BS))-0.1,max(max(hist_MC_notau/hist_BS),max(hist_MC_tau/hist_BS))+0.1)
+    ax2.set_ylabel("ratio (data/MC)")
+    ax2.set_ylim(min(min(hist_BS/hist_MC_notau),min(hist_BS/hist_MC_tau))-0.1,max(max(hist_BS/hist_MC_notau),max(hist_BS/hist_MC_tau))+0.1)
     ax2.axhline(y=1,linewidth=1, color='r')
     #ax2.legend(loc='upper center',ncol=1, frameon=False)
-    a_text = AnchoredText('nutau x2/NDF=%.2f\nno nutau x2/NDF=%.2f'%(x2_nutau,x2_no_nutau), loc=2)
+    a_text = AnchoredText('nutau x2/NDF=%.2f\nno nutau x2/NDF=%.2f\npoisson llh nutau=%.2f'%(x2_nutau,x2_no_nutau,poisson_llh), loc=2)
     ax2.add_artist(a_text)
     ax2.grid()
     fig.subplots_adjust(hspace=0)
@@ -288,6 +296,7 @@ settings file. ''')
     MC_RecoEnergy_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'energy')
     MC_RecoCoszen_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'coszen')
 
+
     MC_RecoEnergy_nominal_nutau_all_chan = MC_RecoEnergy_nominal_nutau_cscd + MC_RecoEnergy_nominal_nutau_trck
     MC_RecoCoszen_nominal_nutau_all_chan = MC_RecoCoszen_nominal_nutau_cscd + MC_RecoCoszen_nominal_nutau_trck
 
@@ -309,6 +318,17 @@ settings file. ''')
     plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_all_chan, MC_RecoEnergy_nominal_no_nutau_all_chan, BurnSample_RecoEnergy_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', E_bin_centers, anlys_ebins, 'cscd+trck', 'energy')
 
     plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_all_chan, MC_RecoCoszen_nominal_no_nutau_all_chan, BurnSample_RecoCoszen_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', 'coszen')
+    # make 1-d slices
+    burn_sample_map = burn_sample_trck_map + burn_sample_cscd_map
+    nominal_nutau_map = nominal_nutau_trck_map + nominal_nutau_cscd_map
+    nominal_no_nutau_map = nominal_no_nutau_trck_map + nominal_no_nutau_cscd_map
+
+    for i in range(0, burn_sample_trck_map.shape[0]):
+        plot_burn_sample_MC_comparison( nominal_nutau_trck_map[i,:], nominal_no_nutau_trck_map[i,:], burn_sample_trck_map[i,:], 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', 'coszen_E_bin%s'%i)
+        plot_burn_sample_MC_comparison( nominal_nutau_cscd_map[i,:], nominal_no_nutau_cscd_map[i,:], burn_sample_cscd_map[i,:], 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', 'coszen_E_bin%s'%i)
+        plot_burn_sample_MC_comparison( nominal_nutau_map[i,:], nominal_no_nutau_map[i,:], burn_sample_map[i,:], 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd+trck', 'coszen_E_bin%s'%i)
+
+
 
     if not args.save: plt.show()
     else: print '\n-->>Saved all files to: ',args.outdir
