@@ -152,6 +152,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         delta = np.pi/4 - old_th23_val
         free_params['theta23']['value'] = np.pi/4 + delta
         init_vals = get_param_values(free_params)
+        init_vals = np.array(init_vals)*np.array(scales)
 
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
         display_optimizer_settings(free_params=free_params,
