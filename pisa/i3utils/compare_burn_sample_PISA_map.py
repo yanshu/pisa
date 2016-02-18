@@ -108,7 +108,7 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     plt.savefig(args.outdir+'BurnSample_MC_%s_%s_distribution_0217.png' % (channel, x_label),dpi=150)
     plt.clf()
 
-def plot_1D_distribution_comparison(burn_sample_maps, nominal_nutau, nominal_no_nutau, png_name_root):
+def plot_1D_distribution_comparison(burn_sample_maps, fit_nutau, fit_no_nutau, png_name_root):
 
     print "Entering plot_1D_distribution_comparison "
 
@@ -121,51 +121,51 @@ def plot_1D_distribution_comparison(burn_sample_maps, nominal_nutau, nominal_no_
     BurnSample_RecoCoszen_cscd = get_1D_projection(burn_sample_cscd_map, 'coszen')
     BurnSample_RecoCoszen_trck = get_1D_projection(burn_sample_trck_map, 'coszen')
 
-    nominal_nutau_cscd_map = nominal_nutau['cscd']['map']
-    MC_RecoEnergy_nominal_nutau_cscd = get_1D_projection(nominal_nutau_cscd_map, 'energy')
-    MC_RecoCoszen_nominal_nutau_cscd = get_1D_projection(nominal_nutau_cscd_map, 'coszen')
-    nominal_nutau_trck_map = nominal_nutau['trck']['map']
-    MC_RecoEnergy_nominal_nutau_trck = get_1D_projection(nominal_nutau_trck_map, 'energy')
-    MC_RecoCoszen_nominal_nutau_trck = get_1D_projection(nominal_nutau_trck_map, 'coszen')
+    fit_nutau_cscd_map = fit_nutau['cscd']['map']
+    MC_RecoEnergy_fit_nutau_cscd = get_1D_projection(fit_nutau_cscd_map, 'energy')
+    MC_RecoCoszen_fit_nutau_cscd = get_1D_projection(fit_nutau_cscd_map, 'coszen')
+    fit_nutau_trck_map = fit_nutau['trck']['map']
+    MC_RecoEnergy_fit_nutau_trck = get_1D_projection(fit_nutau_trck_map, 'energy')
+    MC_RecoCoszen_fit_nutau_trck = get_1D_projection(fit_nutau_trck_map, 'coszen')
 
-    nominal_no_nutau_cscd_map = nominal_no_nutau['cscd']['map']
-    MC_RecoEnergy_nominal_no_nutau_cscd = get_1D_projection(nominal_no_nutau_cscd_map, 'energy')
-    MC_RecoCoszen_nominal_no_nutau_cscd = get_1D_projection(nominal_no_nutau_cscd_map, 'coszen')
-    nominal_no_nutau_trck_map = nominal_no_nutau['trck']['map']
-    MC_RecoEnergy_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'energy')
-    MC_RecoCoszen_nominal_no_nutau_trck = get_1D_projection(nominal_no_nutau_trck_map, 'coszen')
+    fit_no_nutau_cscd_map = fit_no_nutau['cscd']['map']
+    MC_RecoEnergy_fit_no_nutau_cscd = get_1D_projection(fit_no_nutau_cscd_map, 'energy')
+    MC_RecoCoszen_fit_no_nutau_cscd = get_1D_projection(fit_no_nutau_cscd_map, 'coszen')
+    fit_no_nutau_trck_map = fit_no_nutau['trck']['map']
+    MC_RecoEnergy_fit_no_nutau_trck = get_1D_projection(fit_no_nutau_trck_map, 'energy')
+    MC_RecoCoszen_fit_no_nutau_trck = get_1D_projection(fit_no_nutau_trck_map, 'coszen')
 
-    MC_RecoEnergy_nominal_nutau_all_chan = MC_RecoEnergy_nominal_nutau_cscd + MC_RecoEnergy_nominal_nutau_trck
-    MC_RecoCoszen_nominal_nutau_all_chan = MC_RecoCoszen_nominal_nutau_cscd + MC_RecoCoszen_nominal_nutau_trck
+    MC_RecoEnergy_fit_nutau_all_chan = MC_RecoEnergy_fit_nutau_cscd + MC_RecoEnergy_fit_nutau_trck
+    MC_RecoCoszen_fit_nutau_all_chan = MC_RecoCoszen_fit_nutau_cscd + MC_RecoCoszen_fit_nutau_trck
 
-    MC_RecoEnergy_nominal_no_nutau_all_chan = MC_RecoEnergy_nominal_no_nutau_cscd + MC_RecoEnergy_nominal_no_nutau_trck
-    MC_RecoCoszen_nominal_no_nutau_all_chan = MC_RecoCoszen_nominal_no_nutau_cscd + MC_RecoCoszen_nominal_no_nutau_trck
+    MC_RecoEnergy_fit_no_nutau_all_chan = MC_RecoEnergy_fit_no_nutau_cscd + MC_RecoEnergy_fit_no_nutau_trck
+    MC_RecoCoszen_fit_no_nutau_all_chan = MC_RecoCoszen_fit_no_nutau_cscd + MC_RecoCoszen_fit_no_nutau_trck
 
     BurnSample_RecoEnergy_all_chan = BurnSample_RecoEnergy_cscd + BurnSample_RecoEnergy_trck
     BurnSample_RecoCoszen_all_chan = BurnSample_RecoCoszen_cscd + BurnSample_RecoCoszen_trck
 
     # plot 1D energy (coszen) distribution
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_cscd, MC_RecoEnergy_nominal_no_nutau_cscd, BurnSample_RecoEnergy_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', E_bin_centers, anlys_ebins, 'cscd', png_name_root+'energy')
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_fit_nutau_cscd, MC_RecoEnergy_fit_no_nutau_cscd, BurnSample_RecoEnergy_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', E_bin_centers, anlys_ebins, 'cscd', png_name_root+'energy')
 
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_cscd, MC_RecoCoszen_nominal_no_nutau_cscd, BurnSample_RecoCoszen_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', png_name_root+'coszen')
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_fit_nutau_cscd, MC_RecoCoszen_fit_no_nutau_cscd, BurnSample_RecoCoszen_cscd, 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', png_name_root+'coszen')
 
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_trck, MC_RecoEnergy_nominal_no_nutau_trck, BurnSample_RecoEnergy_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', E_bin_centers, anlys_ebins, 'trck', png_name_root+'energy')
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_fit_nutau_trck, MC_RecoEnergy_fit_no_nutau_trck, BurnSample_RecoEnergy_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', E_bin_centers, anlys_ebins, 'trck', png_name_root+'energy')
 
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_trck, MC_RecoCoszen_nominal_no_nutau_trck, BurnSample_RecoCoszen_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', png_name_root+'coszen')
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_fit_nutau_trck, MC_RecoCoszen_fit_no_nutau_trck, BurnSample_RecoCoszen_trck, 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', png_name_root+'coszen')
 
-    plot_burn_sample_MC_comparison( MC_RecoEnergy_nominal_nutau_all_chan, MC_RecoEnergy_nominal_no_nutau_all_chan, BurnSample_RecoEnergy_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', E_bin_centers, anlys_ebins, 'cscd+trck', png_name_root+'energy')
+    plot_burn_sample_MC_comparison( MC_RecoEnergy_fit_nutau_all_chan, MC_RecoEnergy_fit_no_nutau_all_chan, BurnSample_RecoEnergy_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', E_bin_centers, anlys_ebins, 'cscd+trck', png_name_root+'energy')
 
-    plot_burn_sample_MC_comparison( MC_RecoCoszen_nominal_nutau_all_chan, MC_RecoCoszen_nominal_no_nutau_all_chan, BurnSample_RecoCoszen_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', png_name_root+'coszen')
+    plot_burn_sample_MC_comparison( MC_RecoCoszen_fit_nutau_all_chan, MC_RecoCoszen_fit_no_nutau_all_chan, BurnSample_RecoCoszen_all_chan, 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', png_name_root+'coszen')
 
     # make 1-d slices
     burn_sample_map = burn_sample_trck_map + burn_sample_cscd_map
-    nominal_nutau_map = nominal_nutau_trck_map + nominal_nutau_cscd_map
-    nominal_no_nutau_map = nominal_no_nutau_trck_map + nominal_no_nutau_cscd_map
+    fit_nutau_map = fit_nutau_trck_map + fit_nutau_cscd_map
+    fit_no_nutau_map = fit_no_nutau_trck_map + fit_no_nutau_cscd_map
 
     for i in range(0, burn_sample_trck_map.shape[0]):
-        plot_burn_sample_MC_comparison( nominal_nutau_trck_map[i,:], nominal_no_nutau_trck_map[i,:], burn_sample_trck_map[i,:], 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', png_name_root+'coszen_E_bin%s'%i)
-        plot_burn_sample_MC_comparison( nominal_nutau_cscd_map[i,:], nominal_no_nutau_cscd_map[i,:], burn_sample_cscd_map[i,:], 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', png_name_root+'coszen_E_bin%s'%i)
-        plot_burn_sample_MC_comparison( nominal_nutau_map[i,:], nominal_no_nutau_map[i,:], burn_sample_map[i,:], 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', png_name_root+'coszen_E_bin%s'%i)
+        plot_burn_sample_MC_comparison( fit_nutau_trck_map[i,:], fit_no_nutau_trck_map[i,:], burn_sample_trck_map[i,:], 'MC trck (nutau)', 'MC trck (no nutau)', 'BurnSample trck', CZ_bin_centers, czbins, 'trck', png_name_root+'coszen_E_bin%s'%i)
+        plot_burn_sample_MC_comparison( fit_nutau_cscd_map[i,:], fit_no_nutau_cscd_map[i,:], burn_sample_cscd_map[i,:], 'MC cscd (nutau)', 'MC cscd (no nutau)', 'BurnSample cscd', CZ_bin_centers, czbins, 'cscd', png_name_root+'coszen_E_bin%s'%i)
+        plot_burn_sample_MC_comparison( fit_nutau_map[i,:], fit_no_nutau_map[i,:], burn_sample_map[i,:], 'MC cscd+trck (nutau)', 'MC cscd+trck (no nutau)', 'BurnSample cscd+trck', CZ_bin_centers, czbins, 'cscd+trck', png_name_root+'coszen_E_bin%s'%i)
 
 
 
@@ -192,10 +192,13 @@ settings file. ''')
                         help='No. of livetime[ unit: Julian year]')
     parser.add_argument('--bg_scale',type=float,
                         help='atmos background scale value')
-    parser.add_argument('-logE','--logE',action='store_true',default=False,
+    parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
     parser.add_argument('--plot_background',action='store_true',default=False,
                         help='Plot background(from ICC data)')
+    parser.add_argument('-plot_sigl_side','--plot_sigl_side',action='store_true',default=False,
+                        help='''Plot signal and side region defined by'
+                        sgnl_side_region_selection.json which is produced by running template_check_f_1.py''')
     parser.add_argument('-norm','--norm',action='store_true',default=False,
                         help='Normalize the histogram.')
     parser.add_argument('-a','--all',action='store_true',default=False,
@@ -244,7 +247,7 @@ settings file. ''')
 
     for flav in ['cscd', 'trck']:
         plt.figure()
-        show_map(burn_sample_maps[flav],vmax=15 if flav == 'cscd' else 10,logE=args.logE,annotate_prcs=0)
+        show_map(burn_sample_maps[flav],vmax=15 if flav == 'cscd' else 10,logE=not(args.no_logE),annotate_prcs=0)
         if args.save:
             filename = os.path.join(args.outdir,args.title+ '_burn_sample_%s_5.6_56GeV.png'% flav)
             plt.title(r'${\rm %s \, yr \, burn \, sample \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(burn_sample_maps[flav]['map'])), fontsize='large')
@@ -254,90 +257,78 @@ settings file. ''')
 
     ##################### Plot MC expectation #######################
 
-    nominal_up_template_settings = copy.deepcopy(template_settings)
-    nominal_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-    nominal_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
+    fit_up_template_settings = copy.deepcopy(template_settings)
+    fit_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
+    fit_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
 
-    nominal_down_template_settings = copy.deepcopy(template_settings)
-    nominal_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-    nominal_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-    nominal_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
+    fit_down_template_settings = copy.deepcopy(template_settings)
+    fit_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
+    fit_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
+    fit_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
 
-    no_nutau_nominal_up_template_settings = copy.deepcopy(no_nutau_template_settings)
-    no_nutau_nominal_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-    no_nutau_nominal_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
+    fit_no_nutau_up_template_settings = copy.deepcopy(no_nutau_template_settings)
+    fit_no_nutau_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
+    fit_no_nutau_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
 
-    no_nutau_nominal_down_template_settings = copy.deepcopy(no_nutau_template_settings)
-    no_nutau_nominal_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-    no_nutau_nominal_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-    no_nutau_nominal_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
+    fit_no_nutau_down_template_settings = copy.deepcopy(no_nutau_template_settings)
+    fit_no_nutau_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
+    fit_no_nutau_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
+    fit_no_nutau_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
 
     with Timer() as t:
-        nominal_template_maker_down = TemplateMaker(get_values(nominal_down_template_settings['params']), **nominal_down_template_settings['binning'])
-        nominal_template_maker_up = TemplateMaker(get_values(nominal_up_template_settings['params']), **nominal_up_template_settings['binning'])
-        nominal_template_maker = [nominal_template_maker_up, nominal_template_maker_down]
-        no_nutau_nominal_template_maker_down = TemplateMaker(get_values(no_nutau_nominal_down_template_settings['params']), **no_nutau_nominal_down_template_settings['binning'])
-        no_nutau_nominal_template_maker_up = TemplateMaker(get_values(no_nutau_nominal_up_template_settings['params']), **no_nutau_nominal_up_template_settings['binning'])
-        no_nutau_nominal_template_maker = [no_nutau_nominal_template_maker_up, no_nutau_nominal_template_maker_down]
+        fit_template_maker_down = TemplateMaker(get_values(fit_down_template_settings['params']), **fit_down_template_settings['binning'])
+        fit_template_maker_up = TemplateMaker(get_values(fit_up_template_settings['params']), **fit_up_template_settings['binning'])
+        fit_template_maker = [fit_template_maker_up, fit_template_maker_down]
+        fit_no_nutau_template_maker_down = TemplateMaker(get_values(fit_no_nutau_down_template_settings['params']), **fit_no_nutau_down_template_settings['binning'])
+        fit_no_nutau_template_maker_up = TemplateMaker(get_values(fit_no_nutau_up_template_settings['params']), **fit_no_nutau_up_template_settings['binning'])
+        fit_no_nutau_template_maker = [fit_no_nutau_template_maker_up, fit_no_nutau_template_maker_down]
 
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
     # Make nutau template:
-    nominal_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_up_template_settings['params'],True,1.0))
-    nominal_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_down_template_settings['params'],True,1.0))
-    nominal_no_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( no_nutau_nominal_up_template_settings['params'],True,0.0))
-    nominal_no_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( no_nutau_nominal_down_template_settings['params'],True,0.0))
+    fit_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_up_template_settings['params'],True,1.0))
+    fit_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_down_template_settings['params'],True,1.0))
+    fit_no_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_up_template_settings['params'],True,0.0))
+    fit_no_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_down_template_settings['params'],True,0.0))
 
     with Timer(verbose=False) as t:
-        nominal_nutau_up = nominal_template_maker_up.get_template(get_values(nominal_nutau_up_params),return_stages=args.all)
-        nominal_nutau_down = nominal_template_maker_down.get_template(get_values(nominal_nutau_down_params),return_stages=args.all)
-        print "from Template_maker, nominal_nutau cscd = ", sum_map(nominal_nutau_up['cscd'], nominal_nutau_down['cscd'])
-        nominal_no_nutau_up = no_nutau_nominal_template_maker_up.get_template(get_values(nominal_no_nutau_up_params),return_stages=args.all)
-        nominal_no_nutau_down = no_nutau_nominal_template_maker_down.get_template(get_values(nominal_no_nutau_down_params),return_stages=args.all)
+        fit_nutau_up = fit_template_maker_up.get_template(get_values(fit_nutau_up_params),return_stages=args.all)
+        fit_nutau_down = fit_template_maker_down.get_template(get_values(fit_nutau_down_params),return_stages=args.all)
+        print "from Template_maker, fit_nutau cscd = ", sum_map(fit_nutau_up['cscd'], fit_nutau_down['cscd'])
+        fit_no_nutau_up = fit_no_nutau_template_maker_up.get_template(get_values(fit_no_nutau_up_params),return_stages=args.all)
+        fit_no_nutau_down = fit_no_nutau_template_maker_down.get_template(get_values(fit_no_nutau_down_params),return_stages=args.all)
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
 
-    nominal_nutau_up_params = dict(get_values(nominal_nutau_up_params).items())
-    nominal_nutau = get_template_for_plot(nominal_nutau_up_params, nominal_template_maker)
-    print "from get_template_for_plot, nominal_nutau cscd = "
-    print nominal_nutau['cscd']
+    fit_nutau_up_params = dict(get_values(fit_nutau_up_params).items())
+    fit_nutau = get_template_for_plot(fit_nutau_up_params, fit_template_maker)
+    print "from get_template_for_plot, fit_nutau cscd = "
+    print fit_nutau['cscd']
     print "\n"
 
-    nominal_no_nutau_up_params = dict(get_values(nominal_no_nutau_up_params).items())
-    nominal_no_nutau = get_template_for_plot(nominal_no_nutau_up_params, nominal_template_maker)
-    print "from get_template_for_plot, nominal_no_nutau cscd = "
-    print nominal_no_nutau['cscd']
+    fit_no_nutau_up_params = dict(get_values(fit_no_nutau_up_params).items())
+    fit_no_nutau = get_template_for_plot(fit_no_nutau_up_params, fit_no_nutau_template_maker)
+    print "from get_template_for_plot, fit_no_nutau cscd = "
+    print fit_no_nutau['cscd']
     print "\n"
 
-    #nominal_nutau_down_params = dict(get_values(nominal_nutau_down_params).items())
-    #print "nominal_nutau_down_params = ", nominal_nutau_down_params
-    #[t_nominal_nutau_up, t_nominal_nutau_down] = get_template_for_plot(nominal_nutau_down_params, nominal_template_maker)
-    #print "t_nominal_nutau_up, t_nominal_nutau_down = "
-    #print t_nominal_nutau_up['cscd']
-    #print t_nominal_nutau_down['cscd']
-    #print "\n"
+    ################## PLOT MC/Data comparison ##################
 
+    # plot 1D distribution comparison
 
-    
-    # combine up and down maps to one
-    #nominal_nutau = {'cscd' : sum_map(nominal_nutau_up['cscd'], nominal_nutau_down['cscd']),
-    #                 'trck' : sum_map(nominal_nutau_up['trck'], nominal_nutau_down['trck']) 
-    #                 }
-    #nominal_no_nutau = {'cscd' : sum_map(nominal_no_nutau_up['cscd'], nominal_no_nutau_down['cscd']),
-    #                 'trck' : sum_map(nominal_no_nutau_up['trck'], nominal_no_nutau_down['trck']) 
-    #                 }
+    plot_1D_distribution_comparison(burn_sample_maps, fit_nutau,  fit_no_nutau, png_name_root = 'whole_region_')
 
     # Plot nominal PISA template (cscd and trck separately), and the ratio of burn sample to PISA template 
     for flav in ['cscd', 'trck']:
         plt.figure()
-        show_map(nominal_nutau[flav],vmax=np.max(nominal_nutau[flav]['map'])+10,logE=args.logE)
+        show_map(fit_nutau[flav],vmax=np.max(fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
         if args.save:
             filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s.png' % (args.y, args.bg_scale, flav))
-            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(nominal_nutau[flav]['map'])), fontsize='large')
+            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(fit_nutau[flav]['map'])), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
-        delta_pid_pisa_pid_bs = delta_map(burn_sample_maps[flav], nominal_nutau[flav])
+        delta_pid_pisa_pid_bs = delta_map(burn_sample_maps[flav], fit_nutau[flav])
         plt.figure()
         show_map(delta_pid_pisa_pid_bs, vmin= np.min(delta_pid_pisa_pid_bs['map']), vmax= np.max(delta_pid_pisa_pid_bs['map']),annotate_prcs=2)
         if args.save:
@@ -346,7 +337,7 @@ settings file. ''')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
-        ratio_pid_pisa_pid_bs = ratio_map(burn_sample_maps[flav], nominal_nutau[flav])
+        ratio_pid_pisa_pid_bs = ratio_map(burn_sample_maps[flav], fit_nutau[flav])
         plt.figure()
         show_map(ratio_pid_pisa_pid_bs, vmin= np.min(ratio_pid_pisa_pid_bs['map']), vmax= np.max(ratio_pid_pisa_pid_bs['map']),annotate_prcs=2)
         if args.save:
@@ -357,23 +348,23 @@ settings file. ''')
 
 
     # plot the cscd + trck maps and the ratio of burn sample to PISA map
-    nominal_nutau_no_pid = sum_map(nominal_nutau['cscd'], nominal_nutau['trck'])
+    fit_nutau_no_pid = sum_map(fit_nutau['cscd'], fit_nutau['trck'])
     burn_sample_maps_no_pid = sum_map(burn_sample_maps['cscd'], burn_sample_maps['trck'])
     print "sum of burn_sample_maps['cscd'] = ", np.sum(burn_sample_maps['cscd']['map'])
     print "sum of burn_sample_maps['trck'] = ", np.sum(burn_sample_maps['trck']['map'])
-    ratio_bs_pisa_no_pid = ratio_map( burn_sample_maps_no_pid, nominal_nutau_no_pid)
-    delta_bs_pisa_no_pid = delta_map( burn_sample_maps_no_pid, nominal_nutau_no_pid)
+    ratio_bs_pisa_no_pid = ratio_map( burn_sample_maps_no_pid, fit_nutau_no_pid)
+    delta_bs_pisa_no_pid = delta_map( burn_sample_maps_no_pid, fit_nutau_no_pid)
 
     plt.figure()
-    show_map(nominal_nutau_no_pid,vmax=np.max(nominal_nutau_no_pid['map'])+10,logE=args.logE,annotate_prcs=1)
+    show_map(fit_nutau_no_pid,vmax=np.max(fit_nutau_no_pid['map'])+10,logE=not(args.no_logE),annotate_prcs=1)
     if args.save:
         filename = os.path.join(args.outdir,args.title+ '_NutauCCNorm_1_'+ 'all_channel.png')
-        plt.title(r'${\rm 1 \, yr \, PISA \, cscd \, + \, trck \, (Nevts: \, %.1f) }$'%(np.sum(nominal_nutau_no_pid['map'])), fontsize='large')
+        plt.title(r'${\rm 1 \, yr \, PISA \, cscd \, + \, trck \, (Nevts: \, %.1f) }$'%(np.sum(fit_nutau_no_pid['map'])), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
     fig = plt.figure()
-    show_map(burn_sample_maps_no_pid,logE=args.logE,vmax=15,annotate_prcs=0)
+    show_map(burn_sample_maps_no_pid,logE=not(args.no_logE),vmax=15,annotate_prcs=0)
     if args.save:
         filename = os.path.join(args.outdir,args.title+ '_Burn_Sample_final_event_rate_all_channel.png')
         plt.title(r'${\rm 1 \, yr \, Burn \, Sample \, cscd \, + \, trck \, map \, (Nevts: \, %.1f) }$'%(np.sum(burn_sample_maps_no_pid['map'])), fontsize='large')
@@ -397,45 +388,45 @@ settings file. ''')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
-    print 'no. of nominal_nutau_cscd = ', np.sum(nominal_nutau['cscd']['map'])
-    print 'no. of nominal_nutau_trck = ', np.sum(nominal_nutau['trck']['map'])
-    print ' total of the above two : ', np.sum(nominal_nutau['cscd']['map'])+np.sum(nominal_nutau['trck']['map'])
+    print 'no. of fit_nutau_cscd = ', np.sum(fit_nutau['cscd']['map'])
+    print 'no. of fit_nutau_trck = ', np.sum(fit_nutau['trck']['map'])
+    print ' total of the above two : ', np.sum(fit_nutau['cscd']['map'])+np.sum(fit_nutau['trck']['map'])
     print ' \n'
-    print 'no. of nominal_no_nutau_cscd = ', np.sum(nominal_no_nutau['cscd']['map'])
-    print 'no. of nominal_no_nutau_trck = ', np.sum(nominal_no_nutau['trck']['map'])
-    print ' total of the above two : ', np.sum(nominal_no_nutau['cscd']['map'])+np.sum(nominal_no_nutau['trck']['map'])
+    print 'no. of fit_no_nutau_cscd = ', np.sum(fit_no_nutau['cscd']['map'])
+    print 'no. of fit_no_nutau_trck = ', np.sum(fit_no_nutau['trck']['map'])
+    print ' total of the above two : ', np.sum(fit_no_nutau['cscd']['map'])+np.sum(fit_no_nutau['trck']['map'])
     print ' \n'
    
 
     ################ Plot background ##################
     # get background
     if args.plot_background:
-        up_background_service = BackgroundServiceICC(nominal_up_template_settings['binning']['anlys_ebins'],czbins[czbins<=0],**get_values(nominal_nutau_up_params))
+        up_background_service = BackgroundServiceICC(fit_up_template_settings['binning']['anlys_ebins'],czbins[czbins<=0],**get_values(fit_nutau_up_params))
         up_background_dict = up_background_service.get_icc_bg()
-        down_background_service = BackgroundServiceICC(nominal_down_template_settings['binning']['anlys_ebins'],czbins[czbins>=0],**get_values(nominal_nutau_down_params))
+        down_background_service = BackgroundServiceICC(fit_down_template_settings['binning']['anlys_ebins'],czbins[czbins>=0],**get_values(fit_nutau_down_params))
         down_background_dict = down_background_service.get_icc_bg()
 
-        up_background_maps = {'params': nominal_nutau_up['params']}
+        up_background_maps = {'params': fit_nutau_up['params']}
         for flav in ['trck','cscd']:
             up_background_maps[flav] = {'map':up_background_dict[flav],
-                                     'ebins':nominal_up_template_settings['binning']['anlys_ebins'],
+                                     'ebins':fit_up_template_settings['binning']['anlys_ebins'],
                                      'czbins':czbins[czbins<=0]}
-        down_background_maps = {'params': nominal_nutau_down['params']}
+        down_background_maps = {'params': fit_nutau_down['params']}
         for flav in ['trck','cscd']:
             down_background_maps[flav] = {'map':down_background_dict[flav],
-                                     'ebins':nominal_down_template_settings['binning']['anlys_ebins'],
+                                     'ebins':fit_down_template_settings['binning']['anlys_ebins'],
                                      'czbins':czbins[czbins>=0]}
 
         for flav in ['trck','cscd']:
             plt.figure()
-            show_map(up_background_maps[flav],logE=args.logE,annotate_prcs=0)
+            show_map(up_background_maps[flav],logE=not(args.no_logE),annotate_prcs=0)
             if args.save:
                 filename = os.path.join(args.outdir,args.title+'_%s_yr_bg_scale_%s_upgoing_background_' % (args.y, args.bg_scale) +flav+'.png')
                 plt.title(r'${\rm %s \, yr \, background \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(up_background_maps[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
             plt.figure()
-            show_map(down_background_maps[flav],logE=args.logE,annotate_prcs=0)
+            show_map(down_background_maps[flav],logE=not(args.no_logE),annotate_prcs=0)
             if args.save:
                 filename = os.path.join(args.outdir,args.title+'_%s_yr_bg_scale_%s_downgoing_background_' % (args.y, args.bg_scale) +flav+'.png')
                 plt.title(r'${\rm %s \, yr \, background \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(down_background_maps[flav]['map'])), fontsize='large')
@@ -446,75 +437,73 @@ settings file. ''')
         print 'total of the above two : ', np.sum(up_background_maps['cscd']['map'])+ np.sum(up_background_maps['trck']['map'])+np.sum(down_background_maps['cscd']['map'])+ np.sum(down_background_maps['trck']['map']) 
 
 
-    ################## PLOT MC/Data comparison ##################
+    ################## PLOT MC/Data comparison in signal and side regions separately ##################
 
-    f_select = from_json('sgnl_side_region_selection.json')
-    region_nominal_nutau = {}
-    region_nominal_no_nutau = {}
-    region_nominal_nutau_minus_no_nutau = {}
-    for region in ['sgnl', 'side']:
-        region_nominal_nutau[region] = {}
-        region_nominal_nutau_minus_no_nutau[region] = {}
-        region_nominal_no_nutau[region] = {}
-        for flav in ['trck','cscd']:
-            #print "region, flav" , region, " ", flav, " f_select[region][flav] = " , f_select[region][flav]
-            region_nominal_nutau[region][flav] = {'map':nominal_nutau[flav]['map'] * f_select[region][flav],
-                                                  'ebins':anlys_ebins,
-                                                  'czbins':czbins}
-            region_nominal_no_nutau[region][flav] = {'map':nominal_no_nutau[flav]['map'] * f_select[region][flav],
-                                                  'ebins':anlys_ebins,
-                                                  'czbins':czbins}
-            delta_nominal_nutau_no_nutau = delta_map(region_nominal_nutau[region][flav],region_nominal_no_nutau[region][flav])
-            region_nominal_nutau_minus_no_nutau[region][flav] = {'map':delta_nominal_nutau_no_nutau['map'] * f_select[region][flav],
-                                                  'ebins':anlys_ebins,
-                                                  'czbins':czbins}
+    if args.plot_sigl_side:
 
-    sgnl_nominal_nutau = {'cscd' : region_nominal_nutau['sgnl']['cscd'],
-                          'trck' : region_nominal_nutau['sgnl']['trck']
-                          }
-    side_nominal_nutau = {'cscd' : region_nominal_nutau['side']['cscd'],
-                          'trck' : region_nominal_nutau['side']['trck']
-                          }
+        f_select = from_json('sgnl_side_region_selection.json')
+        region_fit_nutau = {}
+        region_fit_no_nutau = {}
+        region_fit_nutau_minus_no_nutau = {}
+        for region in ['sgnl', 'side']:
+            region_fit_nutau[region] = {}
+            region_fit_nutau_minus_no_nutau[region] = {}
+            region_fit_no_nutau[region] = {}
+            for flav in ['trck','cscd']:
+                #print "region, flav" , region, " ", flav, " f_select[region][flav] = " , f_select[region][flav]
+                region_fit_nutau[region][flav] = {'map':fit_nutau[flav]['map'] * f_select[region][flav],
+                                                      'ebins':anlys_ebins,
+                                                      'czbins':czbins}
+                region_fit_no_nutau[region][flav] = {'map':fit_no_nutau[flav]['map'] * f_select[region][flav],
+                                                      'ebins':anlys_ebins,
+                                                      'czbins':czbins}
+                delta_fit_nutau_no_nutau = delta_map(region_fit_nutau[region][flav],region_fit_no_nutau[region][flav])
+                region_fit_nutau_minus_no_nutau[region][flav] = {'map':delta_fit_nutau_no_nutau['map'] * f_select[region][flav],
+                                                      'ebins':anlys_ebins,
+                                                      'czbins':czbins}
 
-    sgnl_nominal_no_nutau = {'cscd' : region_nominal_no_nutau['sgnl']['cscd'],
-                             'trck' : region_nominal_no_nutau['sgnl']['trck']
-                             }
-    side_nominal_no_nutau = {'cscd' : region_nominal_no_nutau['side']['cscd'],
-                             'trck' : region_nominal_no_nutau['side']['trck']
-                             }
-    sgnl_nominal_nutau_minus_no_nutau = {'cscd' : region_nominal_nutau_minus_no_nutau['sgnl']['cscd'],
-                          'trck' : region_nominal_nutau_minus_no_nutau['sgnl']['trck']
-                          }
+        sgnl_fit_nutau = {'cscd' : region_fit_nutau['sgnl']['cscd'],
+                              'trck' : region_fit_nutau['sgnl']['trck']
+                              }
+        side_fit_nutau = {'cscd' : region_fit_nutau['side']['cscd'],
+                              'trck' : region_fit_nutau['side']['trck']
+                              }
 
-    plot_1D_distribution_comparison(burn_sample_maps, nominal_nutau,  nominal_no_nutau, png_name_root = 'whole_region_')
-    plot_1D_distribution_comparison(sgnl_burn_sample_maps, sgnl_nominal_nutau, sgnl_nominal_no_nutau, png_name_root = 'signal_region_')
-    plot_1D_distribution_comparison(side_burn_sample_maps, side_nominal_nutau, side_nominal_no_nutau, png_name_root = 'side_region_')
+        sgnl_fit_no_nutau = {'cscd' : region_fit_no_nutau['sgnl']['cscd'],
+                                 'trck' : region_fit_no_nutau['sgnl']['trck']
+                                 }
+        side_fit_no_nutau = {'cscd' : region_fit_no_nutau['side']['cscd'],
+                                 'trck' : region_fit_no_nutau['side']['trck']
+                                 }
+        sgnl_fit_nutau_minus_no_nutau = {'cscd' : region_fit_nutau_minus_no_nutau['sgnl']['cscd'],
+                              'trck' : region_fit_nutau_minus_no_nutau['sgnl']['trck']
+                              }
 
-    # Plot nominal PISA template (cscd and trck separately), and the ratio of burn sample to PISA template 
-    for flav in ['cscd', 'trck']:
-        plt.figure()
-        show_map(side_nominal_nutau[flav],vmax=np.max(side_nominal_nutau[flav]['map'])+10,logE=args.logE)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_side_region.png' % (args.y, args.bg_scale, flav))
-            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(side_nominal_nutau[flav]['map'])), fontsize='large')
-            plt.savefig(filename,dpi=150)
-            plt.clf()
-        plt.figure()
-        show_map(sgnl_nominal_nutau[flav],vmax=np.max(sgnl_nominal_nutau[flav]['map'])+10,logE=args.logE)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_signal_region.png' % (args.y, args.bg_scale, flav))
-            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(sgnl_nominal_nutau[flav]['map'])), fontsize='large')
-            plt.savefig(filename,dpi=150)
-            plt.clf()
-        show_map(sgnl_nominal_nutau_minus_no_nutau[flav],vmax=20 if flav=='cscd' else 5,logE=args.logE)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_minus_0_%s_signal_region.png' % (args.y, args.bg_scale, flav))
-            plt.title(r'${\rm 1 yr \, %s \, (Nevts: \, %.1f) }$'%(flav, np.sum(sgnl_nominal_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
-            plt.savefig(filename,dpi=150)
-            plt.clf()
+        plot_1D_distribution_comparison(sgnl_burn_sample_maps, sgnl_fit_nutau, sgnl_fit_no_nutau, png_name_root = 'signal_region_')
+        plot_1D_distribution_comparison(side_burn_sample_maps, side_fit_nutau, side_fit_no_nutau, png_name_root = 'side_region_')
 
-    burn_sample_cscd_map = burn_sample_maps['cscd']['map']
-    burn_sample_trck_map = burn_sample_maps['trck']['map']
+        # Plot nominal PISA template (cscd and trck separately), and the ratio of burn sample to PISA template 
+        for flav in ['cscd', 'trck']:
+            plt.figure()
+            show_map(side_fit_nutau[flav],vmax=np.max(side_fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
+            if args.save:
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_side_region.png' % (args.y, args.bg_scale, flav))
+                plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(side_fit_nutau[flav]['map'])), fontsize='large')
+                plt.savefig(filename,dpi=150)
+                plt.clf()
+            plt.figure()
+            show_map(sgnl_fit_nutau[flav],vmax=np.max(sgnl_fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
+            if args.save:
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_signal_region.png' % (args.y, args.bg_scale, flav))
+                plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(sgnl_fit_nutau[flav]['map'])), fontsize='large')
+                plt.savefig(filename,dpi=150)
+                plt.clf()
+            show_map(sgnl_fit_nutau_minus_no_nutau[flav],vmax=20 if flav=='cscd' else 5,logE=not(args.no_logE))
+            if args.save:
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_minus_0_%s_signal_region.png' % (args.y, args.bg_scale, flav))
+                plt.title(r'${\rm 1 yr \, %s \, (Nevts: \, %.1f) }$'%(flav, np.sum(sgnl_fit_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
+                plt.savefig(filename,dpi=150)
+                plt.clf()
 
 
     if not args.save: plt.show()
