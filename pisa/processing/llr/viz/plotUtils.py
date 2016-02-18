@@ -33,7 +33,9 @@ def do_gauss(xvals, yvals, **kwargs):
     f, c = curve_fit(gauss, xvals, yvals, **kwargs)
     return f, np.sqrt(np.diag(c))
 
-def plot_gauss(xvals, fit, **kwargs):
+def plot_gauss(fit, **kwargs):
+    # plot smooth gauss function, over +- 8 std. dev.
+    xvals = np.linspace(fit[1]-8*fit[2], fit[1]+8*fit[2], 1000)
     plt.plot(xvals, gauss(xvals, *fit), **kwargs)
     return
 
@@ -153,7 +155,7 @@ def plot_gauss_fit(llr,hist_vals,bincen,**kwargs):
 
     guess = [np.max(hist_vals), np.mean(llr), np.std(llr)]
     fit, cov = do_gauss(bincen,hist_vals, p0=guess)
-    plot_gauss(bincen,fit,**kwargs)
+    plot_gauss(fit,**kwargs)
 
     return fit
 
@@ -198,19 +200,20 @@ def plot_fill(llr_cur, tkey, asimov_llr, hist_vals, bincen, fit_gauss, **kwargs)
     plt.fill_betweenx(
         hist_vals, bincen, x2=asimov_llr, where=eval(expr), **kwargs)
 
-    pvalue = (1.0 - float(np.sum(llr_cur > asimov_llr))/len(llr_cur)
+    pval_count = (1.0 - float(np.sum(llr_cur > asimov_llr))/len(llr_cur)
               if 'true_N' in tkey else
               (1.0 - float(np.sum(llr_cur < asimov_llr))/len(llr_cur)))
-
-    sigma_fit = np.fabs(asimov_llr - fit_gauss[1])/fit_gauss[2]
+    sigma_count = norm.isf(pval_count)
+    sigma_count_2sided = norm.isf(pval_count/2.)
+    sigma_gauss = np.fabs(asimov_llr - fit_gauss[1])/fit_gauss[2]
     #logging.info(
     #    "  For tkey: %s, gaussian computed mean (of alt MH): %.3f and sigma: %.3f"
     #    %(tkey,fit_gauss[1],fit_gauss[2]))
-    pval_gauss = 1.0 - norm.cdf(sigma_fit)
-    sigma_1side = np.sqrt(2.0)*erfinv(1.0 - pval_gauss)
+    pval_gauss = 1.0 - norm.cdf(sigma_gauss)
+    sigma_gauss_2sided = norm.isf(pval_gauss/2.)#np.sqrt(2.0)*erfinv(1.0 - pval_gauss)
 
-    mctrue_row = [tkey,asimov_llr,llr_cur.mean(),pvalue,pval_gauss,sigma_fit,
-                  sigma_1side]
+    mctrue_row = [tkey,asimov_llr,llr_cur.mean(),pval_count,sigma_count,
+		  sigma_count_2sided,pval_gauss,sigma_gauss,sigma_gauss_2sided]
 
     return mctrue_row
 

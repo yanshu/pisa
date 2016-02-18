@@ -24,8 +24,9 @@ from plotUtils import make_scatter_plot, plot_posterior_params
 def displayStats(mc_table):
     print ""
     print tabulate(
-        mc_table,headers=['mcTrue','TH Mean','AH Mean','N pval',
-                          'gauss pval','gauss sigma','gauss 1 side sigma'],
+        mc_table,headers=['mcTrue','TH Mean','AH Mean','Count pval',
+                          'Count sigma', 'Count sigma 2-sided',
+                          'Gauss pval','Gauss sigma','Gauss sigma 2-sided'],
         tablefmt='grid')
     return
 
