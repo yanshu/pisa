@@ -18,6 +18,19 @@ from pisa.utils.log import logging
 from pisa.utils.params import select_hierarchy, get_free_params, get_param_values
 from pisa.utils.utils import get_bin_centers
 
+def get_param_label_string(param_name):
+    param_label_dict = {'aeff_scale': r'$s_\mathrm{Aeff}$',
+			'energy_scale': r'$s_E$',
+			'nue_numu_ratio': r'$r_{\nu_e/\nu_\mu}$',
+			'nu_nubar_ratio': r'$r_{\nu/\bar{\nu}}$',
+			'theta13': r'$\theta_{13}\,[\mathrm{deg}]$',
+			'theta23': r'$\theta_{23}\,[\mathrm{deg}]$',
+			'deltam21': r'$\Delta m^2_{21}\,[\mathrm{eV}^2]$',
+			'deltam31': r'$\Delta m^2_{31}[\mathrm{eV}^2]$',
+			'deltacp': r'$\delta_\mathrm{CP}\,[\mathrm{deg}]$'}
+    try: return param_label_dict[param_name]
+    except: return param_name
+
 
 def validate_key(key):
     valid_keys = ['true_NH', 'true_IH']
@@ -228,7 +241,9 @@ def plot_mean_std(mean_val, std_val, ymax,ax):
     ax.fill_between(xfill,0.0,ymax*0.15,alpha=0.5,hatch='x',
                     facecolor='g')
     plt.plot(xfill,np.zeros_like(xfill),lw=3,color='g',alpha=0.8,label="st dev")
-
+    ax.text(0.02, 0.98, r"$%.3f\pm %.3f$" %(mean_val, std_val),
+        ha='left', va='top', transform=ax.transAxes, fontsize=12,
+        bbox={'facecolor':'g', 'alpha':0.5, 'pad':2})
     return
 
 def plot_injected_val(injected_val,ymax):
@@ -282,16 +297,19 @@ def get_col_info(col_name, tkey, hkey, template_settings, mctrue=False):
                                     normal_hierarchy=mh)
 
     value = injected_vals[col_name]['value']
+    # needed for correct plotting of prior
+    init_value = fit_vals[col_name]['value']
     scale = injected_vals[col_name]['scale']
     prange = fit_vals[col_name]['range']
 
     #prior = fit_vals[col_name]['prior']
-    if injected_vals[col_name]['prior']['kind'] == "gaussian":
-        prior_val = injected_vals[col_name]['prior']["sigma"]
+    # for prior, fit vals necessary
+    if fit_vals[col_name]['prior']['kind'] == "gaussian":
+        prior_val = fit_vals[col_name]['prior']["sigma"]
     else:
         prior_val = None
 
-    return prior_val, value, prange, scale
+    return prior_val, value, prange, scale, init_value
 
 def plot_column(tkey,hkey, subplot, column, template_settings, color,
                 plot_param_info=True,pbins=20,mctrue=False):
@@ -307,14 +325,14 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
 
     col_name = column.name
     if 'llh' not in col_name:
-        prior, inj_value, prange, scale = get_col_info(
+        prior, inj_value, prange, scale, init_value = get_col_info(
             col_name, tkey, hkey, template_settings,mctrue=mctrue)
         column = scale*column
-
     if bool(re.match('^theta',col_name)):
         column = np.rad2deg(column)
         if prior is not None: prior = np.rad2deg(prior)
         inj_value = np.rad2deg(inj_value)
+        init_value = np.rad2deg(init_value)
         prange = np.rad2deg(prange)
 
     std = column.std()
@@ -325,7 +343,6 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
 
     hist,xbins,patches = plt.hist(column,histtype='step',lw=2,color=color,
                                   bins=pbins)
-    plt.title(col_name)#,fontsize='large')
     plt.grid(True)
 
     # Plot extra info about priors, injected val, mean, range, etc.
@@ -340,7 +357,7 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
         if col_name != 'llh':
             plot_injected_val(scale*inj_value,ymax)
             if prior is not None:
-                plot_prior(scale*prior,scale*inj_value, ymax,ax)
+                plot_prior(scale*prior,scale*init_value, ymax,ax)
 
             # Finally, plot bound:
             plot_bound(scale*prange,ymax,ax)
@@ -350,6 +367,8 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
         else:
             ax.set_xlim([mean-5.0*std,mean+5.0*std])
         ax.set_ylim([ylim[0],ymax*1.2])
+        scale_label = r' $\times\,%s$'%scale if scale!=1. else ''
+        ax.set_xlabel(get_param_label_string(col_name)+scale_label)
 
         plt.legend(loc='best',framealpha=0.5)#,fontsize='large')
 
