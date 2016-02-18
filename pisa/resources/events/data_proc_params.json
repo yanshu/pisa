@@ -8,7 +8,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_Neutrino/energy",
         "reco_zenith": "MultiNest_Neutrino/zenith",
-        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
@@ -17,7 +17,7 @@
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
         "zenith_min": "I3MCWeightDict/MinZenith",
         "zenith_max": "I3MCWeightDict/MaxZenith",
-        "energy_log_min": "I3MCWeightDict/MaxEnergyLog",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
@@ -56,7 +56,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_Neutrino/energy",
         "reco_zenith": "MultiNest_Neutrino/zenith",
-        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
@@ -65,7 +65,7 @@
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
         "zenith_min": "I3MCWeightDict/MinZenith",
         "zenith_max": "I3MCWeightDict/MaxZenith",
-        "energy_log_min": "I3MCWeightDict/MaxEnergyLog",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
@@ -96,7 +96,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_8D_Neutrino/energy",
         "reco_zenith": "MultiNest_8D_Neutrino/zenith",
-        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
@@ -105,7 +105,7 @@
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
         "zenith_min": "I3MCWeightDict/MinZenith",
         "zenith_max": "I3MCWeightDict/MaxZenith",
-        "energy_log_min": "I3MCWeightDict/MaxEnergyLog",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
@@ -140,6 +140,61 @@
             "pid"
           ],
           "criteria": "pid <= 0.15"
+        }
+      }
+    },
+    "5.1": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "MCNeutrino/pdg_encoding",
+        "true_energy": "MCNeutrino/energy",
+        "true_zenith": "MCNeutrino/zenith",
+        "reco_energy": "MultiNest_8D_Neutrino/energy",
+        "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid": "PINGU_PID_Score/PID_PINGU_V38_HE_E2wgt_MLPBNN.weights.xml",
+        "cuts_step_1": "Cuts_V5.1_Step1/value",
+        "cuts_step_2": "Cuts_V5.1_Step2/value"
+      },
+      "cuts": {
+        "bgrej": {
+          "fields": [
+            "cuts_step_1"
+          ],
+          "pass_if": "cuts_step_1 == 1"
+        },
+        "analysis": {
+          "fields": [
+            "cuts_step_1",
+            "cuts_step_2"
+          ],
+          "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 0.55"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 0.55"
         }
       }
     }
