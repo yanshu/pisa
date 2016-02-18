@@ -15,7 +15,8 @@ from scipy.stats import norm
 
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
 from pisa.utils.log import logging
-from pisa.utils.params import select_hierarchy, get_free_params, get_param_values
+from pisa.utils.params import select_hierarchy, get_free_params, get_param_values,\
+get_prior_bounds
 from pisa.utils.utils import get_bin_centers
 
 def get_param_label_string(param_name):
@@ -303,9 +304,12 @@ def get_col_info(col_name, tkey, hkey, template_settings, mctrue=False):
     prange = fit_vals[col_name]['range']
 
     #prior = fit_vals[col_name]['prior']
+    #TODO: Also get width of prior (+- 1sigma) for spline prior
     # for prior, fit vals necessary
     if fit_vals[col_name]['prior']['kind'] == "gaussian":
         prior_val = fit_vals[col_name]['prior']["sigma"]
+    #elif fit_vals[col_name]['prior']['kind'] == 'spline':
+    #    prior_val = get_prior_bounds(fit_vals[col_name]['prior'], sigma=1.)
     else:
         prior_val = None
 

@@ -13,6 +13,7 @@
 
 import re
 from scipy import interpolate, optimize
+from scipy.stats import chi2, norm
 import numpy as np
 from copy import deepcopy
 from pisa.utils.log import logging
@@ -190,7 +191,7 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
         x1 = +1
     x = np.linspace(x0, x1, 5000)
     llh = prior.llh(x)
-    chi2 = prior.chi2(x)
+    chisquare = prior.chi2(x)
 
     if x_xform is not None:
         x = x_xform(x)
@@ -203,7 +204,7 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
         ax2 = f.add_subplot(111)
 
     ax1.plot(x, llh, **plt_kwargs)
-    ax2.plot(x, chi2, **plt_kwargs)
+    ax2.plot(x, chisquare, **plt_kwargs)
     
     ax1.set_title(str(prior))
     ax2.set_title(str(prior))
@@ -214,6 +215,12 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
 
     return ax1, ax2
 
+def get_prior_bounds(prior, sigma=1.0, dof=1.0):
+    #cl = 1.0 - 2*norm.sf(sigma)
+    #chi2_val_bounds = chi2.ppf( cl, dof )
+    chi2_val_bounds = sigma**2
+    #TODO: Evaluate spline and get bounds corresponding to chi2_val_bounds
+    return
 
 def get_values(params):
     """
@@ -390,7 +397,7 @@ def test_Prior(ts_fname, param_name='theta23'):
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     sigma = [1, 2, 3, 4, 5]
-    chi2 =  [s**2 for s in sigma]
+    chisquare =  [s**2 for s in sigma]
 
     ts = fileio.from_file(resources.find_resource(ts_fname))
     f1 = plt.figure(1) #,figsize=(8,14),dpi=60)
@@ -448,7 +455,7 @@ def test_Prior(ts_fname, param_name='theta23'):
         ax.grid(which='both', b=True)
         ax.set_title('')
 
-    for c2 in chi2:
+    for c2 in chisquare:
         ax2.plot(xlim, [c2,c2], 'k-', lw=1.0, alpha=0.4)
 
     plt.draw();plt.show()
