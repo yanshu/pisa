@@ -55,15 +55,15 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     ax1.errorbar(x_bin_centers,hist_BS,yerr=[lowerE,upperE],fmt='o',color='black',label='data')
     #if (channel == 'cscd' or channel == 'cscd+trck') and x_label == 'energy':
     ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1)
-    plt.title(r'${\rm 0.045 \, yr \, %s \, (background \, scale \, %s) }$'%(channel, args.bg_scale), fontsize='large')
+    plt.title(r'${\rm 0.045 \, yr \, %s  }$'%(channel), fontsize='large')
     min_hist = min(np.min(hist_BS), np.min(hist_MC_notau), np.min(hist_MC_tau))
     max_hist = max(np.max(hist_BS), np.max(hist_MC_notau), np.max(hist_MC_tau))
     ax1.set_ylim(min_hist - min_hist*0.4,max_hist + 0.4*max_hist)
     ax1.set_ylabel('$\#$ events')
     ax1.grid()
 
-    poisson_llh = np.sum( hist_BS * np.log(hist_MC_tau)- gammaln(hist_BS+1) - hist_MC_tau)
-    print poisson_llh
+    #poisson_llh = np.sum( hist_BS * np.log(hist_MC_tau)- gammaln(hist_BS+1) - hist_MC_tau)
+    #print poisson_llh
 
     x2,_ = stats.chisquare(BS_data, f_exp=MC_nutau)
     x2_nutau = x2/len(BS_data)
@@ -100,7 +100,7 @@ def plot_burn_sample_MC_comparison(MC_nutau, MC_no_nutau, BS_data, MC_nutau_name
     ax2.set_ylim(min(min(ratio_MC_to_BS_notau),min(ratio_MC_to_BS_tau))-0.1,max(max(ratio_MC_to_BS_notau),max(ratio_MC_to_BS_tau))+0.2)
     ax2.axhline(y=1,linewidth=1, color='r')
     #ax2.legend(loc='upper center',ncol=1, frameon=False)
-    a_text = AnchoredText('nutau x2/NDF=%.2f\nno nutau x2/NDF=%.2f\npoisson llh nutau=%.2f'%(x2_nutau,x2_no_nutau,poisson_llh), loc=2)
+    a_text = AnchoredText('nutau x2/NDF=%.2f\nno nutau x2/NDF=%.2f'%(x2_nutau,x2_no_nutau), loc=2)
     ax2.add_artist(a_text)
     ax2.grid()
     fig.subplots_adjust(hspace=0)
@@ -190,8 +190,6 @@ settings file. ''')
                         inverted corridor cut data''')
     parser.add_argument('-y','--y',default=0.045,type=float,
                         help='No. of livetime[ unit: Julian year]')
-    parser.add_argument('--bg_scale',type=float,
-                        help='atmos background scale value')
     parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
     parser.add_argument('--plot_background',action='store_true',default=False,
@@ -211,18 +209,48 @@ settings file. ''')
                         help='Directory to save the output figures.')
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help='set verbosity level')
+    parser.add_argument('-f1', '--fit-results-1', default=None, dest='fit_file_tau',
+                        help='use post fit parameters from fit result json file (nutau_norm = 1)')
+    parser.add_argument('-f0', '--fit-results-0', default=None, dest='fit_file_notau',
+                        help='use post fit parameters from fit result json file (nutau_norm = 0)')
     args = parser.parse_args()
     set_verbosity(args.verbose)
 
+    # get settings file for nutau norm = 1
     template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
-    #template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
     template_settings['params']['livetime']['value'] = args.y
+
+    if args.fit_file_tau:
+        # replace with parameters determ,ined in fit
+        fit_file_tau = from_json(args.fit_file_tau)
+        syslist = fit_file_tau['trials'][0]['fit_results'][0].keys()
+        for sys in syslist:
+            if not sys == 'llh':
+                val = fit_file_tau['trials'][0]['fit_results'][0][sys][0]
+                if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                    sys += '_nh'
+                print '%s at %.4f'%(sys,val)
+                template_settings['params'][sys]['value'] = val
+
+    # get settings file for nutau norm = 0
     no_nutau_template_settings = from_json(args.no_nutau_template_settings)
     no_nutau_template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
-    #no_nutau_template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
     no_nutau_template_settings['params']['livetime']['value'] = args.y
 
+    if args.fit_file_notau:
+        # replace with parameters determ,ined in fit
+        fit_file_notau = from_json(args.fit_file_notau)
+        syslist = fit_file_notau['trials'][0]['fit_results'][0].keys()
+        for sys in syslist:
+            if not sys == 'llh':
+                val = fit_file_notau['trials'][0]['fit_results'][0][sys][0]
+                if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                    sys += '_nh'
+                print '%s at %.4f'%(sys,val)
+                no_nutau_template_settings['params'][sys]['value'] = val
+
+    # get binning info
     ebins = template_settings['binning']['ebins']
     anlys_ebins = template_settings['binning']['anlys_ebins']
     czbins = template_settings['binning']['czbins']
@@ -239,12 +267,11 @@ settings file. ''')
     #burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, output_form = 'array', channel=template_settings['params']['channel']['value'])
     #print '     total no. of events in burn sample :', np.sum(burn_sample_in_array) 
 
-    sgnl_burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='sgnl_map', cut_level='L6', channel=template_settings['params']['channel']['value'])
-    side_burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='side_map', cut_level='L6', channel=template_settings['params']['channel']['value'])
+    if args.plot_sigl_side:
+        sgnl_burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='sgnl_map', cut_level='L6', channel=template_settings['params']['channel']['value'])
+        side_burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='side_map', cut_level='L6', channel=template_settings['params']['channel']['value'])
 
-    #print 'burn_sample_sgnl = ', sgnl_burn_sample_maps
-    #print 'burn_sample_side = ', side_burn_sample_maps
-
+    # plot burn sample maps
     for flav in ['cscd', 'trck']:
         plt.figure()
         show_map(burn_sample_maps[flav],vmax=15 if flav == 'cscd' else 10,logE=not(args.no_logE),annotate_prcs=0)
@@ -323,7 +350,7 @@ settings file. ''')
         plt.figure()
         show_map(fit_nutau[flav],vmax=np.max(fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
         if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s.png' % (args.y, args.bg_scale, flav))
+            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_%s.png' % (args.y, flav))
             plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(fit_nutau[flav]['map'])), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
@@ -421,14 +448,14 @@ settings file. ''')
             plt.figure()
             show_map(up_background_maps[flav],logE=not(args.no_logE),annotate_prcs=0)
             if args.save:
-                filename = os.path.join(args.outdir,args.title+'_%s_yr_bg_scale_%s_upgoing_background_' % (args.y, args.bg_scale) +flav+'.png')
+                filename = os.path.join(args.outdir,args.title+'_%s_yr_upgoing_background_' % (args.y) +flav+'.png')
                 plt.title(r'${\rm %s \, yr \, background \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(up_background_maps[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
             plt.figure()
             show_map(down_background_maps[flav],logE=not(args.no_logE),annotate_prcs=0)
             if args.save:
-                filename = os.path.join(args.outdir,args.title+'_%s_yr_bg_scale_%s_downgoing_background_' % (args.y, args.bg_scale) +flav+'.png')
+                filename = os.path.join(args.outdir,args.title+'_%s_yr_downgoing_background_' % (args.y) +flav+'.png')
                 plt.title(r'${\rm %s \, yr \, background \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(down_background_maps[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
@@ -487,20 +514,20 @@ settings file. ''')
             plt.figure()
             show_map(side_fit_nutau[flav],vmax=np.max(side_fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
             if args.save:
-                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_side_region.png' % (args.y, args.bg_scale, flav))
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_%s_side_region.png' % (args.y, flav))
                 plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(side_fit_nutau[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
             plt.figure()
             show_map(sgnl_fit_nutau[flav],vmax=np.max(sgnl_fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
             if args.save:
-                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_%s_signal_region.png' % (args.y, args.bg_scale, flav))
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_%s_signal_region.png' % (args.y, flav))
                 plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(sgnl_fit_nutau[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
             show_map(sgnl_fit_nutau_minus_no_nutau[flav],vmax=20 if flav=='cscd' else 5,logE=not(args.no_logE))
             if args.save:
-                filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_minus_0_%s_signal_region.png' % (args.y, args.bg_scale, flav))
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_%s_signal_region.png' % (args.y, flav))
                 plt.title(r'${\rm 1 yr \, %s \, (Nevts: \, %.1f) }$'%(flav, np.sum(sgnl_fit_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
