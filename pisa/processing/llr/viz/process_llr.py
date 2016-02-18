@@ -97,7 +97,7 @@ def make_llr_with_false_h(llr_true_h, llr_false_h, nbins, xlim=15):
     colors = ['r','b']
     for ii,tkey in enumerate(['true_NH','true_IH']):
 
-        plt.subplot(1,2,ii+1)
+        ax = plt.subplot(1,2,ii+1)
         label=r'H$_0$: Other Hierarchy'
         hvals, bincen, gfit = plot_llr_distribution(
             llr_false_h[tkey], tkey, nbins, color=colors[ii], label=label)
@@ -112,6 +112,9 @@ def make_llr_with_false_h(llr_true_h, llr_false_h, nbins, xlim=15):
         mcrow = plot_fill(
             llr_false_h[tkey], tkey, asimov_llr, hvals, bincen, gfit,
             alpha=0.5, hatch='xx', facecolor='black')
+        ax.text(0.02, 0.98, r"$n_{\sigma,\,\mathrm{2-sided}}=%.2f$" %
+        mcrow[-1], ha='left', va='top', transform=ax.transAxes,
+        bbox={'facecolor':'slategrey', 'alpha':0.5, 'pad':2})
         plt.legend(framealpha=0.5,loc='best')
 
         ax = set_xlim(llr_true_h[tkey],llr_false_h[tkey])
@@ -144,9 +147,9 @@ parser.add_argument('--scatter',metavar='PARAM_NAMES',type=str,nargs='+',
                     help='''Makes scatter plot for first two names listed here''')
 parser.add_argument('--plot_llh',action='store_true', default=False,
                     help='''Plot llh distribution with other parameters.''')
-parser.add_argument('--true_h',action='store_true',default=False,
-                    help='''Plot the true_h_fiducial posteriors rather than the
-                    false_h_best_fit by default.''')
+parser.add_argument('--false_h',action='store_true',default=False,
+                    help='''Plot the false_h_best_fit posteriors rather than the
+                    true_h_fiducial ones by default.''')
 
 parser.add_argument('-s','--save_fig',action='store_true',default=False,
                     help='Save all figures')
@@ -196,13 +199,13 @@ if args.save_fig:
 
 if args.params:
 
-    df = df_true_h if args.true_h else df_false_h
+    df = df_false_h if args.false_h else df_true_h
 
     # Plot true_h_fiducial:
     figs, fignames = plot_posterior_params(
         df, template_params, plot_param_info=True,
         save_fig=args.save_fig, pbins=args.pbins,
-        plot_llh=args.plot_llh, mctrue=args.true_h)
+        plot_llh=args.plot_llh, mctrue=not args.false_h)
 
     if args.save_fig:
         for i,name in enumerate(fignames):
