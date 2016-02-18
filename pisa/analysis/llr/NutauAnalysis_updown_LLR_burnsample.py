@@ -34,8 +34,7 @@ parser.add_argument('-t','--template_settings',type=str,
                     help='''Settings related to the template generation and systematics.''')
 parser.add_argument('--burn_sample_file',metavar='FILE',type=str,
                     default='burn_sample/Matt_L5b_burn_sample_IC86_2_to_4.hdf5',
-                    help='''HDF5 File containing burn sample.'
-                    inverted corridor cut data''')
+                    help='''HDF5 File containing burn sample.''')
 parser.add_argument('-m','--minimizer_settings',type=str,
                     metavar='JSONFILE', required = True,
                     help='''Settings related to the optimizer used in the LLR analysis.''')
