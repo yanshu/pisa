@@ -74,11 +74,17 @@ parser = ArgumentParser(
 
 parser.add_argument('-d','--data_dir', metavar='DIR', type=str, required=True,
                     help='Directory where the llh analysis run data is stored.')
-parser.add_argument('-b','--basename', metavar='STR', type=str, required=True,
-		    default='llh_data', help='Common basename of llh files.')
+parser.add_argument('--llh_basename', metavar='STR', type=str, required=False,
+                    default='llh_data', help='''Common basename of llh files.'''
+                    ''' Assumes they are are written to directory as:'''
+                    ''' llh_basename<#>.json''')
 parser.add_argument('-l','--log_dir', metavar='DIR', type=str, required=False,
                     default=None,
                     help='Directory where the llh analysis run log info is.')
+parser.add_argument('--log_basename', metavar='STR', type=str, required=False,
+                    default='log', help='''Common basename of log files.'''
+                    ''' Assumes they are written to directory as:'''
+                    ''' log_basename<#>.log''')
 parser.add_argument('-o', '--outfile', metavar='STR', type=str, required=True,
                     help="Output file to store processed, combined llh file.")
 parser.add_argument('--fix_keys', action='store_true', default=False,
@@ -90,10 +96,10 @@ parser.add_argument('-v', '--verbose', action='count', default=None,
 args = parser.parse_args()
 set_verbosity(args.verbose)
 
-llhfiles = glob(os.path.join(args.data_dir,args.basename+'*'))
+llhfiles = glob(os.path.join(args.data_dir, args.llh_basename+'*'))
 
 if args.log_dir is not None:
-    logfiles = glob(os.path.join(args.log_dir,args.basename+'*'))
+    logfiles = glob(os.path.join(args.log_dir, args.log_basename+'*'))
     # These MUST have the same number initialized if we are using the logging
     # information. Otherwise, perhaps one of the directories are incorrect.
     # Sometimes there are fewere llh files, since they crash before writing out.
