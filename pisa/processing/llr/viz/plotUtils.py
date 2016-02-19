@@ -15,8 +15,8 @@ from scipy.stats import norm
 
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
 from pisa.utils.log import logging
-from pisa.utils.params import select_hierarchy, get_free_params, get_param_values,\
-get_prior_bounds
+from pisa.utils.params import select_hierarchy, get_free_params,\
+get_prior_bounds, get_values
 from pisa.utils.utils import get_bin_centers
 
 def get_param_label_string(param_name):
@@ -77,11 +77,13 @@ def plot_llr_distribution(llr_cur, tkey, bins, color='b', **kwargs):
     return hist_vals, bincen, fit_gauss
 
 
-def plot_posterior_params(frames, template_settings, plot_llh=True,
-                          plot_param_info=True, pbins=20, mctrue=False,
-                          **kwargs):
+def plot_posterior_params(frames, template_settings, false_h_inj=None,
+                          plot_llh=True, plot_param_info=True, pbins=20,
+                          mctrue=True, **kwargs):
     """Plot posterior parameter distributions, and related data"""
-
+    if not mctrue and false_h_inj is None:
+        logging.warn("Not plotting WH hypo injected values since no WH settings "
+                     "provided...")
     good_columns = get_free_params(
         select_hierarchy(template_settings, normal_hierarchy=True)).keys()
 
@@ -108,10 +110,16 @@ def plot_posterior_params(frames, template_settings, plot_llh=True,
             if (icol%max_plots_per_fig) == 0:
                 ifig += 1
                 fig = plt.figure(figsize=(10,10))
-                fig_names.append(true_key+"_"+hypo_key+"_"+str(ifig)+".png")
                 figs.append(fig)
-                fig.suptitle('Posteriors for %s, %s'%(true_key,hypo_key))
+                if mctrue:
+                    fig_names.append(true_key+"_"+hypo_key+"_"+str(ifig)+".png")
+                    fig.suptitle('Posteriors for %s, %s'%(true_key,hypo_key))
                              #fontsize='large')
+                else:
+                    fig_names.append("WH_best_to_"+true_key+"_"+hypo_key
+				     +"_"+str(ifig)+".png")
+                    fig.suptitle('Posteriors for true WH best to %s, %s'%
+                                 (true_key,hypo_key))
 
             # Why is this not adding subplot?...
             subplot = (icol%max_plots_per_fig + 1)
@@ -120,7 +128,7 @@ def plot_posterior_params(frames, template_settings, plot_llh=True,
             plot_column(
                 true_key, hypo_key, subplot, column, template_settings,
                 color,plot_param_info=plot_param_info,pbins=pbins,
-                mctrue=mctrue)
+                mctrue=mctrue,false_h_inj=false_h_inj)
 
     return figs,fig_names
 
@@ -248,7 +256,6 @@ def plot_mean_std(mean_val, std_val, ymax,ax):
     return
 
 def plot_injected_val(injected_val,ymax):
-
     vline = plt.vlines(injected_val,1,ymax,colors='r',linewidth=2,
                        alpha=1.0,label="injected")
     return
@@ -271,7 +278,8 @@ def plot_bound(range_bound,ymax,ax):
 
     return
 
-def get_col_info(col_name, tkey, hkey, template_settings, mctrue=False):
+def get_col_info(col_name, tkey, hkey, template_settings, false_h_inj=None,
+                 mctrue=True):
 
     # REMEMBER: Since the "true_NH" corresponds to "pseudo data IH",
     # the normal hierarchy input is opposite!
@@ -279,30 +287,26 @@ def get_col_info(col_name, tkey, hkey, template_settings, mctrue=False):
     #   rather than the AH, null hypothesis.
 
     #print "mctrue: ",mctrue
-
-    if 'true_N' in tkey:
-        mh = True if mctrue else False
-        injected_vals = select_hierarchy(template_settings,
-                                         normal_hierarchy=mh)
+    if mctrue:
+        injected_vals = get_values(select_hierarchy(template_settings,
+                                   normal_hierarchy=True if 'true_N' in tkey
+                                   else False))
     else:
-        mh = False if mctrue else True
-        injected_vals = select_hierarchy(template_settings,
-                                         normal_hierarchy=mh)
-    if 'hypo_N' in hkey:
-        mh = True if mctrue else False
-        fit_vals = select_hierarchy(template_settings,
-                                    normal_hierarchy=mh)
-    else:
-        mh = False if mctrue else True
-        fit_vals = select_hierarchy(template_settings,
-                                    normal_hierarchy=mh)
+        # don't raise if false_h_inj values not there, since we can still plot
+        # posteriors even without this information
+        try: injected_vals = false_h_inj[tkey]
+        except: pass
 
-    value = injected_vals[col_name]['value']
+    fit_vals = select_hierarchy(template_settings,
+                                normal_hierarchy=True if 'hypo_N' in hkey
+                                else False)
+
+    try: value = injected_vals[col_name]
+    except: value = None
     # needed for correct plotting of prior
     init_value = fit_vals[col_name]['value']
-    scale = injected_vals[col_name]['scale']
+    scale = fit_vals[col_name]['scale']
     prange = fit_vals[col_name]['range']
-
     #prior = fit_vals[col_name]['prior']
     #TODO: Also get width of prior (+- 1sigma) for spline prior
     # for prior, fit vals necessary
@@ -316,7 +320,7 @@ def get_col_info(col_name, tkey, hkey, template_settings, mctrue=False):
     return prior_val, value, prange, scale, init_value
 
 def plot_column(tkey,hkey, subplot, column, template_settings, color,
-                plot_param_info=True,pbins=20,mctrue=False):
+                plot_param_info=True,pbins=20,mctrue=True,false_h_inj=None):
     """Plot column information"""
 
 
@@ -330,12 +334,13 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
     col_name = column.name
     if 'llh' not in col_name:
         prior, inj_value, prange, scale, init_value = get_col_info(
-            col_name, tkey, hkey, template_settings,mctrue=mctrue)
+            col_name, tkey, hkey, template_settings, false_h_inj=false_h_inj,
+            mctrue=mctrue)
         column = scale*column
     if bool(re.match('^theta',col_name)):
         column = np.rad2deg(column)
         if prior is not None: prior = np.rad2deg(prior)
-        inj_value = np.rad2deg(inj_value)
+        if inj_value is not None: inj_value = np.rad2deg(inj_value)
         init_value = np.rad2deg(init_value)
         prange = np.rad2deg(prange)
 
@@ -359,7 +364,8 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
 
         # Next: plot injected_val, prior, and bound
         if col_name != 'llh':
-            plot_injected_val(scale*inj_value,ymax)
+            if inj_value is not None:
+                plot_injected_val(scale*inj_value,ymax)
             if prior is not None:
                 plot_prior(scale*prior,scale*init_value, ymax,ax)
 

@@ -7,6 +7,7 @@
 #
 #
 
+from copy import deepcopy
 from argparse import ArgumentParser,ArgumentDefaultsHelpFormatter
 from matplotlib import pyplot as plt
 import numpy as np
@@ -15,11 +16,23 @@ from tabulate import tabulate
 
 from pisa.utils.hdf import from_hdf
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.params import get_values, select_hierarchy
 
 from dfUtils import get_llr_data_frames, get_llh_ratios, show_frame
 from plotUtils import plot_llr_distribution, plot_asimov_line, plot_fill
 from plotUtils import make_scatter_plot, plot_posterior_params
 
+def get_false_h_best_params(llh_data):
+    params = {}
+    for tkey, ttag in [('true_NH', True), ('true_IH', False)]:
+        try:
+            params[tkey] = \
+            deepcopy(llh_data[tkey]['false_h_best_fit']['false_h_settings'])
+        except:
+            params[tkey] = \
+            deepcopy(get_values(select_hierarchy(
+			llh_data['template_settings']['params'], ttag)))
+    return params
 
 def displayStats(mc_table):
     print ""
@@ -166,6 +179,10 @@ sns.set_style("white")
 llh_data = from_hdf(args.llh_file)
 df_true_h, df_false_h = get_llr_data_frames(llh_data)
 template_params = llh_data['template_settings']['params']
+# If the best Asimov WH params have been fit for, need the best
+# fit vals for posterior plotting
+false_h_best_params = get_false_h_best_params(llh_data)
+
 
 if args.verbose > 1: show_frame(df_true_h)
 
@@ -205,7 +222,8 @@ if args.params:
     figs, fignames = plot_posterior_params(
         df, template_params, plot_param_info=True,
         save_fig=args.save_fig, pbins=args.pbins,
-        plot_llh=args.plot_llh, mctrue=not args.false_h)
+        plot_llh=args.plot_llh, mctrue=not args.false_h,
+        false_h_inj=false_h_best_params)
 
     if args.save_fig:
         for i,name in enumerate(fignames):
