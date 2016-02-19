@@ -76,15 +76,15 @@ parser.add_argument('-d','--data_dir', metavar='DIR', type=str, required=True,
                     help='Directory where the llh analysis run data is stored.')
 parser.add_argument('--llh_basename', metavar='STR', type=str, required=False,
                     default='llh_data', help='''Common basename of llh files.'''
-                    ''' Assumes they are are written to directory as:'''
-                    ''' llh_basename<#>.json''')
+                    ''' Assumes they begin with llh_basename and end with '''
+                    ''' _<#>.json''')
 parser.add_argument('-l','--log_dir', metavar='DIR', type=str, required=False,
                     default=None,
                     help='Directory where the llh analysis run log info is.')
 parser.add_argument('--log_basename', metavar='STR', type=str, required=False,
                     default='log', help='''Common basename of log files.'''
-                    ''' Assumes they are written to directory as:'''
-                    ''' log_basename<#>.log''')
+                    ''' Assumes they begin with log_basename and end with:'''
+                    ''' _<#>.log''')
 parser.add_argument('-o', '--outfile', metavar='STR', type=str, required=True,
                     help="Output file to store processed, combined llh file.")
 parser.add_argument('--fix_keys', action='store_true', default=False,
@@ -139,11 +139,12 @@ for i,filename in enumerate(llhfiles):
 
     if args.log_dir is not None:
         # Now process corresponding log file:
-        # ASSUMES that llh, log files are written to directory as:
-        #   args.basename<#>(.json), args.basename<#>.log
+        # ASSUMES that llh, log files begin with:
+        # args.llh_basename, args.log_basename
+        # and end with _<#>(.json/.log)
         # where '#' in range(1, nfiles)
         logfilename = os.path.join(args.log_dir,
-                                   (args.basename+filename.split('.')[0].split('_')[-1]+".log"))
+                                   (args.log_basename+filename.split('.')[0].split('_')[-1]+".log"))
         
         #print("File: ",logfilename)
         fh = open(logfilename, 'r')
