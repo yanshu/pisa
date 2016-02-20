@@ -74,6 +74,13 @@ class TemplateMaker:
         * czbins - coszen bin edges
         '''
 
+        self.cache_params = None
+        self.flux_maps = None
+        self.osc_flux_maps = None
+        self.event_rate_maps = None
+        self.event_rate_reco_maps = None
+        self.event_rate_pid_maps = None
+        self.final_event_rate = None
         
         self.ebins = ebins
         self.czbins = czbins
@@ -165,47 +172,68 @@ class TemplateMaker:
         'params' dict. If 'return_stages' is set to True, returns
         output from each stage as a simple tuple. 
         '''
-        logging.info("STAGE 1: Getting Atm Flux maps...")
-        with Timer() as t:
-            flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                      self.czbins, **params)
-        profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
+        # just assume all steps changed
+        step_changed = [True]*6
 
-        logging.info("STAGE 2: Getting osc prob maps...")
-        with Timer() as t:
-            osc_flux_maps = get_osc_flux(flux_maps, self.osc_service,
-                                         oversample_e=self.oversample_e,
-                                         oversample_cz=self.oversample_cz,
-                                         **params)
-        profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+        # now see what really changed, if we have a cached map to decide from which step on we have to recalculate
+        if self.cache_params:
+            step_changed = [False]*6
+            for p,v in params.items():
+                if self.cache_params[p] != v:
+                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
+                    elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
+                    elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
+                    elif p in ['cz_reco_precision_down','e_reco_precision_down','cz_reco_precision_up','e_reco_precision_up']: step_changed[3] = True
+                    elif p in ['']: step_changed[4] = True
+                    elif p in ['atmos_mu_scale']: step_changed[5] = True
+                    # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
+                    elif not(p in ['dom_eff','hole_ice']): steps_changed = [True]*6
 
-        logging.info("STAGE 3: Getting event rate true maps...")
-        with Timer() as t:
-            event_rate_maps = get_event_rates(osc_flux_maps,
-                                              self.aeff_service, **params)
-        profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+        # update the cached information
+        self.cache_params = params
 
-        logging.info("STAGE 4: Getting event rate reco maps...")
-        with Timer() as t:
-            event_rate_reco_maps = get_reco_maps(event_rate_maps, self.anlys_ebins,
-                                                 self.reco_service,
-                                                 **params)
-        profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
+        if any(step_changed[:1]):
+            logging.info("STAGE 1: Getting Atm Flux maps...")
+            with Timer() as t:
+                self.flux_maps = get_flux_maps(self.flux_service, self.ebins,self.czbins, **params)
+            profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
+        
+        if any(step_changed[:2]):
+            logging.info("STAGE 2: Getting osc prob maps...")
+            with Timer() as t:
+                self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
+            profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
 
-        logging.info("STAGE 5: Getting pid maps...")
-        with Timer(verbose=False) as t:
-            event_rate_pid_maps = get_pid_maps(event_rate_reco_maps,
-                                            self.pid_service)
-            final_event_rate = add_icc_background(event_rate_pid_maps,self.background_service,**params)
+        if any(step_changed[:3]):
+            logging.info("STAGE 3: Getting event rate true maps...")
+            with Timer() as t:
+                self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
+            profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
 
-        profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+        if any(step_changed[:4]):
+            logging.info("STAGE 4: Getting event rate reco maps...")
+            with Timer() as t:
+                self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins,self.reco_service,**params)
+            profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
+
+        if any(step_changed[:5]):
+            logging.info("STAGE 5: Getting pid maps...")
+            with Timer(verbose=False) as t:
+                self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
+            profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+
+        if any(step_changed[:6]):
+            logging.info("STAGE 5: Getting bkgd maps...")
+            with Timer(verbose=False) as t:
+                self.final_event_rate = add_icc_background(self.event_rate_pid_maps,self.background_service,**params)
+            profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
 
         if not return_stages:
-            return final_event_rate
+            return self.final_event_rate
 
         # Otherwise, return all stages as a simple tuple
-        return (flux_maps, osc_flux_maps, event_rate_maps,
-                event_rate_reco_maps, final_event_rate)
+        return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,
+                self.event_rate_reco_maps, self.final_event_rate)
 
     def get_tau_template(self, params, return_stages=False):
         '''
