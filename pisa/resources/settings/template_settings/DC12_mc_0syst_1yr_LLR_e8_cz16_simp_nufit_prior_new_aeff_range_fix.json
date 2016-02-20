@@ -437,6 +437,7 @@
     "reco_vbwkde_evts_file": {
       "fixed": true,
       "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
     "domeff_holeice_slope_file": {
       "fixed": true,
       "value": "domeff_holeice/DH_slopes_up_down_8_by_16.json"
@@ -444,7 +445,6 @@
     "reco_prcs_coeff_file": {
       "fixed": true,
       "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_8_by_16.json"
-    },
     },
     "domeff_holeice_slope_file": {
       "fixed": true,

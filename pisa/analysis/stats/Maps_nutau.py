@@ -363,6 +363,49 @@ def apply_reco_precisions(template, params, channel):
     else:
        raise TypeError("The type of input template is wrong!")
 
+def get_template_for_plot(template_params, template_maker):
+    flavs=['trck', 'cscd']
+    if template_params['theta23'] == 0.0:
+        #TODO
+        logging.info("Zero theta23, so generating no oscillations template...")
+        true_template = template_maker.get_template_no_osc(template_params)
+        # add domeff and/or hole ice effects
+        true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
+        true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params, channel= 'all')
+    elif type(template_maker)==list and len(template_maker)==2:
+        template_maker_up = template_maker[0]
+        template_maker_down = template_maker[1]
+        template_up = template_maker_up.get_template(template_params)  
+        template_down = template_maker_down.get_template(template_params)  
+
+        template_up_down_combined = get_combined_map(template_up,template_down, channel= 'all')
+        template_up = get_up_map(template_up_down_combined, channel= 'all')
+        reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= 'all')
+
+        # add domeff and/or hole ice effects
+        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],template_params, channel= 'all')
+        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],template_params, channel= 'all')
+
+        template_down_dh_prcs = {flav:{
+            'map': np.fliplr(reflected_template_down_dh_prcs[flav]['map']),
+            'ebins':reflected_template_down_dh_prcs[flav]['ebins'],
+            'czbins': np.sort(-reflected_template_down_dh_prcs[flav]['czbins']) }
+            for flav in flavs}
+        output_map= get_concatenated_map(template_up_dh_prcs, template_down_dh_prcs, channel = 'all')
+        return output_map
+
+    else:
+        #TODO
+        true_template = template_maker.get_template(template_params)  
+        # add domeff and/or hole ice effects
+        #true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
+        #reflected_true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params,channel= 'all')
+        #true_template_dh_prcs = {flav:{
+        #    'map': np.fliplr(reflected_true_template_dh_prcs[flav]['map']),
+        #    'ebins':reflected_true_template_dh_prcs[flav]['ebins'],
+        #    'czbins': np.sort(-reflected_true_template_dh_prcs[flav]['czbins']) }
+        #    for flav in flavs}
+        return true_template_dh_prcs
 
 def get_true_template(template_params, template_maker):
     if template_params['theta23'] == 0.0:
@@ -545,4 +588,27 @@ def get_combined_map(amap, bmap, channel):
         'map': amap[flav]['map'] + bmap[flav]['map'],
         'ebins':amap[flav]['ebins'],
         'czbins': amap[flav]['czbins'] }
+            for flav in flavs}
+
+def get_concatenated_map(up_map, down_map, channel):
+    ''' Sum the up-going and the down-going map.'''
+    if not (np.all(up_map['cscd']['czbins']<=0) and np.all(down_map['cscd']['czbins']>=0) ):
+        raise ValueError("These two maps have wrong cz binnings!")
+    if channel=='all':
+        flavs=['trck', 'cscd']
+    elif channel=='trck':
+        flavs=['trck']
+    elif channel=='cscd':
+        flavs=['cscd']
+    elif channel == 'no_pid':
+        return {'no_pid':{
+            'map': up_map['trck']['map']+ up_map['cscd']['map']+ down_map['trck']['map']+down_map['cscd']['map'],
+            'ebins':up_map[flav]['ebins'],
+            'czbins': np.hstack((up_map[flav]['czbins'][:-1], down_map[flav]['czbins'][:])) }}
+    else:
+        raise ValueError("channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"%channel)
+    return {flav:{
+        'map': np.hstack((up_map[flav]['map'], down_map[flav]['map'])),
+        'ebins':up_map[flav]['ebins'],
+        'czbins': np.hstack((up_map[flav]['czbins'][:-1], down_map[flav]['czbins'][:])) }
             for flav in flavs}
