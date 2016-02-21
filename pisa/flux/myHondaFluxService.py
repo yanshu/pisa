@@ -87,7 +87,7 @@ class myHondaFluxService():
         self.czbins = czbins
 
         # do it once, but with much finer steps for 'integrating' the spline interpolation
-        N = 100
+        N = 10
         small_ebins = []
         small_czbins = []
 
