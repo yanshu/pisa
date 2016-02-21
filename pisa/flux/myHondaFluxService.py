@@ -17,7 +17,7 @@
 import os
 import numpy as np
 from scipy.interpolate import bisplrep, bisplev
-from pisa.utils.log import logging
+from pisa.utils.log import logging, profile
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import open_resource
 
@@ -32,6 +32,10 @@ class myHondaFluxService():
     """
 
     def __init__(self, flux_file=None, smooth=0.05, **params):
+
+        self.final_tablesT = {}
+        self.ebins = None
+        self.czbins = None
         logging.info("Loading atmospheric flux table %s" %flux_file)
 
         #Load the data table
@@ -69,6 +73,20 @@ class myHondaFluxService():
     def get_flux(self, ebins, czbins, prim):
         """Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary."""
+
+        if self.final_tablesT.has_key(prim):
+            # check if this is the table we want
+            if all(ebins == self.ebins) and all(self.czbins == czbins):
+                # if so, return it
+                profile.info('Reusing flux table %s'%prim)
+                return self.final_tablesT[prim]
+
+        # otherwise continue here, update chached values
+        profile.info('Calculating flux table %s'%prim)
+        self.ebins = ebins
+        self.czbins = czbins
+
+        # do it once, but with much finer steps for 'integrating' the spline interpolation
         N = 100
         small_ebins = []
         small_czbins = []
@@ -125,6 +143,7 @@ class myHondaFluxService():
             for j in xrange(N):
                 final_table[i] += final_table_e[i*N +j]
 
+        self.final_tablesT[prim] = final_table.T
 
-        return final_table.T
+        return self.final_tablesT[prim]
 

@@ -24,3 +24,17 @@ pisa.egg-info
 # Common editor remnants
 *~
 *.swp
+
+# ignore my personal settings
+pisa/resources/settings/template_settings/*.json
+# output files
+/*.json
+# plots
+*.png
+# stupid mac spotlight files
+.DS_Store
+._.DS_Store
+# my scripts
+/*.sh
+pisa/i3utils/PBS/*.sh
+pisa/i3utils/PBS/*.in

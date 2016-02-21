@@ -12,7 +12,8 @@ import os
 import numpy as np
 import h5py
 from pisa.analysis.stats.LLHStatistics import get_random_map
-from pisa.utils.log import logging
+from pisa.utils.log import logging, profile
+from pisa.utils.utils import Timer
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
@@ -281,7 +282,9 @@ def apply_reco_precisions(template, params, channel):
     e_precision_down_val = params['e_reco_precision_down']
     cz_precision_up_val = params['cz_reco_precision_up']
     cz_precision_down_val = params['cz_reco_precision_down']
-    cubic_coeff = from_json(find_resource(params['reco_prcs_coeff_file']))
+    with Timer() as t:
+        cubic_coeff = from_json(find_resource(params['reco_prcs_coeff_file']))
+    profile.debug("==> JSON %s sec"%t.secs)
     if e_precision_up_val == 1.0 and e_precision_down_val == 1.0 and cz_precision_up_val == 1.0 and cz_precision_down_val == 1.0:
         return template
     if channel=='all' or channel == 'no_pid':
@@ -412,8 +415,12 @@ def get_true_template(template_params, template_maker):
         logging.info("Zero theta23, so generating no oscillations template...")
         true_template = template_maker.get_template_no_osc(template_params)
         # add domeff and/or hole ice effects
-        true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
-        true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params, channel= 'all')
+        with Timer() as t:
+            true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
+        profile.debug("==> elapsed time for dom eff/hole ice: %s sec"%t.secs)
+        with Timer() as t:
+            true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params, channel= 'all')
+        profile.debug("==> elapsed time for reco precision: %s sec"%t.secs)
         true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=template_params['channel'])
     elif type(template_maker)==list and len(template_maker)==2:
         template_maker_up = template_maker[0]
@@ -426,8 +433,12 @@ def get_true_template(template_params, template_maker):
         reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= 'all')
 
         # add domeff and/or hole ice effects
-        [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],template_params, channel= 'all')
-        [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],template_params, channel= 'all')
+        with Timer() as t:
+            [template_up_dh,reflected_template_down_dh] = apply_domeff_holeice([template_up,reflected_template_down],template_params, channel= 'all')
+        profile.debug("==> elapsed time for dom eff/hole ice: %s sec"%t.secs)
+        with Timer() as t:
+            [template_up_dh_prcs,reflected_template_down_dh_prcs] = apply_reco_precisions([template_up_dh,reflected_template_down_dh],template_params, channel= 'all')
+        profile.debug("==> elapsed time for reco precision: %s sec"%t.secs)
         true_fmap_up = Maps.flatten_map(template_up_dh_prcs, channel=template_params['channel'])
         true_fmap_down = Maps.flatten_map(reflected_template_down_dh_prcs, channel=template_params['channel'])
         if template_params['residual_up_down'] or template_params['ratio_up_down']:
@@ -437,8 +448,12 @@ def get_true_template(template_params, template_maker):
     else:
         true_template = template_maker.get_template(template_params)  
         # add domeff and/or hole ice effects
-        true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
-        true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params,channel= 'all')
+        with Timer() as t:
+            true_template_dh = apply_domeff_holeice(true_template,template_params,channel= 'all')
+        profile.debug("==> elapsed time for dom eff/hole ice: %s sec"%t.secs)
+        with Timer() as t:
+            true_template_dh_prcs = apply_reco_precisions(true_template_dh, template_params,channel= 'all')
+        profile.debug("==> elapsed time for reco precision: %s sec"%t.secs)
         true_fmap = Maps.flatten_map(true_template_dh_prcs, channel=template_params['channel'])
 
     return true_fmap

@@ -335,14 +335,21 @@
     "hole_ice": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.2,
-        "kind": "gaussian",
-        "sigma": 0.1
+        "kind": "uniform"
       },
       "range": [
         0.0,
         0.5
       ],
+      #"prior": {
+      #  "fiducial": 0.2,
+      #  "kind": "gaussian",
+      #  "sigma": 0.1
+      #},
+      #"range": [
+      #  0.0,
+      #  0.5
+      #],
       "scale": 1.0,
       "value": 0.2
     },

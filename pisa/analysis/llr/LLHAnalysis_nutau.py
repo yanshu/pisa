@@ -21,6 +21,7 @@ from pisa.utils.utils import Timer
 from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh
 from pisa.analysis.stats.Maps import flatten_map
 from pisa.analysis.stats.Maps_nutau import get_up_map,get_flipped_map, get_true_template
+from pisa.analysis.stats.Maps_nutau_cls import Maps_nutau_cls
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
                            minimizer_settings,only_atm_params=True,check_octant=False):
@@ -109,10 +110,12 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     priors = get_param_priors(free_params)
     names  = sorted(free_params.keys())
 
+    myMaps_nutau = Maps_nutau_cls()
+
     if len(free_params)==0:
         logging.warn("NO FREE PARAMS, returning LLH")
         unscaled_opt_vals = [init_vals[i] for i in xrange(len(init_vals))]
-        true_fmap = get_true_template(template_params,template_maker)
+        true_fmap = myMaps_nutau.get_true_template(template_params,template_maker)
         neg_llh = -get_binwise_llh(fmap,true_fmap,template_params)
         neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
@@ -131,7 +134,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     after_check_opt_steps_dict = {key:[] for key in names}
     after_check_opt_steps_dict['llh'] = []
 
-    const_args = (names,scales,fmap,fixed_params,template_maker,opt_steps_dict,priors)
+    const_args = (names,scales,fmap,fixed_params,template_maker,opt_steps_dict,priors, myMaps_nutau)
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
 
@@ -154,7 +157,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         init_vals = get_param_values(free_params)
         init_vals = np.array(init_vals)*np.array(scales)
 
-        const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
+        const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors, myMaps_nutau)
         display_optimizer_settings(free_params=free_params,
                                    names=names,
                                    init_vals=init_vals,
@@ -204,7 +207,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
 
 def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
-             opt_steps_dict, priors):
+             opt_steps_dict, priors,myMaps_nutau):
 
     '''
     Function that the bfgs algorithm tries to minimize: wraps get_template()
@@ -253,7 +256,7 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
 
     # Now get true template, and compute LLH
     with Timer() as t:
-        true_fmap = get_true_template(template_params,template_maker)
+        true_fmap = myMaps_nutau.get_true_template(template_params,template_maker)
 
     profile.info("==> elapsed time for template maker: %s sec"%t.secs)
 

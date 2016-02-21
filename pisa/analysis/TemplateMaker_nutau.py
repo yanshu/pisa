@@ -197,36 +197,48 @@ class TemplateMaker:
             with Timer() as t:
                 self.flux_maps = get_flux_maps(self.flux_service, self.ebins,self.czbins, **params)
             profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 1: Reused from step before...")
         
         if any(step_changed[:2]):
             logging.info("STAGE 2: Getting osc prob maps...")
             with Timer() as t:
                 self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
             profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 2: Reused from step before...")
 
         if any(step_changed[:3]):
             logging.info("STAGE 3: Getting event rate true maps...")
             with Timer() as t:
                 self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
             profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 3: Reused from step before...")
 
         if any(step_changed[:4]):
             logging.info("STAGE 4: Getting event rate reco maps...")
             with Timer() as t:
                 self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins,self.reco_service,**params)
             profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 4: Reused from step before...")
 
         if any(step_changed[:5]):
             logging.info("STAGE 5: Getting pid maps...")
             with Timer(verbose=False) as t:
                 self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
             profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 5: Reused from step before...")
 
         if any(step_changed[:6]):
-            logging.info("STAGE 5: Getting bkgd maps...")
+            logging.info("STAGE 6: Getting bkgd maps...")
             with Timer(verbose=False) as t:
                 self.final_event_rate = add_icc_background(self.event_rate_pid_maps,self.background_service,**params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 6: Reused from step before...")
 
         if not return_stages:
             return self.final_event_rate

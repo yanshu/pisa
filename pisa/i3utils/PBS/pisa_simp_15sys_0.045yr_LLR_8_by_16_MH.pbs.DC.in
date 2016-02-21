@@ -1,6 +1,7 @@
 #PBS -l nodes=1:ppn=1
 #PBS -l mem=3gb
 #PBS -l walltime=28:00:00
+## dele the below line when using ACI open queue
 #PBS -q dfc13-reco
 #PBS -j oe
 #PBS -o @@LOG_FILE@@_Run@@RUN@@.log
@@ -13,17 +14,23 @@ export PROJECT=@@PROJECT@@
 
 # Workaround go avoid globbing...
 #export PATH="/gpfs/home/fxh140/local/anaconda/bin:$PATH"
+#source /gpfs/home/pde3/setup_icecube.sh
+source /gpfs/home/pde3/setup_pisa.sh
 export LD_LIBRARY_PATH=@@LD_LIBRARY_PATH@@
 export DYLD_LIBRARY_PATH=@@DYLD_LIBRARY_PATH@@
 export PYTHONPATH=@@PYTHONPATH@@
+export PYTHONPATH=/storage/home/pde3/pisa:$PYTHONPATH
 export SRC_SCRIPT_DIR=@@SRC_SCRIPT_DIR@@
 export I3_SHELL=python
+
+echo $PYTHONPATH
 
 set noglob
 
 cd @@SRC_SCRIPT_DIR@@
 
-./NutauAnalysis_updown_LLR_MH.py -t ~/work/pisa/pisa/resources/settings/template_settings/DC12_mc_15syst_0.045yr_e8_cz16_simp_nufit_prior.json -m ~/work/pisa/pisa/resources/settings/minimizer_settings/bfgs_settings_fac1e9_eps1e-4_mi100.json -o @@OUTPUT_DIR@@/llh_data_LLR_MH_0.045yr_15sys_run_@@RUN@@.json --check_octant -n 2
+python pisa/analysis/llr/NutauAnalysis_updown_LLR_MH.py -t ~/pisa/pisa/resources/settings/template_settings/DC12_mc_15syst_0.045yr_e8_cz16_simp_nufit_prior.json -m ~/pisa/pisa/resources/settings/minimizer_settings/bfgs_settings_fac1e9_eps1e-4_mi100.json -o @@OUTPUT_DIR@@/llh_data_LLR_MH_0.045yr_15sys_run_@@RUN@@.json --check_octant -n 2
+
 st=$?
 
 [ ${st} != 0 ] && exit ${st}
