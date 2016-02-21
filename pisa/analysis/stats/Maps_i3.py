@@ -17,7 +17,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
+def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     anlys_bins = (anlys_ebins, czbins)
     num_nue_files = 2700
     num_numu_files = 4000
@@ -26,22 +26,32 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
     #livetime_in_s = 27920000  # (DC12: 1 livetime year = 27920000 s)
 
     # read MC hdf5 files directly
-    #MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/DOMEff_HoleIce/DC12_nue.hd5','r'))
-    #MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/DOMEff_HoleIce/DC12_nutau.hd5','r'))
-    #MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/DOMEff_HoleIce/DC12_numu.hd5','r'))
-    MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights/Matt_L5b_mc_with_weights_nue.hdf5','r'))
-    MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
-    MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights/Matt_L5b_mc_with_weights_numu.hdf5','r'))
+
+    if honda_model == 'IPhonda2014':
+        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
+        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
+        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
+
+    if honda_model == 'honda2014':
+        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
+        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
+        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
+
 
     L6_result = {}
     L6_result['nue'] = MC_file_nue['IC86_Dunkman_L6']['result']
     L6_result['numu'] = MC_file_numu['IC86_Dunkman_L6']['result']
     L6_result['nutau'] = MC_file_nutau['IC86_Dunkman_L6']['result']
 
-    ExpectedNumber = {}
-    ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nue_files/2)
-    ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_numu_files/2)
-    ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nutau_files/2)
+    Oscillated_ExpectedNumber = {}
+    Oscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nue_files)
+    Oscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_numu_files)
+    Oscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nutau_files)
+
+    #UnOscillated_ExpectedNumber = {}
+    #UnOscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nue_files)
+    #UnOscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_numu_files)
+    #UnOscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nutau_files)
 
     MC_true_x = {}
     MC_true_x['nue'] = MC_file_nue['trueNeutrino']['x']
@@ -130,7 +140,14 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
     nuDict = {'nue':12,'numu':14,'nutau':16,'nue_bar':-12,'numu_bar':-14,'nutau_bar':-16}
     inttypeDict = {'cc':1, 'nc':2}
 
-    # get aeff maps from i3 files
+    # cut to get aeff maps and osc_flux maps from i3 files
+    #cut_osc_flux = {}
+    #for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+    #    cut_osc_flux[flavor] = {}
+    #    for int_type in ['cc','nc']:
+    #        cut_osc_flux[flavor][int_type] = TrueNeutrino_pdg[flavor.split('_bar')[0]] == nuDict[flavor][int_type]
+    #            cut_aeff[flavor][int_type] = np.logical_and(L6_result[flavor.split('_bar')[0]] ==1 , np.logical_and(TrueNeutrino_pdg[flavor.split('_bar')[0]] == nuDict[flavor], InteractionType[flavor.split('_bar')[0]] == inttypeDict[int_type]))
+
     cut_aeff = {}
     for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
         cut_aeff[flavor] = {}
@@ -143,6 +160,20 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
                 #TODO
                 print "cut level above L5 is not available"
 
+    #osc_weights = {}
+    #osc_flux_maps_from_i3 = {}
+    #for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+    #    for int_type in ['cc','nc']:
+    #        oscillated_rate = Oscillated_ExpectedNumber[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]]
+    #        osc_weights[flavor] = oscillated_rate
+    #        true_energy = MC_true_energy[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]] 
+    #        true_coszen = MC_true_coszen[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]]
+    #        osc_flux_hist,_,_ = np.histogram2d(true_energy,true_coszen, weights=oscillated_rate,bins=anlys_bins)
+    #        osc_flux_maps_from_i3[flavor] = {'map':osc_flux_hist,
+    #                                     'ebins':anlys_ebins,
+    #                                     'czbins':czbins}
+
+
     aeff_maps_from_i3 = {}
     true_coszen_from_i3 = {}
     true_energy_from_i3 = {}
@@ -151,7 +182,7 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
     reco_energy_from_i3 = {}
     reco_xyzt_from_i3 = {}
     trck_len_from_i3 = {}
-    weights = {}
+    osc_weights = {}
     for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
         aeff_maps_from_i3[flavor] = {}
         true_coszen_from_i3[flavor] = {}
@@ -161,15 +192,15 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
         reco_energy_from_i3[flavor] = {}
         reco_xyzt_from_i3[flavor] = {}
         trck_len_from_i3[flavor] = {}
-        weights[flavor] = {}
+        osc_weights[flavor] = {}
         for int_type in ['cc','nc']:
-            oscillated_rate = ExpectedNumber[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
+            oscillated_rate = Oscillated_ExpectedNumber[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
             true_energy = MC_true_energy[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
             true_coszen = MC_true_coszen[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
             reco_energy = MN_reco_energy[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
             reco_coszen = MN_reco_coszen[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
 
-            weights[flavor][int_type] = oscillated_rate
+            osc_weights[flavor][int_type] = oscillated_rate
             true_coszen_from_i3[flavor][int_type] = true_coszen
             true_energy_from_i3[flavor][int_type] = true_energy
             reco_coszen_from_i3[flavor][int_type] = reco_coszen
@@ -206,10 +237,13 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
                 true_xyzt_from_i3[flavor][int_type]['time'] = true_t 
 
     if output_form == 'true_info':
-        return (true_xyzt_from_i3, true_energy_from_i3, true_coszen_from_i3, weights)
+        return (true_xyzt_from_i3, true_energy_from_i3, true_coszen_from_i3, osc_weights)
 
     if output_form == 'reco_info':
-        return (reco_xyzt_from_i3, reco_energy_from_i3, reco_coszen_from_i3, trck_len_from_i3, weights)
+        return (reco_xyzt_from_i3, reco_energy_from_i3, reco_coszen_from_i3, trck_len_from_i3, osc_weights)
+
+    if output_form == 'osc_flux_map':
+        return osc_flux_maps_from_i3
 
     if output_form == 'aeff_map':
         return aeff_maps_from_i3
@@ -227,7 +261,7 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins):
             reco_coszen_pid = np.array([]) 
             oscillated_rate_pid = np.array([]) 
             for flavor in ['nue', 'numu', 'nutau']:
-                oscillated_rate = ExpectedNumber[flavor][cut_pid[flavor][channel]]/2
+                oscillated_rate = Oscillated_ExpectedNumber[flavor][cut_pid[flavor][channel]]
                 reco_energy = MN_reco_energy[flavor][cut_pid[flavor][channel]] 
                 reco_coszen = MN_reco_coszen[flavor][cut_pid[flavor][channel]]
                 oscillated_rate_pid = np.concatenate([oscillated_rate_pid, oscillated_rate])

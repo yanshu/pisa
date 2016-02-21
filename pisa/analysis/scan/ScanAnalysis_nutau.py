@@ -18,8 +18,7 @@ from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_true_template
 from pisa.analysis.scan.Scan_nutau import find_max_grid
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values
-from pisa.utils.params_nutau import select_hierarchy_and_nutau_norm, change_nutau_norm_settings
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings
 import random as rnd
 
 parser = ArgumentParser(
@@ -149,7 +148,7 @@ for itrial in xrange(1, args.ntrials+1):
             profile.info("start scan")
             hypo_params = change_nutau_norm_settings(
                 template_settings['params'],
-                hypo_nutau_norm,nutau_norm_fix
+                hypo_nutau_norm,nutau_norm_fix,hypo_normal
             )
             llh_data = find_max_grid(fmap=fmap,
                                      template_maker=template_maker,

@@ -276,7 +276,7 @@ settings file. ''')
         plt.figure()
         show_map(burn_sample_maps[flav],vmax=15 if flav == 'cscd' else 10,logE=not(args.no_logE),annotate_prcs=0)
         if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_burn_sample_%s_5.6_56GeV.png'% flav)
+            filename = os.path.join(args.outdir,args.title+ '_burn_sample_%s.png'% flav)
             plt.title(r'${\rm %s \, yr \, burn \, sample \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(burn_sample_maps[flav]['map'])), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
@@ -318,13 +318,13 @@ settings file. ''')
     fit_no_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_up_template_settings['params'],True,0.0))
     fit_no_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_down_template_settings['params'],True,0.0))
 
-    with Timer(verbose=False) as t:
-        fit_nutau_up = fit_template_maker_up.get_template(get_values(fit_nutau_up_params),return_stages=args.all)
-        fit_nutau_down = fit_template_maker_down.get_template(get_values(fit_nutau_down_params),return_stages=args.all)
-        print "from Template_maker, fit_nutau cscd = ", sum_map(fit_nutau_up['cscd'], fit_nutau_down['cscd'])
-        fit_no_nutau_up = fit_no_nutau_template_maker_up.get_template(get_values(fit_no_nutau_up_params),return_stages=args.all)
-        fit_no_nutau_down = fit_no_nutau_template_maker_down.get_template(get_values(fit_no_nutau_down_params),return_stages=args.all)
-    profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
+    #with Timer(verbose=False) as t:
+    #    fit_nutau_up = fit_template_maker_up.get_template(get_values(fit_nutau_up_params),return_stages=args.all)
+    #    fit_nutau_down = fit_template_maker_down.get_template(get_values(fit_nutau_down_params),return_stages=args.all)
+    #    print "from Template_maker, fit_nutau cscd = ", sum_map(fit_nutau_up['cscd'], fit_nutau_down['cscd'])
+    #    fit_no_nutau_up = fit_no_nutau_template_maker_up.get_template(get_values(fit_no_nutau_up_params),return_stages=args.all)
+    #    fit_no_nutau_down = fit_no_nutau_template_maker_down.get_template(get_values(fit_no_nutau_down_params),return_stages=args.all)
+    #profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
 
     fit_nutau_up_params = dict(get_values(fit_nutau_up_params).items())
