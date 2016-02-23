@@ -317,7 +317,7 @@
       "value": "oscillations/PREM_12layer.dat"
     },
     "energy_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -408,9 +408,13 @@
       "fixed": true,
       "value": "param"
     },
-    "pid_paramfile": {
+    "pid_paramfile_up": {
       "fixed": true,
       "value": "pid/1X60_pid.json"
+    },
+    "pid_paramfile_down": {
+      "fixed": true,
+      "value": "pid/1X60_pid_down.json"
     },
     "prop_height": {
       "fixed": true,

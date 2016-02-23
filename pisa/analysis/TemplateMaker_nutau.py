@@ -50,8 +50,8 @@ from pisa.pid.PIDServiceParam import PIDServiceParam
 from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
 from pisa.pid.PID import get_pid_maps
 
-from pisa.background.BackgroundServiceICC_nutau import BackgroundServiceICC 
-from pisa.background.ICCBackground_nutau import add_icc_background
+from pisa.background.BackgroundServiceICC import BackgroundServiceICC 
+from pisa.background.ICCBackground import add_icc_background
 from pisa.sys.HoleIce import HoleIce
 from pisa.sys.DomEfficiency import DomEfficiency
 from pisa.sys.Resolution import Resolution
