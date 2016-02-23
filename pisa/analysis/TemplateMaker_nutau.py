@@ -52,6 +52,9 @@ from pisa.pid.PID import get_pid_maps
 
 from pisa.background.BackgroundServiceICC_nutau import BackgroundServiceICC 
 from pisa.background.ICCBackground_nutau import add_icc_background
+from pisa.sys.HoleIce import HoleIce
+from pisa.sys.DomEfficiency import DomEfficiency
+from pisa.sys.Resolution import Resolution
 
 class TemplateMaker:
     '''
@@ -80,6 +83,8 @@ class TemplateMaker:
         self.event_rate_maps = None
         self.event_rate_reco_maps = None
         self.event_rate_pid_maps = None
+        self.hole_ice_maps = None
+        self.dom_eff_maps = None
         self.final_event_rate = None
         
         self.ebins = ebins
@@ -164,7 +169,11 @@ class TemplateMaker:
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
                                                      **template_settings)
-        return
+
+        # hole ice sys
+        self.HoleIce = HoleIce(template_settings['domeff_holeice_slope_file'])
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_holeice_slope_file'])
+        self.Resolution = Resolution(template_settings['reco_prcs_coeff_file'])
 
     def get_template(self, params, return_stages=False):
         '''
@@ -183,11 +192,10 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif p in ['cz_reco_precision_down','e_reco_precision_down','cz_reco_precision_up','e_reco_precision_up']: step_changed[3] = True
                     elif p in ['']: step_changed[4] = True
                     elif p in ['atmos_mu_scale']: step_changed[5] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
-                    elif not(p in ['dom_eff','hole_ice']): steps_changed = [True]*6
+                    else: steps_changed = [True]*6
 
         # update the cached information
         self.cache_params = params
@@ -232,16 +240,26 @@ class TemplateMaker:
         else:
             profile.info("STAGE 5: Reused from step before...")
 
+        #self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
+        # test
+        self.hole_ice_maps = self.event_rate_pid_maps 
+
         if any(step_changed[:6]):
             logging.info("STAGE 6: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.event_rate_pid_maps,self.background_service,**params)
+                self.final_event_rate = add_icc_background(self.hole_ice_maps, self.background_service,**params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.info("STAGE 6: Reused from step before...")
 
         if not return_stages:
-            return self.final_event_rate
+            
+            # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
+            sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
+            sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
+            sys_maps = self.Resolution.apply_sys(sys_maps, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
+
+            return sys_maps
 
         # Otherwise, return all stages as a simple tuple
         return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,

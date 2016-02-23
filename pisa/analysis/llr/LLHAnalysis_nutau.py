@@ -116,7 +116,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         logging.warn("NO FREE PARAMS, returning LLH")
         unscaled_opt_vals = [init_vals[i] for i in xrange(len(init_vals))]
         true_fmap = myMaps_nutau.get_true_template(template_params,template_maker)
-        neg_llh = -get_binwise_llh(fmap,true_fmap,template_params)
+        neg_llh = -get_binwise_llh(fmap,true_fmap)
         neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
         physics.debug("LLH is %.2f "%neg_llh)
@@ -263,7 +263,7 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     # NOTE: The minus sign is present on both of these next two lines
     # to reflect the fact that the optimizer finds a minimum rather
     # than maximum.
-    neg_llh = -get_binwise_llh(fmap,true_fmap,template_params)
+    neg_llh = -get_binwise_llh(fmap,true_fmap)
     neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
 
