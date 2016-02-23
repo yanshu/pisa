@@ -36,18 +36,18 @@ class BackgroundServiceICC:
         reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
 
         # throw away delta LLH < -3:
-        reco_energy_all_cut1 = reco_energy_all[dLLH>=-3]
-        reco_coszen_all_cut1 = reco_coszen_all[dLLH>=-3]
-        dLLH_cut1 = dLLH[dLLH>=-3]
+        reco_energy_all = reco_energy_all[dLLH>=-3]
+        reco_coszen_all = reco_coszen_all[dLLH>=-3]
+        dLLH = dLLH[dLLH>=-3]
 
         # write to dictionary
         for flavor in ['cscd','trck']:
             if flavor == 'cscd':
-                cut = dLLH_cut1 < 3.0 
+                cut = dLLH < 3.0 
             if flavor == 'trck':
-                cut = dLLH_cut1 >= 3.0 
-            reco_energy = reco_energy_all_cut1[cut]*energy_scale
-            reco_coszen = reco_coszen_all_cut1[cut]
+                cut = dLLH >= 3.0 
+            reco_energy = reco_energy_all[cut]*energy_scale
+            reco_coszen = reco_coszen_all[cut]
 
             flavor_dict = {}
             logging.debug("Working on %s background"%flavor)
