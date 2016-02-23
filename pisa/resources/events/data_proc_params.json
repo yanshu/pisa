@@ -8,6 +8,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_Neutrino/energy",
         "reco_zenith": "MultiNest_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
         "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
@@ -56,6 +57,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_Neutrino/energy",
         "reco_zenith": "MultiNest_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
         "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
@@ -96,6 +98,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_8D_Neutrino/energy",
         "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
         "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
@@ -109,6 +112,7 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid": "PINGU_PID_Score/PID_Train_V36_baseline_HE_CutsV4_BDTG.weights.xml",
         "cuts_step_1": "Cuts_V5_Step1/value",
         "cuts_step_2": "Cuts_V5_Step2/value"
       },
@@ -126,6 +130,20 @@
           ],
           "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
         }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 0.15"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 0.15"
+        }
       }
     },
     "5.1": {
@@ -136,6 +154,7 @@
         "true_zenith": "MCNeutrino/zenith",
         "reco_energy": "MultiNest_8D_Neutrino/energy",
         "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
         "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
@@ -149,6 +168,7 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid": "PINGU_PID_Score/PID_PINGU_V38_HE_E2wgt_MLPBNN.weights.xml",
         "cuts_step_1": "Cuts_V5.1_Step1/value",
         "cuts_step_2": "Cuts_V5.1_Step2/value"
       },
@@ -165,6 +185,20 @@
             "cuts_step_2"
           ],
           "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 0.55"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 0.55"
         }
       }
     }
