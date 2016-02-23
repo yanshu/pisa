@@ -414,7 +414,7 @@
     },
     "pid_paramfile_down": {
       "fixed": true,
-      "value": "pid/1X60_pid.json"
+      "value": "pid/1X60_pid_down.json"
     },
     "prop_height": {
       "fixed": true,
