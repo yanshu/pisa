@@ -263,6 +263,16 @@ def plot_injected_val(injected_val,ymax):
 def plot_prior(prior,value,ymax,ax):
 
     if prior is None: return
+    if isinstance(prior, np.ndarray) or isinstance(prior, list):
+        if len(prior)%2!=0:
+            # something unexpected has happened, don't plot
+            return
+        n = len(prior) / 2
+        for i in xrange(0, n):
+            xfill = np.linspace(prior[i*n], prior[i*n+1], 10)
+            ax.fill_between(xfill, 0.0, ymax*0.1, alpha=0.4, facecolor='k')
+            plt.plot(xfill,np.zeros_like(xfill),lw=3,color='k',alpha=0.4,
+					 label='prior' if i==0 else '')
     else:
         xfill = np.linspace(value-prior,value+prior,10)
         ax.fill_between(xfill,0.0,ymax*0.1,alpha=0.4,facecolor='k')
@@ -307,13 +317,11 @@ def get_col_info(col_name, tkey, hkey, template_settings, false_h_inj=None,
     init_value = fit_vals[col_name]['value']
     scale = fit_vals[col_name]['scale']
     prange = fit_vals[col_name]['range']
-    #prior = fit_vals[col_name]['prior']
-    #TODO: Also get width of prior (+- 1sigma) for spline prior
     # for prior, fit vals necessary
     if fit_vals[col_name]['prior']['kind'] == "gaussian":
         prior_val = fit_vals[col_name]['prior']["sigma"]
-    #elif fit_vals[col_name]['prior']['kind'] == 'spline':
-    #    prior_val = get_prior_bounds(fit_vals[col_name]['prior'], sigma=1.)
+    elif fit_vals[col_name]['prior']['kind'] == "spline":
+        prior_val = get_prior_bounds(fit_vals[col_name]['prior'], sigma=[1.0])[1.0]
     else:
         prior_val = None
 

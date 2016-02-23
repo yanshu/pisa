@@ -215,12 +215,52 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
 
     return ax1, ax2
 
-def get_prior_bounds(prior, sigma=1.0, dof=1.0):
-    #cl = 1.0 - 2*norm.sf(sigma)
-    #chi2_val_bounds = chi2.ppf( cl, dof )
-    chi2_val_bounds = sigma**2
-    #TODO: Evaluate spline and get bounds corresponding to chi2_val_bounds
-    return
+def get_prior_bounds(obj, param=None, sigma=[1.0]):
+	"""Obtain confidence regions for CL corresponding to given number of sigmas
+	from parameter prior.
+
+	Arguments
+	---------
+	obj : str or dict
+		if str, interpret as path from which to load a dict
+		if dict, can be:
+            template settings dict; must supply `param` to choose which to plot
+            params dict; must supply `param` to choose which to plot
+            prior dict
+	param
+		Name of param for which to get bounds;
+		necessary if obj is either template settings or params
+	sigma
+		List of number of sigmas
+
+	Returns
+	-------
+	bounds
+		A dictionary mapping sigma to the corresponding bounds
+	"""
+	bounds = {s: [] for s in sigma}
+	if isinstance(obj, basestring):
+		obj = fileio.from_file(obj)
+	if 'params' in obj:
+		obj = obj['params']
+	if param is not None and param in obj:
+		obj = obj[param]
+	if 'prior' in obj:
+		obj = obj['prior']
+	prior = Prior(**obj)
+	logging.info('Getting confidence region from prior: %s' % prior)
+	x0 = prior.valid_range[0]
+	x1 = prior.valid_range[1]
+	x = np.linspace(x0, x1, 10000)
+	chisquare = prior.chi2(x)
+	for (i, xval) in enumerate(x[:-1]):
+		for s in sigma:
+			chi2_level = s**2
+			if chisquare[i]>chi2_level and chisquare[i+1]<chi2_level:
+				bounds[s].append(xval)
+			elif chisquare[i]<chi2_level and chisquare[i+1]>chi2_level:
+				bounds[s].append(x[i+1])
+	return bounds
 
 def get_values(params):
     """
