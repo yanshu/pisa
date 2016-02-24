@@ -30,6 +30,11 @@
       "handlers": [ "console" ],
       "level": "DEBUG",
       "propagate": false
+    },
+    "logging": {
+      "handlers": [ "console" ],
+      "level": "DEBUG",
+      "propagate": false
     }
   },
   "root": {

@@ -119,7 +119,7 @@ def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_leve
 def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
     true_template = template_maker.get_template(fiducial_params)  
     true_fmap = Maps.flatten_map(true_template, channel=channel)
-    return fmap
+    return true_fmap
 
 def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
     """
@@ -146,7 +146,7 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
 def get_true_template(template_params, template_maker):
     if template_params['theta23'] == 0.0:
         logging.info("Zero theta23, so generating no oscillations template...")
-        true_template = template_maker.get_template_no_osc(template_params)
+        true_template = template_maker.get_template(template_params,no_osc_maps=True)
         true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
     else:
         true_template = template_maker.get_template(template_params)  
