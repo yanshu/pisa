@@ -23,17 +23,17 @@
   "loggers": {
     "profile": {
       "handlers": [ "console"  ],
-      "level": "DEBUG",
+      "level": "INFO",
       "propagate": false
     },
     "physics": {
       "handlers": [ "console" ],
-      "level": "DEBUG",
+      "level": "INFO",
       "propagate": false
     },
     "logging": {
       "handlers": [ "console" ],
-      "level": "DEBUG",
+      "level": "INFO",
       "propagate": false
     }
   },
