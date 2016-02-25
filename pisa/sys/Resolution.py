@@ -12,7 +12,7 @@ class Resolution(SysBase):
         self.cubic_coeffs = {} 
         for channel in ['cscd', 'trck']:
             # add up and down together
-            self.cubic_coeffs[channel] = cubic_coeffs['coeffs']['data_tau']['%s_reco_precision_%s'%(var,direction)][channel]
+            self.cubic_coeffs[channel] = cubic_coeffs['%s_reco_precision_%s'%(var,direction)][channel]
 
     def get_scales(self, channel, sys_val):
         # get the sacles to be applied to a map

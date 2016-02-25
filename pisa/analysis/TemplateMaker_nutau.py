@@ -166,9 +166,8 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['domeff_holeice_slope_file'])
-        print "template_settings['holeice_slope_file'] = ", template_settings['holeice_slope_file']
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_holeice_slope_file'])
+        self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
         self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
         self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
