@@ -16,7 +16,7 @@ import os
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
 from pisa.analysis.stats.Maps import get_seed
 from pisa.utils.log import set_verbosity,logging,profile
@@ -36,10 +36,10 @@ if __name__ == '__main__':
                         default='background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
-    parser.add_argument('-logE','--logE',action='store_true',default=False,
+    parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
-    parser.add_argument('--bg_scale',type=float,
-                        help="atmos background scale value")
+    parser.add_argument('--bg_scale',type=float, default = 0.0,
+                        help='atmos background scale value')
     parser.add_argument('-y','--y',type=float,
                         help='No. of livetime[ unit: Julian year]')
     parser.add_argument('--plot_f_1_0_diff',action='store_true', default= False,
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     nominal_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_down_template_settings['params'],True,1.0))
 
     with Timer(verbose=False) as t:
-        print "getting nominal_nutau_up "
+        print 'getting nominal_nutau_up '
         nominal_nutau_up = nominal_template_maker_up.get_template(get_values(nominal_nutau_up_params),return_stages=args.all)
         nominal_nutau_down = nominal_template_maker_down.get_template(get_values(nominal_nutau_down_params),return_stages=args.all)
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
@@ -115,21 +115,21 @@ if __name__ == '__main__':
                                      'czbins':czbins[czbins>=0]}
         for channel in ['trck','cscd']:
             plt.figure()
-            show_map(up_background_maps[channel],logE=args.logE)
+            show_map(up_background_maps[channel],logE=not(args.no_logE))
             if args.save:
                 filename = os.path.join(args.outdir,args.title+'_upgoing_background_'+channel+'.png')
                 plt.title(args.title+'_upgoing_background_'+channel)
                 plt.savefig(filename,dpi=150)
                 plt.clf()
             plt.figure()
-            show_map(down_background_maps[channel],logE=args.logE)
+            show_map(down_background_maps[channel],logE=not(args.no_logE))
             if args.save:
                 filename = os.path.join(args.outdir,args.title+'_downgoing_background_'+channel+'.png')
                 plt.title(args.title+'_downgoing_background_'+channel)
                 plt.savefig(filename,dpi=150)
                 plt.clf()
         no_totl = np.sum(down_background_maps['trck']['map']) + np.sum(down_background_maps['cscd']['map']) + np.sum(up_background_maps['trck']['map']) + np.sum(up_background_maps['cscd']['map'])
-        print "total no. of background events = ", no_totl
+        print 'total no. of background events = ', no_totl
 
 
     ###### Plot nominal templates #####
@@ -137,25 +137,25 @@ if __name__ == '__main__':
     nominal_nutau_trck = sum_map(nominal_nutau_up['trck'], nominal_nutau_down['trck'])
 
     plt.figure()
-    show_map(nominal_nutau_cscd,vmax=np.max(nominal_nutau_cscd['map'])+10,logE=args.logE)
+    show_map(nominal_nutau_cscd,vmax=np.max(nominal_nutau_cscd['map'])+10,logE=not(args.no_logE))
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_' % (args.y, args.bg_scale) + 'cscd_5.6_56GeV.png')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_' % (args.y, args.bg_scale) + 'cscd.png')
         plt.title(r'${\rm %s \, yr \, cscd \, (Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, np.sum(nominal_nutau_cscd['map']), args.bg_scale), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
     plt.figure()
-    show_map(nominal_nutau_trck,vmax=np.max(nominal_nutau_trck['map'])+10,logE=args.logE)
+    show_map(nominal_nutau_trck,vmax=np.max(nominal_nutau_trck['map'])+10,logE=not(args.no_logE))
     if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_' % (args.y, args.bg_scale) + 'trck_5.6_56GeV.png')
+        filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_' % (args.y, args.bg_scale) + 'trck.png')
         plt.title(r'${\rm %s \, yr \, trck \, (Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, np.sum(nominal_nutau_trck['map']), args.bg_scale), fontsize='large')
         plt.savefig(filename,dpi=150)
         plt.clf()
 
-    print "no. of nominal_nutau_cscd = ", np.sum(nominal_nutau_cscd['map'])
-    print "no. of nominal_nutau_trck = ", np.sum(nominal_nutau_trck['map'])
-    print " total of the above two : ", np.sum(nominal_nutau_cscd['map'])+np.sum(nominal_nutau_trck['map'])
-    print " \n"
+    print 'no. of nominal_nutau_cscd = ', np.sum(nominal_nutau_cscd['map'])
+    print 'no. of nominal_nutau_trck = ', np.sum(nominal_nutau_trck['map'])
+    print ' total of the above two : ', np.sum(nominal_nutau_cscd['map'])+np.sum(nominal_nutau_trck['map'])
+    print ' \n'
     
     if args.plot_other_nutau_norm:
         other_nutau_norm_val_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_up_template_settings['params'],True,args.val))
@@ -165,25 +165,25 @@ if __name__ == '__main__':
         other_nutau_norm_val_cscd = sum_map(other_nutau_norm_val_up['cscd'], other_nutau_norm_val_down['cscd'])
         other_nutau_norm_val_trck = sum_map(other_nutau_norm_val_up['trck'], other_nutau_norm_val_down['trck'])
         plt.figure()
-        show_map(other_nutau_norm_val_cscd,vmax=np.max(other_nutau_norm_val_cscd['map'])+10,logE=args.logE)
+        show_map(other_nutau_norm_val_cscd,vmax=np.max(other_nutau_norm_val_cscd['map'])+10,logE=not(args.no_logE))
         if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_%s_' % (args.y, args.bg_scale, args.val) + 'cscd_5.6_56GeV.png')
+            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_%s_' % (args.y, args.bg_scale, args.val) + 'cscd.png')
             plt.title(r'${\rm %s \, yr \, cscd \, (\nu_{\tau} \, CC \, norm: \, %s , \, Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, args.val, np.sum(other_nutau_norm_val_cscd['map']), args.bg_scale), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
         plt.figure()
-        show_map(other_nutau_norm_val_trck,vmax=np.max(other_nutau_norm_val_trck['map'])+10,logE=args.logE)
+        show_map(other_nutau_norm_val_trck,vmax=np.max(other_nutau_norm_val_trck['map'])+10,logE=not(args.no_logE))
         if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_%s_' % (args.y, args.bg_scale, args.val) + 'trck_5.6_56GeV.png')
+            filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_%s_' % (args.y, args.bg_scale, args.val) + 'trck.png')
             plt.title(r'${\rm %s \, yr \, trck \, (\nu_{\tau} \, CC \, norm: \, %s , \, Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, args.val, np.sum(other_nutau_norm_val_trck['map']), args.bg_scale), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
-        print "no. of other_nutau_norm_val_cscd = ", np.sum(other_nutau_norm_val_cscd['map'])
-        print "no. of other_nutau_norm_val_trck = ", np.sum(other_nutau_norm_val_trck['map'])
-        print " total of the above two : ", np.sum(other_nutau_norm_val_cscd['map'])+np.sum(other_nutau_norm_val_trck['map'])
-        print " \n"
+        print 'no. of other_nutau_norm_val_cscd = ', np.sum(other_nutau_norm_val_cscd['map'])
+        print 'no. of other_nutau_norm_val_trck = ', np.sum(other_nutau_norm_val_trck['map'])
+        print ' total of the above two : ', np.sum(other_nutau_norm_val_cscd['map'])+np.sum(other_nutau_norm_val_trck['map'])
+        print ' \n'
    
     if args.plot_f_1_0_diff:
         nominal_no_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_up_template_settings['params'],True,0.0))
@@ -195,19 +195,19 @@ if __name__ == '__main__':
         nominal_nutau_minus_no_nutau_cscd = delta_map(nominal_nutau_cscd, nominal_no_nutau_cscd)
         nominal_nutau_minus_no_nutau_trck = delta_map(nominal_nutau_trck, nominal_no_nutau_trck)
         plt.figure()
-        show_map(nominal_nutau_minus_no_nutau_cscd,vmax=20, logE=args.logE, xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
+        show_map(nominal_nutau_minus_no_nutau_cscd,vmax=20, logE=not(args.no_logE), xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
         if args.save:
-            scale_E = 'logE' if args.logE else 'linE'
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_cscd_5.6_56GeV.png')
+            scale_E = 'linE' if args.no_logE else 'logE'
+            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_cscd.png')
             plt.title(r'${\rm 1 \, yr \, cascade \, (Nevts: \, %.1f) }$'%(np.sum(nominal_nutau_minus_no_nutau_cscd['map'])), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
         plt.figure()
-        show_map(nominal_nutau_minus_no_nutau_trck,vmax=5, logE=args.logE, xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
+        show_map(nominal_nutau_minus_no_nutau_trck,vmax=5, logE=not(args.no_logE), xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
         if args.save:
-            scale_E = 'logE' if args.logE else 'linE'
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_trck_5.6_56GeV.png')
+            scale_E = 'logE' if not(args.no_logE) else 'linE'
+            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_trck.png')
             plt.title(r'${\rm 1 \, yr \, track \, (Nevts: \, %.1f) }$'%(np.sum(nominal_nutau_minus_no_nutau_trck['map'])), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
