@@ -345,8 +345,8 @@
         0.0,
         0.5
       ],
-      "scale": 1.0,
-      "value": 0.2
+      "scale": 10.0,
+      "value": 0.02
     },
     "icc_bg_file": {
       "fixed": true,
@@ -444,9 +444,13 @@
       "fixed": true,
       "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
-    "domeff_holeice_slope_file": {
+    "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/DH_slopes_up_down_10_by_16.json"
+      "value": "domeff_holeice/DomEff_linear_fits_10_by_16.json"
+    },
+    "holeice_slope_file": {
+      "fixed": true,
+      "value": "domeff_holeice/HoleIce_linear_fits_10_by_16.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,

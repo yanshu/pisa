@@ -15,10 +15,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
-from pisa.analysis.stats.Maps import get_seed, flatten_map
-from pisa.analysis.stats.Maps_nutau import get_half_map, get_combined_map
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
 from pisa.utils.params import get_values, change_nutau_norm_settings, select_hierarchy
 from pisa.utils.plot import show_map
 import os
@@ -53,12 +50,12 @@ templates = {}
 fits_DOMEff = {}
 fits_HoleIce = {}
 
-fits_DOMEff = {'trck':{'slopes':{}, 'fixed_ratio':{}},
-                 'cscd':{'slopes':{}, 'fixed_ratio':{}},
+fits_DOMEff = {'trck':{'slopes':{}, 'fixed_ratios':{}},
+                 'cscd':{'slopes':{}, 'fixed_ratios':{}},
                  'nominal': 1
                  }
-fits_HoleIce = {'trck':{'slopes':{}, 'fixed_ratio':{}},
-                 'cscd':{'slopes':{}, 'fixed_ratio':{}},
+fits_HoleIce = {'trck':{'slopes':{}, 'fixed_ratios':{}},
+                 'cscd':{'slopes':{}, 'fixed_ratios':{}},
                  'nominal': 0.02
                  }
 
@@ -106,6 +103,8 @@ for flav in ['trck','cscd']:
             hole_ice = np.array([1.0/50, 1.0/50, 1.0/50, 1.0/50, 1.0/50, 0.0, 1.0/30, 1.0/100])         #unit: cm-1
             bin_counts = np.array([templ[0][i][j],templ[1][i][j],templ[2][i][j],templ[3][i][j],templ[4][i][j],templ[5][i][j],templ[6][i][j],templ[7][i][j]]) 
             bin_ratio_values = bin_counts/templ[1][i][j]  #divide by the nominal value templ[1][i]
+            if templ[1][i][j] == 0:
+                print "templ[1][", i , "][", j, "] == 0 !!!!!!!!!"
 
             fixed_r_val = bin_ratio_values[0]
 
@@ -137,8 +136,8 @@ for flav in ['trck','cscd']:
 
     fits_DOMEff[flav]['slopes'] = k_DE 
     fits_HoleIce[flav]['slopes'] = k_HI
-    fits_DOMEff[flav]['fixed_ratio'] = fixed_ratio 
-    fits_HoleIce[flav]['fixed_ratio'] = fixed_ratio
+    fits_DOMEff[flav]['fixed_ratios'] = fixed_ratio 
+    fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
 #Assemble output dict
 output_template = {'templates' : templates,

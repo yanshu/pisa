@@ -18,12 +18,10 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
-from pisa.analysis.stats.Maps import get_seed, flatten_map
-from pisa.analysis.stats.Maps_nutau import get_flipped_map, get_combined_map, get_up_map, get_flipped_down_map
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.resources.resources import find_resource
+from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm,change_nutau_norm_settings, select_hierarchy
+from pisa.utils.params import get_values, change_nutau_norm_settings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,15 +49,7 @@ set_verbosity(args.verbose)
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
 
-up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-
-down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-
+template_settings = copy.deepcopy(template_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 
 # make sure that both pseudo data and template are using the same
@@ -70,14 +60,11 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg += " pseudo_data_settings channel: '%s', template channel: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
 
-template_maker_down = TemplateMaker(get_values(down_template_settings['params']),
-                                             **down_template_settings['binning'])
-template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
-                               **up_template_settings['binning'])
-template_maker = [template_maker_up,template_maker_down]
-
-reco_mc_file_up = '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'
-reco_mc_file_down = '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'
+template_maker = TemplateMaker(get_values(template_settings['params']),
+                               **template_settings['binning'])
+#reco_mc_file = from_json(find_resource(template_settings['params']['reco_mc_wt_file']['value']))
+reco_mc_file = "~/pisa/pisa/resources/aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+template_settings['params']['atmos_mu_scale']['value'] = 0
 
 def func_cubic_through_nominal(x, a, b, c):
     return a*x*x*x + b*x*x + c*x + 1.0 - a - b - c
@@ -85,114 +72,89 @@ def func_cubic_through_nominal(x, a, b, c):
 tmaps = {}
 coeffs = {}
 MCmaps = {}
-
 reco_prcs_vals = eval(args.reco_prcs_vals)
+data_nutau_norm = 1.0
 print "reco_prcs_vals = ", reco_prcs_vals
-for data_tag, data_nutau_norm in [('data_tau', 1.0)]:
 
-    tmaps[data_tag] = {}
-    MCmaps[data_tag] = {}
-    coeffs[data_tag] = {}
+for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
+    MCmaps[precision_tag] = {}
+    tmaps[precision_tag] = {}
 
-    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
-        MCmaps[data_tag][precision_tag] = {}
-        tmaps[data_tag][precision_tag] = {}
+    for reco_prcs_val in reco_prcs_vals:
+        tmaps[precision_tag][str(reco_prcs_val)] = {'trck':{},
+                                                    'cscd':{}}
+        MCmaps[precision_tag][str(reco_prcs_val)] = {'trck':{},
+                                                     'cscd':{}}
 
+        template_settings_Reco = copy.deepcopy(template_settings)
+        template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
+        template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
+
+        tmap = template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
+        tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
+        tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
+
+        MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings['binning']['anlys_ebins'], template_settings['binning']['czbins'], reco_mc_file)
+        tmap_MC = MCMap.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file)
+        MCmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap_MC['trck']['map']
+        MCmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap_MC['cscd']['map']
+
+
+for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
+    templ_list = []
+    coeffs[precision_tag] = {'trck':{},
+                             'cscd':{}}
+    for flav in ['trck','cscd']:
+        templ = []
+        templ_err = []
+        templ_nominal = []
+        templ_nominal_err = []
         for reco_prcs_val in reco_prcs_vals:
-            tmaps[data_tag][precision_tag][str(reco_prcs_val)] = {'trck':{'up':{}, 'down':{}},
-                                                                  'cscd':{'up':{}, 'down':{}}}
-            MCmaps[data_tag][precision_tag][str(reco_prcs_val)] = {'trck':{'up':{}, 'down':{}},
-                                                                  'cscd':{'up':{}, 'down':{}}}
+            templ.append(tmaps[precision_tag][str(reco_prcs_val)][flav])  
 
-            template_settings_Reco = copy.deepcopy(up_template_settings)
-            template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
-            template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
+            ## Get template error (either standard deviation or standard error):
+            # standard deviation: sqrt(n_event_rate):
+            #templ_err.append(np.sqrt(tmapsprecision_tag][str(reco_prcs_val)]))
 
-            tmap_up = template_maker_up.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
-            tmap_down = template_maker_down.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
+            # standard error: sqrt(n_event_rate)/sqrt(N_mc):
+            templ_err.append(np.sqrt(tmaps[precision_tag][str(reco_prcs_val)][flav])/np.sqrt(MCmaps[precision_tag][str(reco_prcs_val)][flav]))  
 
-            template_up_down_combined = get_combined_map(tmap_up,tmap_down, channel= channel)
-            template_up = get_up_map(template_up_down_combined, channel= channel)
-            reflected_template_down = get_flipped_down_map(template_up_down_combined, channel= channel)
+        templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
+        templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav])/np.sqrt(MCmaps[precision_tag]['1.0'][flav]))
+        templ = np.array(templ)
+        templ_err = np.array(templ_err)
+        templ_nominal = np.array(templ_nominal)
+        templ_nominal_err = np.array(templ_nominal_err)
 
-            tmaps[data_tag][precision_tag][str(reco_prcs_val)]['trck']['up'] = template_up['trck']['map']
-            tmaps[data_tag][precision_tag][str(reco_prcs_val)]['cscd']['up'] = template_up['cscd']['map']
-            tmaps[data_tag][precision_tag][str(reco_prcs_val)]['trck']['down'] = reflected_template_down['trck']['map']
-            tmaps[data_tag][precision_tag][str(reco_prcs_val)]['cscd']['down'] = reflected_template_down['cscd']['map']
+        tml_shape = np.shape(templ)
+        coeff = np.empty(np.shape(tmaps[precision_tag]['1.0'][flav]), dtype = object) 
+        for i in range(0,tml_shape[1]):
+            for j in range(0,tml_shape[2]):
+                bin_counts = templ[:,i,j]
 
-            MCMap_up = GetMCError(get_values(template_settings_Reco['params']), up_template_settings['binning']['anlys_ebins'], up_template_settings['binning']['czbins'], reco_mc_file_up)
-            MCMap_down = GetMCError(get_values(template_settings_Reco['params']), down_template_settings['binning']['anlys_ebins'], down_template_settings['binning']['czbins'], reco_mc_file_down)
-            tmap_MC_up = MCMap_up.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file_up)
-            tmap_MC_down = MCMap_down.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file_down)
-            #print "tmap_MC_up = ", tmap_MC_up
-            #print "tmap_MC_down = ", tmap_MC_down
-            tmap_MC_up_down_combined = get_combined_map(tmap_MC_up, tmap_MC_down, channel= channel)
-            template_MC_up = get_up_map(tmap_MC_up_down_combined, channel= channel)
-            reflected_template_MC_down = get_flipped_down_map(tmap_MC_up_down_combined, channel= channel)
+                # if use bin value ratio (to nominal bin value) as y axis
+                y_val = templ[:,i,j]/templ_nominal[i,j]  #divide by the nominal value
 
-            MCmaps[data_tag][precision_tag][str(reco_prcs_val)]['trck']['up'] = template_MC_up['trck']['map']
-            MCmaps[data_tag][precision_tag][str(reco_prcs_val)]['cscd']['up'] = template_MC_up['cscd']['map']
-            MCmaps[data_tag][precision_tag][str(reco_prcs_val)]['trck']['down'] = reflected_template_MC_down['trck']['map']
-            MCmaps[data_tag][precision_tag][str(reco_prcs_val)]['cscd']['down'] = reflected_template_MC_down['cscd']['map']
-
-
-    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
-        templ_list = []
-        coeffs[data_tag][precision_tag] = {'trck':{'up':{}, 'down':{}},
-                                           'cscd':{'up':{}, 'down':{}}}
-        for flav in ['trck','cscd']:
-            for direction in ['up','down']:
-                templ = []
-                templ_err = []
-                templ_nominal = []
-                templ_nominal_err = []
-                for reco_prcs_val in reco_prcs_vals:
-                    templ.append(tmaps[data_tag][precision_tag][str(reco_prcs_val)][flav][direction])  
-
-                    ## Get template error (either standard deviation or standard error):
-                    # standard deviation: sqrt(n_event_rate):
-                    #templ_err.append(np.sqrt(tmaps['data_tau'][precision_tag][str(reco_prcs_val)]))
-
-                    # standard error: sqrt(n_event_rate)/sqrt(N_mc):
-                    templ_err.append(np.sqrt(tmaps[data_tag][precision_tag][str(reco_prcs_val)][flav][direction])/np.sqrt(MCmaps[data_tag][precision_tag][str(reco_prcs_val)][flav][direction]))  
-
-                templ_nominal = np.array(tmaps[data_tag][precision_tag]['1.0'][flav][direction])
-                templ_nominal_err = np.array(np.sqrt(tmaps[data_tag][precision_tag]['1.0'][flav][direction])/np.sqrt(MCmaps[data_tag][precision_tag]['1.0'][flav][direction]))
-                templ = np.array(templ)
-                templ_err = np.array(templ_err)
-                templ_nominal = np.array(templ_nominal)
-                templ_nominal_err = np.array(templ_nominal_err)
-
-                tml_shape = np.shape(templ)
-                coeff = np.empty(np.shape(tmaps[data_tag][precision_tag]['1.0'][flav][direction]), dtype = object) 
-                for i in range(0,tml_shape[1]):
-                    for j in range(0,tml_shape[2]):
-                        bin_counts = templ[:,i,j]
-
-                        # if use bin value ratio (to nominal bin value) as y axis
-                        y_val = templ[:,i,j]/templ_nominal[i,j]  #divide by the nominal value
-
-                        # standard error of ratio n1/n2: (n1/n2)*sqrt((SE1/n1)^2 + (SE2/n2)^2) 
-                        y_err = y_val * np.sqrt(np.square(templ_nominal_err[i,j]/templ_nominal[i,j])+np.square(templ_err[:,i,j]/templ[:,i,j]))
-        
-                        ## Cubic Fit  (through (1, 1) point)
-                        popt, pcov = curve_fit(func_cubic_through_nominal, reco_prcs_vals, y_val)
-                        a = popt[0]
-                        b = popt[1]
-                        c = popt[2]
-                        coeff[i,j] = [a, b, c]
-                coeffs[data_tag][precision_tag][flav][direction] = coeff
-        
+                # standard error of ratio n1/n2: (n1/n2)*sqrt((SE1/n1)^2 + (SE2/n2)^2) 
+                #y_err = y_val * np.sqrt(np.square(templ_nominal_err[i,j]/templ_nominal[i,j])+np.square(templ_err[:,i,j]/templ[:,i,j]))
+    
+                ## Cubic Fit  (through (1, 1) point)
+                popt, pcov = curve_fit(func_cubic_through_nominal, reco_prcs_vals, y_val)
+                a = popt[0]
+                b = popt[1]
+                c = popt[2]
+                coeff[i,j] = [a, b, c]
+        coeffs[precision_tag][flav] = coeff
 
 #Assemble output dict
 output = {'tmaps' : tmaps,
           'MCmaps' : MCmaps,
           'coeffs' : coeffs,
-          'template_settings_up' : up_template_settings,
-          'template_settings_down' : down_template_settings}
+          'template_settings' : template_settings}
 if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings
 
-    #And write to file
-to_json(output,args.outfile)
+#And write to file
+#to_json(output_template,'RecoPrcs_templates_up_down_10_by_16.json')
+to_json(coeffs,args.outfile)
 

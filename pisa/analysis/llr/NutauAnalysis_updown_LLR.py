@@ -55,15 +55,7 @@ set_verbosity(args.verbose)
 #Read in the settings
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
-
-up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-
-down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': 'pisa/resources/pid/1X60_pid_down.json'}
-down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': 'pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
+template_settings = copy.deepcopy(template_settings)
 
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
@@ -86,12 +78,9 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     raise ValueError(error_msg)
 
 
-template_maker_down = TemplateMaker(get_values(down_template_settings['params']),
-                                 **down_template_settings['binning'])
-template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
-                               **up_template_settings['binning'])
-template_maker = [template_maker_up,template_maker_down]
-pseudo_data_template_maker = [template_maker_up,template_maker_down]
+template_maker = TemplateMaker(get_values(template_settings['params']),
+                               **template_settings['binning'])
+pseudo_data_template_maker = template_maker
 
 #store results from all the trials
 trials = []
@@ -143,8 +132,7 @@ for itrial in xrange(1,args.ntrials+1):
 
 #Assemble output dict
 output = {'trials' : trials,
-          'template_settings_up' : up_template_settings,
-          'template_settings_down' : down_template_settings,
+          'template_settings' : template_settings,
           'minimizer_settings' : minimizer_settings}
 if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings
