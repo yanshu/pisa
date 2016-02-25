@@ -31,7 +31,7 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down, get_burn_sample
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down, get_burn_sample, get_true_template
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings, fix_param, fix_all_params
 
@@ -152,13 +152,20 @@ for itrial in xrange(1,args.ntrials+1):
 
     # Asimov dataset (exact expecation values)
     if args.t_stat == 'asimov':
-        fmap = get_asimov_data_fmap_up_down(pseudo_data_template_maker,
-                                                get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                                            normal_hierarchy=not(args.inv_h_data),
-                                                            nutau_norm_value=float(args.mu_data))
-                                                ),
-                                                channel=channel
-                                            )
+        fmap = get_true_template(get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
+                                            normal_hierarchy=not(args.inv_h_data),
+                                            nutau_norm_value=float(args.mu_data))
+                                            ),
+                                            pseudo_data_template_maker
+                )
+        
+       # get_asimov_data_fmap_up_down(pseudo_data_template_maker,
+       #                                         get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
+       #                                                     normal_hierarchy=not(args.inv_h_data),
+       #                                                     nutau_norm_value=float(args.mu_data))
+       #                                         ),
+       #                                         channel=channel
+       #                                     )
     # Real data
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
@@ -223,7 +230,8 @@ for itrial in xrange(1,args.ntrials+1):
         # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
         elif args.t_stat == 'asimov':
             profile.info("clculate llh without fitting")
-            largs[2] = change_nutau_norm_settings( fix_all_params(template_settings['params']), float(args.mu_data), True, not(args.inv_h_hypo))
+            largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_data), True, not(args.inv_h_hypo))
+            kwargs['no_optimize']=True
 
         # execute optimizer
         fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
