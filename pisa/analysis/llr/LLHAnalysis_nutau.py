@@ -137,7 +137,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
-            iprint=0, bounds=bounds, **get_values(bfgs_settings))
+            iprint=1, bounds=bounds, **get_values(bfgs_settings))
 
     before_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
     if not save_steps:

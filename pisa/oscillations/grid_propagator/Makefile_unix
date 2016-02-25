@@ -9,13 +9,14 @@ SHELL:=/bin/bash
 
 #############################
 # NEEDED FOR PYTHON DLL
-PYLIB = /gpfs/home/tca3/local/anaconda/pkgs/python-2.7.8-1/lib/
-PYINC = /gpfs/home/tca3/local/anaconda/pkgs/python-2.7.8-1/include/python2.7/
+PYLIB = /gpfs/home/pde3/anaconda2/pkgs/python-2.7.11-0/lib/
+PYINC = /gpfs/home/pde3/anaconda2/pkgs/python-2.7.11-0/include/python2.7/ 
 PYFLAGS = -L$(PYLIB) -lpython2.7
-NUMPYINC = /usr/local/lib/python2.7/site-packages/numpy/core/include/
+NUMPYINC = /gpfs/home/pde3/anaconda2/pkgs/numpy-1.10.1-py27_0/lib/python2.7/site-packages/
 
 # Depending on your OS/compiler, you may need a different for a dynamic lib for c++
 DLLFLAG = -shared
+#SWIG = /gpfs/home/pde3/anaconda2/bin/swig
 SWIG = /usr/bin/swig
 #############################
 

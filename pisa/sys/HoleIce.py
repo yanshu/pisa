@@ -2,8 +2,9 @@ import numpy as np
 from pisa.utils.log import logging
 from pisa.utils.jsons import from_json
 from pisa.resources.resources import find_resource
+from pisa.sys.SysBase import SysBase
 
-class HoleIce():
+class HoleIce(SysBase):
 
     def __init__(self, slopes_file):
         # nominal hol_ice value
@@ -18,9 +19,3 @@ class HoleIce():
     def get_scales(self, channel, hole_ice_val):
         # get the sacles to be applied to a map
         return self.slopes[channel]*(hole_ice_val - self.hole_ice_val_nominal) + 1.
-
-    def apply_sys(self, maps, hole_ice_val):
-        for channel in ['trck', 'cscd']:
-            # apply scales
-            maps[channel]['map'] *= self.get_scales(channel, hole_ice_val)
-        return maps
