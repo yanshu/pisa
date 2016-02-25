@@ -53,7 +53,6 @@ def get_pid_maps(reco_events, pid_service=None, recalculate=False,
 
     #Classify events
     for flav in reco_events:
-
         if flav=='params':
             continue
         event_map = reco_events[flav]['map']
@@ -85,8 +84,12 @@ if __name__ == '__main__':
                         ''' "nuall_nc": {...} }''')
     parser.add_argument('-m', '--mode', type=str, choices=['param', 'stored'],
                         default='param', help='PID service to use')
-    parser.add_argument('--param_file', metavar='JSON', type=str,
-                        default='pid/V36_pid.json',
+    parser.add_argument('--param_file_up', metavar='JSON', type=str,
+                        default='pid/1X60_pid.json',
+                        help='JSON file containing parameterizations '
+                        'of the particle ID \nfor each event type.')
+    parser.add_argument('--param_file_down', metavar='JSON', type=str,
+                        default='pid/1X60_pid_down.json',
                         help='JSON file containing parameterizations '
                         'of the particle ID \nfor each event type.')
     parser.add_argument('--kernel_file', metavar='JSON', type=str, default=None,
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     #Initialize the PID service
     if args.mode=='param':
         pid_service = PIDServiceParam(ebins, czbins, 
-                            pid_paramfile=args.param_file, **vars(args))
+                            pid_paramfile_up=args.param_file_up, pid_paramfile_down=args.param_file_down, **vars(args))
     elif args.mode=='stored':
         pid_service = PIDServiceKernelFile(ebins, czbins, 
                             pid_kernelfile=args.kernel_file, **vars(args))

@@ -100,13 +100,6 @@ if not args.f_param == '':
     print 'fixed param %s'%args.f_param
     logging.info('fixed param %s'%args.f_param)
 
-up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
 minimizer_settings  = from_json(args.minimizer_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 
@@ -127,12 +120,10 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     raise ValueError(error_msg)
 
 
-template_maker_down = TemplateMaker(get_values(down_template_settings['params']),
-                                    **down_template_settings['binning'])
-template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
-                                    **up_template_settings['binning'])
-template_maker = [template_maker_up, template_maker_down]
-pseudo_data_template_maker = [template_maker_up, template_maker_down]
+template_maker = TemplateMaker(get_values(template_settings['params']),
+                                    **template_settings['binning'])
+pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
+                                    **pseudo_data_settings['binning'])
 
 # -----------------------------------
 

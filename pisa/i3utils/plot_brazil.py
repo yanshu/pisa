@@ -12,7 +12,7 @@ from matplotlib.offsetbox import AnchoredText
 from pisa.utils.jsons import from_json
 from pisa.utils.params_MH import select_hierarchy
 
-def plot(data,name,hypos,params,trials):
+def plot(data,name,hypos, asimov_hypos, params,trials):
     
     median = np.array([])
     sigmam = np.array([])
@@ -26,17 +26,27 @@ def plot(data,name,hypos,params,trials):
         sigmam2 = np.append(sigmam2,np.percentile(data['%.1f'%hypo],5))
         sigmap = np.append(sigmap,np.percentile(data['%.1f'%hypo],84))
         sigmap2 = np.append(sigmap2,np.percentile(data['%.1f'%hypo],95))
+    for hypo in asimov_hypos:
         asimov = np.append(asimov,data['%.1fasimov'%hypo])
 
     fig = plt.figure()
+    fig.patch.set_facecolor('none')
     ax = fig.add_subplot(111)
-    ax.fill_between(hypos,sigmam2,sigmap2,facecolor='b', linewidth=0, alpha=0.15, label='90% range')
-    ax.fill_between(hypos,sigmam,sigmap,facecolor='b', linewidth=0, alpha=0.3, label='68% range')
-    ax.plot(hypos,median, color='k', label='median')
-    ax.plot(hypos,asimov, color='r', label='asimov')
+    if len(hypos)>0:
+        ax.fill_between(hypos,sigmam2,sigmap2,facecolor='b', linewidth=0, alpha=0.15, label='90% range')
+        ax.fill_between(hypos,sigmam,sigmap,facecolor='b', linewidth=0, alpha=0.3, label='68% range')
+        ax.plot(hypos,median, color='k', label='median')
+    if len(asimov)>0:
+        ax.plot(asimov_hypos,asimov, color='r', label='asimov')
     ax.legend(loc='upper center',ncol=3, frameon=False,numpoints=1)
     ax.set_xlabel(r'$\mu$')
-    ax.set_title('profile likelihood, 4 years, %s trials'%trials)
+    #ax.patch.set_facecolor('white')
+    #ax.set_axis_bgcolor('white') 
+    #ax.set_frame_on(False)
+    if name == 'llh':
+        ax.set_title('profile likelihood, 4 years, %s trials'%trials)
+    else:
+        ax.set_title('nuisance pulls, 4 years, %s trials'%trials)
     if name == 'llh':
         ax.set_ylabel(r'$-2\Delta LLH$')
         ax.set_ylim([0,40])
@@ -58,15 +68,15 @@ def plot(data,name,hypos,params,trials):
                 ax.text(1.88,ymin,r'$-1\sigma$',color='g')
                 ax.text(1.88,ymax,r'$+1\sigma$',color='g')
                 ax.set_ylim(ymin-0.4*(params_value-ymin), ymax+0.4*(ymax-params_value))
-        else:
-            delta = ax.get_ylim()[1]-ax.get_ylim()[0]
-            ax.set_ylim(ax.get_ylim()[0]-0.4*delta, ax.get_ylim()[1]+0.4*delta)
+            else:
+                delta = ax.get_ylim()[1]-ax.get_ylim()[0]
+                ax.set_ylim(ax.get_ylim()[0]-0.4*delta, ax.get_ylim()[1]+0.4*delta)
     for i in [0.5,1,1.5]:
         ax.axvline(i,color='k', linestyle=':',alpha=0.5)
     plt.show()
-    plt.savefig('q1_%s.png'%name)
+    plt.savefig('q1_%s.png'%name, facecolor=fig.get_facecolor(), edgecolor='none')
 
-def dist(data,name,hypos,params,trials):
+def dist(data,name,hypos, asimov_hypos, params,trials):
 
     for hypo in hypos:
 
@@ -74,6 +84,7 @@ def dist(data,name,hypos,params,trials):
         ax = fig.add_subplot(111)
         ax.hist(data['%.1f'%hypo],20,alpha=0.5)
         ax.axvline(np.median(data['%.1f'%hypo]),color='r',linewidth=2)
+        ax.patch.set_facecolor('white')
         if params.has_key(name):
             if params[name].has_key('value'):
                 params_value = params[name]['value']
@@ -82,7 +93,7 @@ def dist(data,name,hypos,params,trials):
         ax.set_ylim(ax.get_ylim()[0], ax.get_ylim()[1]*1.2)
         ax.set_title('profile likelihood, 4 years, %s trials'%trials)
         plt.show()
-        plt.savefig('q%.1f_%s.png'%(hypo,name))
+        plt.savefig('q%.1f_%s.png'%(hypo,name),transparent=True)
 
 
 if __name__ == '__main__':
@@ -97,43 +108,64 @@ if __name__ == '__main__':
     params = None
     syslist = None
     hypos = np.array([])
+    asimov_hypos = np.array([])
     sys = {}
+    denoms = {}
+
+    # get llh denominators for q for each seed
+    for filename in os.listdir(args.dir):
+        if filename.endswith('.json'):
+            if 'denom' in filename:
+                file = from_json(args.dir +'/'+filename)
+                seed = filename[:4] 
+                
+                denoms[seed] = float(file['trials'][0]['llh'][0])
 
     total = 0
     for filename in os.listdir(args.dir):
         if filename.endswith('.json'):
-            if 'asimov' in filename:
-                file = from_json(args.dir +'/'+filename)
+            file = from_json(args.dir +'/'+filename)
+            if not params:
+                params = file['template_settings']['params']
+                params = select_hierarchy(params, True)
+            if not syslist:
+                syslist = file['trials'][0]['fit_results'][0].keys()
+                for s in syslist: 
+                    sys[s] = {}
+            if 'denom' in filename:
+                continue
+            elif 'asimov' in filename:
                 mu = filename[-14:-11]
+                asimov_hypos = np.append(asimov_hypos,float(mu))
                 for s in syslist:
-                    sys[s]['%sasimov'%mu] = float(file['trials'][0]['fit_results'][0][s][0])
+                    if s == 'llh':
+                        sys[s]['%sasimov'%mu] = float(file['trials'][0]['q'])
+                    else:
+                        sys[s]['%sasimov'%mu] = float(file['trials'][0]['fit_results'][0][s][0])
             else:
-                file = from_json(args.dir +'/'+filename)
                 mu = filename[-9:-6]
-                if not syslist:
-                    syslist = file['trials'][0]['fit_results'][0].keys()
-                    for s in syslist: 
-                        sys[s] = {}
+                seed = filename[:4] 
                 if not sys[syslist[0]].has_key(mu):
                     hypos = np.append(hypos,float(mu))
                     for s in syslist:
                         sys[s][mu] = np.array([])
-                if not params:
-                    params = file['template_settings']['params']
-                    params = select_hierarchy(params, True)
 
                 total += 1
                 for s in syslist:
                     if s == 'llh':
-                        sys[s][mu] = np.append(sys[s][mu],float(file['trials'][0]['q'])) 
+                        if denoms.has_key(seed):
+                            sys[s][mu] = np.append(sys[s][mu],2*(float(file['trials'][0]['llh'][0]) - denoms[seed])) 
                     else:
                         sys[s][mu] = np.append(sys[s][mu],float(file['trials'][0]['fit_results'][0][s][0]))
 
-    total = int(round(float(total)/len(hypos)))
+    if total:
+        total = int(round(float(total)/len(hypos)))
+    hypos.sort()
+    asimov_hypos.sort()
     if args.dist:
         for s in syslist:
-            dist(sys[s],s,hypos,params, total)
+            dist(sys[s],s,hypos, asimov_hypos, params, total)
     else:
         for s in syslist:
-            plot(sys[s],s,hypos,params, total)
+            plot(sys[s],s,hypos, asimov_hypos, params, total)
 

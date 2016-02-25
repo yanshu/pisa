@@ -16,7 +16,7 @@ import numpy as np
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import Julian_year
 
-from pisa.utils.log import logging, profile, set_verbosity
+from pisa.utils.log import physics, profile, set_verbosity
 from pisa.resources.resources import find_resource
 from pisa.utils.params import get_fixed_params, get_free_params, get_values, select_hierarchy
 from pisa.utils.jsons import from_json, to_json, json_string
@@ -50,8 +50,11 @@ from pisa.pid.PIDServiceParam import PIDServiceParam
 from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
 from pisa.pid.PID import get_pid_maps
 
-from pisa.background.BackgroundServiceICC_nutau import BackgroundServiceICC 
-from pisa.background.ICCBackground_nutau import add_icc_background
+from pisa.background.BackgroundServiceICC import BackgroundServiceICC 
+from pisa.background.ICCBackground import add_icc_background
+from pisa.sys.HoleIce import HoleIce
+from pisa.sys.DomEfficiency import DomEfficiency
+from pisa.sys.Resolution import Resolution
 
 class TemplateMaker:
     '''
@@ -80,6 +83,8 @@ class TemplateMaker:
         self.event_rate_maps = None
         self.event_rate_reco_maps = None
         self.event_rate_pid_maps = None
+        self.hole_ice_maps = None
+        self.dom_eff_maps = None
         self.final_event_rate = None
         
         self.ebins = ebins
@@ -87,9 +92,9 @@ class TemplateMaker:
         self.anlys_ebins = anlys_ebins
         self.oversample_e = oversample_e
         self.oversample_cz = oversample_cz
-        logging.debug("Using %u bins in energy from %.2f to %.2f GeV"%
+        physics.debug("Using %u bins in energy from %.2f to %.2f GeV"%
                       (len(self.ebins)-1, self.ebins[0], self.ebins[-1]))
-        logging.debug("Using %u bins in cos(zenith) from %.2f to %.2f"%
+        physics.debug("Using %u bins in cos(zenith) from %.2f to %.2f"%
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
@@ -117,11 +122,11 @@ class TemplateMaker:
         # Aeff/True Event Rate Service:
         aeff_mode = template_settings['aeff_mode']
         if aeff_mode == 'param':
-            logging.info(" Using effective area from PARAMETRIZATION...")
+            physics.info(" Using effective area from PARAMETRIZATION...")
             self.aeff_service = AeffServicePar(self.ebins, self.czbins,
                                                **template_settings)
         elif aeff_mode == 'MC':
-            logging.info(" Using effective area from MC EVENT DATA...")
+            physics.info(" Using effective area from MC EVENT DATA...")
             self.aeff_service = AeffServiceMC(self.ebins, self.czbins,
                                               **template_settings)
         else:
@@ -164,9 +169,14 @@ class TemplateMaker:
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
                                                      **template_settings)
-        return
 
-    def get_template(self, params, return_stages=False):
+        # hole ice sys
+        self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
+        print "template_settings['holeice_slope_file'] = ", template_settings['holeice_slope_file']
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
+        self.Resolution = Resolution(template_settings['reco_prcs_coeff_file'])
+
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -183,175 +193,100 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif p in ['cz_reco_precision_down','e_reco_precision_down','cz_reco_precision_up','e_reco_precision_up']: step_changed[3] = True
-                    elif p in ['']: step_changed[4] = True
+                    elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif p in ['atmos_mu_scale']: step_changed[5] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
-                    elif not(p in ['dom_eff','hole_ice']): steps_changed = [True]*6
+                    else: steps_changed = [True]*6
 
         # update the cached information
         self.cache_params = params
 
         if any(step_changed[:1]):
-            logging.info("STAGE 1: Getting Atm Flux maps...")
+            physics.info("STAGE 1: Getting Atm Flux maps...")
             with Timer() as t:
                 self.flux_maps = get_flux_maps(self.flux_service, self.ebins,self.czbins, **params)
             profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 1: Reused from step before...")
         
-        if any(step_changed[:2]):
-            logging.info("STAGE 2: Getting osc prob maps...")
-            with Timer() as t:
-                self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
-            profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+        if not no_osc_maps:
+            if any(step_changed[:2]):
+                physics.info("STAGE 2: Getting osc prob maps...")
+                with Timer() as t:
+                    self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
+                profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+            else:
+                profile.info("STAGE 2: Reused from step before...")
+
+            # set e and mu flavours to zero, if requested
+            if only_tau_maps:
+                physics.info("  >>Setting e and mu flavours to zero...")
+                flavours = ['numu', 'numu_bar','nue','nue_bar']
+                test_map = flux_maps['nue']
+                for flav in flavours:
+                    self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
+                                       'ebins': np.zeros_like(test_map['ebins']),
+                                       'czbins': np.zeros_like(test_map['czbins'])}
+
+        else:
+            # Skipping oscillation stage...
+            physics.info("  >>Skipping Stage 2 in no oscillations case...")
+            flavours = ['nutau', 'nutau_bar']
+            self.osc_flux_maps = self.flux_maps
+            # Create the empty nutau maps:
+            test_map = self.flux_maps['nue']
+            for flav in flavours:
+                self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
+                                            'ebins': np.zeros_like(test_map['ebins']),
+                                            'czbins': np.zeros_like(test_map['czbins'])}
 
         if any(step_changed[:3]):
-            logging.info("STAGE 3: Getting event rate true maps...")
+            physics.info("STAGE 3: Getting event rate true maps...")
             with Timer() as t:
                 self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
             profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 3: Reused from step before...")
 
         if any(step_changed[:4]):
-            logging.info("STAGE 4: Getting event rate reco maps...")
+            physics.info("STAGE 4: Getting event rate reco maps...")
             with Timer() as t:
                 self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins,self.reco_service,**params)
             profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 4: Reused from step before...")
 
         if any(step_changed[:5]):
-            logging.info("STAGE 5: Getting pid maps...")
+            physics.info("STAGE 5: Getting pid maps...")
             with Timer(verbose=False) as t:
                 self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
             profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 5: Reused from step before...")
+
+        #self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
+        # test
+        self.hole_ice_maps = self.event_rate_pid_maps 
 
         if any(step_changed[:6]):
-            logging.info("STAGE 5: Getting bkgd maps...")
+            physics.info("STAGE 6: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.event_rate_pid_maps,self.background_service,**params)
+                self.final_event_rate = add_icc_background(self.hole_ice_maps, self.background_service,**params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
+        else:
+            profile.info("STAGE 6: Reused from step before...")
 
         if not return_stages:
-            return self.final_event_rate
+            
+            # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
+            sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
+            sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
+            sys_maps = self.Resolution.apply_sys(sys_maps, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
+            return sys_maps
 
         # Otherwise, return all stages as a simple tuple
         return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,
                 self.event_rate_reco_maps, self.final_event_rate)
-
-    def get_tau_template(self, params, return_stages=False):
-        '''
-        Runs template making chain, only return tau neutrinos map.
-        '''
-
-        logging.info("STAGE 1: Getting Atm Flux maps...")
-        with Timer() as t:
-            flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                      self.czbins, **params)
-        profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
-
-        logging.info("STAGE 2: Getting osc prob maps...")
-        with Timer() as t:
-            osc_flux_maps = get_osc_flux(flux_maps, self.osc_service,
-                                         oversample_e=self.oversample_e,
-                                         oversample_cz=self.oversample_cz,
-                                         **params)
-        flavours = ['numu', 'numu_bar','nue','nue_bar']
-        test_map = flux_maps['nue']
-        for flav in flavours:
-            osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
-                               'ebins': np.zeros_like(test_map['ebins']),
-                               'czbins': np.zeros_like(test_map['czbins'])}
-        profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
-
-        logging.info("STAGE 3: Getting event rate true maps...")
-        with Timer() as t:
-            event_rate_maps = get_event_rates(osc_flux_maps,
-                                              self.aeff_service, **params)
-        profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
-
-        logging.info("STAGE 4: Getting event rate reco maps...")
-        with Timer() as t:
-            event_rate_reco_maps = get_reco_maps(event_rate_maps,
-                                                 self.reco_service,
-                                                 **params)
-        profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
-
-        logging.info("STAGE 5: Getting pid maps...")
-        with Timer(verbose=False) as t:
-            final_event_rate = get_pid_maps(event_rate_reco_maps,
-                                            self.pid_service)
-        profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
-
-        # if "residual_up_down" is true, then the final event rate map is
-        # upgoing - reflected downgoing map.
-        if params["residual_up_down"]:
-            czbin_edges = len(final_event_rate['cscd']['czbins'])
-            czbin_mid_idx = (czbin_edges-1)/2
-            residual_event_rate = {flav:{
-                'map': np.nan_to_num((final_event_rate[flav]['map'][:,0:czbin_mid_idx]   
-                          - np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx:]))),
-                'ebins':final_event_rate[flav]['ebins'],
-                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx+1] }
-                           for flav in ['cscd','trck']}
-            final_event_rate = residual_event_rate
-
-        # if "ratio_up_down" is true, then the final event rate map is
-        # an array: [upgoing map,reflected downgoing map].
-        if params["ratio_up_down"]:
-            czbin_edges = len(final_event_rate['cscd']['czbins'])
-            czbin_mid_idx = (czbin_edges-1)/2
-            ratio_event_rate = {flav:{
-                'map': np.array([final_event_rate[flav]['map'][:,0:czbin_mid_idx],
-                          np.fliplr(final_event_rate[flav]['map'][:,czbin_mid_idx:])]),
-                'ebins':final_event_rate[flav]['ebins'],
-                'czbins': final_event_rate[flav]['czbins'][0:czbin_mid_idx+1] }
-                           for flav in ['cscd','trck']}
-            final_event_rate = ratio_event_rate
-
-        if not return_stages:
-            return final_event_rate
-
-        # Otherwise, return all stages as a simple tuple
-        return (flux_maps, osc_flux_maps, event_rate_maps,
-                event_rate_reco_maps, final_event_rate)
-
-    def get_template_no_osc(self, params):
-        '''
-        Runs template making chain, but without oscillations
-        '''
-
-        logging.info("STAGE 1: Getting Atm Flux maps...")
-        with Timer() as t:
-            flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                      self.czbins, **params)
-        profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
-
-        # Skipping oscillation stage...
-        logging.info("  >>Skipping Stage 2 in no oscillations case...")
-        flavours = ['nutau', 'nutau_bar']
-        # Create the empty nutau maps:
-        test_map = flux_maps['nue']
-        for flav in flavours:
-            flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
-                               'ebins': np.zeros_like(test_map['ebins']),
-                               'czbins': np.zeros_like(test_map['czbins'])}
-
-        logging.info("STAGE 3: Getting event rate true maps...")
-        with Timer() as t:
-            event_rate_maps = get_event_rates(flux_maps, self.aeff_service,
-                                              **params)
-        profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
-
-        logging.info("STAGE 4: Getting event rate reco maps...")
-        with Timer() as t:
-            event_rate_reco_maps = get_reco_maps(event_rate_maps,
-                                                 self.reco_service, **params)
-        profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
-
-        logging.info("STAGE 5: Getting pid maps...")
-        with Timer(verbose=False) as t:
-            final_event_rate = get_pid_maps(event_rate_reco_maps,
-                                            self.pid_service)
-        profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
-
-        return final_event_rate
 
 
 if __name__ == '__main__':
@@ -386,7 +321,7 @@ if __name__ == '__main__':
         model_settings = from_json(args.template_settings)
 
         #Select a hierarchy
-        logging.info('Selected %s hierarchy'%
+        physics.info('Selected %s hierarchy'%
                      ('normal' if args.normal else 'inverted'))
         params =  select_hierarchy(model_settings['params'],
                                    normal_hierarchy=args.normal)
@@ -402,5 +337,5 @@ if __name__ == '__main__':
                                                     return_stages=args.save_all)
     profile.info("==> elapsed time to get template: %s sec"%t.secs)
 
-    logging.info("Saving file to %s"%args.outfile)
+    physics.info("Saving file to %s"%args.outfile)
     to_json(template_maps, args.outfile)
