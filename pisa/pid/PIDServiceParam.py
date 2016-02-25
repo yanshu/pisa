@@ -33,6 +33,9 @@ class PIDServiceParam(PIDServiceBase):
         Parameters needed to initialize a PID service with parametrizations:
         * ebins: Energy bin edges
         * czbins: cos(zenith) bin edges
+        * PID_offset: energy offset of PID curves
+        * PID_scale: factor to scale to-track probabilities with
+                     (to-cscd prob. scaled such that sum stays the same)
         * pid_paramfile: JSON containing the parametrizations
         """
         self.offset = PID_offset
@@ -73,8 +76,11 @@ class PIDServiceParam(PIDServiceBase):
                                np.where(to_trck > 1.0,1.0,to_trck))
             to_cscd = np.where(to_cscd < 0.0,0.0,
                                np.where(to_cscd > 1.0,1.0,to_cscd))
-            _,to_trck_map = np.meshgrid(czcen, PID_scale*to_trck)
-            _,to_cscd_map = np.meshgrid(czcen, PID_scale*to_cscd)
+            sum = to_trck + to_cscd
+            to_trck_scaled = PID_scale*to_trck
+            to_cscd_scaled = sum - to_trck_scaled
+            _,to_trck_map = np.meshgrid(czcen, to_trck_scaled)
+            _,to_cscd_map = np.meshgrid(czcen, to_cscd_scaled)
 
             pid_kernels[signature] = {'trck':to_trck_map,
                                       'cscd':to_cscd_map}
@@ -84,8 +90,10 @@ class PIDServiceParam(PIDServiceBase):
         self.paramfile = pid_paramfile
         return pid_kernels
 
-    def get_pid_kernels(self, PID_offset=None, PID_scale=None, pid_paramfile=None, **kwargs):
-        if all([hasattr(self, 'pid_kernels'), PID_offset==self.offset, PID_scale==self.scale, pid_paramfile==self.paramfile]):
+    def get_pid_kernels(self, PID_offset=None, PID_scale=None,
+                        pid_paramfile=None, **kwargs):
+        if all([hasattr(self, 'pid_kernels'), PID_offset==self.offset,
+                PID_scale==self.scale, pid_paramfile==self.paramfile]):
             logging.info('Using existing kernels for PID')
             return self.pid_kernels
 
