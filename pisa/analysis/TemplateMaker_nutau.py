@@ -26,14 +26,6 @@ from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
 #from pisa.flux.HondaFluxService import HondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
-from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
-from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
-try:
-    #print "Trying to import Prob3GPUOscillationService..."
-    from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
-except:
-    pass
-    #print "CAN NOT import Prob3GPUOscillationService..."
 from pisa.oscillations.Oscillation import get_osc_flux
 
 from pisa.aeff.AeffServiceMC import AeffServiceMC
@@ -103,14 +95,17 @@ class TemplateMaker:
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
         if osc_code == 'prob3':
+            from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
             self.osc_service = Prob3OscillationService(
                 self.ebins, self.czbins, **template_settings)
         elif osc_code == 'gpu':
+            from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
             self.osc_service = Prob3GPUOscillationService(
                 self.ebins, self.czbins, oversample_e=self.oversample_e,
                 oversample_cz=self.oversample_cz, **template_settings
             )
         elif osc_code == 'nucraft':
+            from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
             self.osc_service = NucraftOscillationService(
                 self.ebins, self.czbins, **template_settings
             )
@@ -172,9 +167,11 @@ class TemplateMaker:
 
         # hole ice sys
         self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
-        print "template_settings['holeice_slope_file'] = ", template_settings['holeice_slope_file']
         self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
-        self.Resolution = Resolution(template_settings['reco_prcs_coeff_file'])
+        self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
+        self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
+        self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
+        self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False):
         '''
@@ -281,8 +278,13 @@ class TemplateMaker:
             # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
             sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
             sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
-            sys_maps = self.Resolution.apply_sys(sys_maps, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
+            sys_maps = self.Resolution_e_up.apply_sys(sys_maps, params['e_reco_precision_up'])
+            sys_maps = self.Resolution_e_down.apply_sys(sys_maps, params['e_reco_precision_down'])
+            sys_maps = self.Resolution_cz_up.apply_sys(sys_maps, params['cz_reco_precision_up'])
+            sys_maps = self.Resolution_cz_down.apply_sys(sys_maps, params['cz_reco_precision_down'])
+
             return sys_maps
+
 
         # Otherwise, return all stages as a simple tuple
         return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,

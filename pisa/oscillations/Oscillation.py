@@ -22,13 +22,6 @@ from pisa.utils.log import logging, tprofile, set_verbosity
 from pisa.utils.utils import check_binning, get_binning, Timer
 from pisa.utils.jsons import from_json, to_json
 from pisa.utils.proc import report_params, get_params, add_params
-from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
-from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
-from pisa.oscillations.TableOscillationService import TableOscillationService
-try:
-    from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
-except:
-    logging.info("NOT loading Prob3GPUOscillationService in Oscillation.py")
 
 def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
                  energy_scale=None, theta12=None,theta13=None,theta23=None,
@@ -160,16 +153,20 @@ if __name__ == '__main__':
                'datadir': args.datadir}
 
     if args.code=='prob3':
-      if iniargs['prop_height'] is None: iniargs['prop_height'] = 20.0
-      osc_service = Prob3OscillationService(ebins, czbins, **iniargs)
+        from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
+        if iniargs['prop_height'] is None: iniargs['prop_height'] = 20.0
+        osc_service = Prob3OscillationService(ebins, czbins, **iniargs)
     elif args.code=='nucraft':
-      if iniargs['prop_height'] is None: iniargs['prop_height'] = 'sample'
-      osc_service = NucraftOscillationService(ebins, czbins, **iniargs)
+        from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
+        if iniargs['prop_height'] is None: iniargs['prop_height'] = 'sample'
+        osc_service = NucraftOscillationService(ebins, czbins, **iniargs)
     elif args.code=='gpu':
+        from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
         settings = vars(args)
         osc_service = Prob3GPUOscillationService(ebins, czbins, **settings)
     else:
-      osc_service = TableOscillationService(ebins, czbins, **iniargs)
+        from pisa.oscillations.TableOscillationService import TableOscillationService
+        osc_service = TableOscillationService(ebins, czbins, **iniargs)
 
     logging.info("Getting osc prob maps")
     with Timer(verbose=False) as t:
