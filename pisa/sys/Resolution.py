@@ -14,12 +14,11 @@ class Resolution():
             for channel in ['cscd', 'trck']:
                 self.cubic_coeffs[var][channel] = {}
                 for direction in ['up','down']:
-                    # add up and down together
-                    self.cubic_coeffs[var][channel][direction] = np.append(cubic_coeffs['coeffs']['data_tau']['%s_reco_precision_%s'%(var,direction)][channel]['up'],np.fliplr(cubic_coeffs['coeffs']['data_tau']['%s_reco_precision_%s'%(var,direction)][channel]['down']), axis=1)
+                    self.cubic_coeffs[var][channel][direction] = cubic_coeffs['%s_reco_precision_%s'%(var,direction)][channel])
 
     def get_scales(self, channel, e_precision_up_val, e_precision_down_val, cz_precision_up_val, cz_precision_down_val):
         # get the sacles to be applied to a map
-        scale = 0.
+        scale = 1.0
         for var in ['e','cz']:
             for direction in ['up','down']:
                 val = eval('%s_precision_%s_val'%(var,direction))

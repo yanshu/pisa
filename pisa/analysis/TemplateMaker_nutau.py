@@ -171,8 +171,9 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['domeff_holeice_slope_file'])
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_holeice_slope_file'])
+        self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
+        print "template_settings['holeice_slope_file'] = ", template_settings['holeice_slope_file']
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
         self.Resolution = Resolution(template_settings['reco_prcs_coeff_file'])
 
     def get_template(self, params, return_stages=False):
@@ -258,7 +259,6 @@ class TemplateMaker:
             sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
             sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
             sys_maps = self.Resolution.apply_sys(sys_maps, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
-
             return sys_maps
 
         # Otherwise, return all stages as a simple tuple
