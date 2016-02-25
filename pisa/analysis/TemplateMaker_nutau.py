@@ -117,11 +117,11 @@ class TemplateMaker:
         # Aeff/True Event Rate Service:
         aeff_mode = template_settings['aeff_mode']
         if aeff_mode == 'param':
-            physics.info(" Using effective area from PARAMETRIZATION...")
+            physics.debug(" Using effective area from PARAMETRIZATION...")
             self.aeff_service = AeffServicePar(self.ebins, self.czbins,
                                                **template_settings)
         elif aeff_mode == 'MC':
-            physics.info(" Using effective area from MC EVENT DATA...")
+            physics.debug(" Using effective area from MC EVENT DATA...")
             self.aeff_service = AeffServiceMC(self.ebins, self.czbins,
                                               **template_settings)
         else:
@@ -195,29 +195,29 @@ class TemplateMaker:
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*6
 
-        # update the cached information
+        # update the cached.debugrmation
         self.cache_params = params
 
         if any(step_changed[:1]):
-            physics.info("STAGE 1: Getting Atm Flux maps...")
+            physics.debug("STAGE 1: Getting Atm Flux maps...")
             with Timer() as t:
                 self.flux_maps = get_flux_maps(self.flux_service, self.ebins,self.czbins, **params)
             profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
         else:
-            profile.info("STAGE 1: Reused from step before...")
+            profile.debug("STAGE 1: Reused from step before...")
         
         if not no_osc_maps:
             if any(step_changed[:2]):
-                physics.info("STAGE 2: Getting osc prob maps...")
+                physics.debug("STAGE 2: Getting osc prob maps...")
                 with Timer() as t:
                     self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
                 profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
             else:
-                profile.info("STAGE 2: Reused from step before...")
+                profile.debug("STAGE 2: Reused from step before...")
 
             # set e and mu flavours to zero, if requested
             if only_tau_maps:
-                physics.info("  >>Setting e and mu flavours to zero...")
+                physics.debug("  >>Setting e and mu flavours to zero...")
                 flavours = ['numu', 'numu_bar','nue','nue_bar']
                 test_map = flux_maps['nue']
                 for flav in flavours:
@@ -227,7 +227,7 @@ class TemplateMaker:
 
         else:
             # Skipping oscillation stage...
-            physics.info("  >>Skipping Stage 2 in no oscillations case...")
+            physics.debug("  >>Skipping Stage 2 in no oscillations case...")
             flavours = ['nutau', 'nutau_bar']
             self.osc_flux_maps = self.flux_maps
             # Create the empty nutau maps:
@@ -238,40 +238,40 @@ class TemplateMaker:
                                             'czbins': np.zeros_like(test_map['czbins'])}
 
         if any(step_changed[:3]):
-            physics.info("STAGE 3: Getting event rate true maps...")
+            physics.debug("STAGE 3: Getting event rate true maps...")
             with Timer() as t:
                 self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
             profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
         else:
-            profile.info("STAGE 3: Reused from step before...")
+            profile.debug("STAGE 3: Reused from step before...")
 
         if any(step_changed[:4]):
-            physics.info("STAGE 4: Getting event rate reco maps...")
+            physics.debug("STAGE 4: Getting event rate reco maps...")
             with Timer() as t:
                 self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins,self.reco_service,**params)
             profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
         else:
-            profile.info("STAGE 4: Reused from step before...")
+            profile.debug("STAGE 4: Reused from step before...")
 
         if any(step_changed[:5]):
-            physics.info("STAGE 5: Getting pid maps...")
+            physics.debug("STAGE 5: Getting pid maps...")
             with Timer(verbose=False) as t:
                 self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
             profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
         else:
-            profile.info("STAGE 5: Reused from step before...")
+            profile.debug("STAGE 5: Reused from step before...")
 
         #self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
         # test
         self.hole_ice_maps = self.event_rate_pid_maps 
 
         if any(step_changed[:6]):
-            physics.info("STAGE 6: Getting bkgd maps...")
+            physics.debug("STAGE 6: Getting bkgd maps...")
             with Timer(verbose=False) as t:
                 self.final_event_rate = add_icc_background(self.hole_ice_maps, self.background_service,**params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
-            profile.info("STAGE 6: Reused from step before...")
+            profile.debug("STAGE 6: Reused from step before...")
 
         if not return_stages:
             
@@ -323,7 +323,7 @@ if __name__ == '__main__':
         model_settings = from_json(args.template_settings)
 
         #Select a hierarchy
-        physics.info('Selected %s hierarchy'%
+        physics.debug('Selected %s hierarchy'%
                      ('normal' if args.normal else 'inverted'))
         params =  select_hierarchy(model_settings['params'],
                                    normal_hierarchy=args.normal)
@@ -331,13 +331,13 @@ if __name__ == '__main__':
         #Intialize template maker
         template_maker = TemplateMaker(get_values(params),
                                        **model_settings['binning'])
-    profile.info("  ==> elapsed time to initialize templates: %s sec"%t.secs)
+    profile.debug("  ==> elapsed time to initialize templates: %s sec"%t.secs)
 
     #Now get the actual template
     with Timer(verbose=False) as t:
         template_maps = template_maker.get_template(get_values(params),
                                                     return_stages=args.save_all)
-    profile.info("==> elapsed time to get template: %s sec"%t.secs)
+    profile.debug("==> elapsed time to get template: %s sec"%t.secs)
 
-    physics.info("Saving file to %s"%args.outfile)
+    physics.debug("Saving file to %s"%args.outfile)
     to_json(template_maps, args.outfile)

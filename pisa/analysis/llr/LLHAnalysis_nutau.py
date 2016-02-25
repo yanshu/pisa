@@ -135,9 +135,15 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
 
+    string = 'LLH'
+    msg = '{}'.format(string.ljust(18))
+    for name in names:
+        msg += ' | {}'.format(name.ljust(8))
+    physics.info(msg)
+
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
-            iprint=1, bounds=bounds, **get_values(bfgs_settings))
+            iprint=0, bounds=bounds, **get_values(bfgs_settings))
 
     before_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
     if not save_steps:
@@ -153,6 +159,12 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         free_params['theta23']['value'] = np.pi/4 + delta
         init_vals = get_param_values(free_params)
         init_vals = np.array(init_vals)*np.array(scales)
+
+        string = 'LLH'
+        msg = '{}'.format(string.ljust(18))
+        for name in names:
+            msg += ' | {}'.format(name.ljust(8))
+        physics.info(msg)
 
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
         display_optimizer_settings(free_params=free_params,
@@ -255,7 +267,7 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     with Timer() as t:
         true_fmap = get_true_template(template_params,template_maker)
 
-    profile.info("==> elapsed time for template maker: %s sec"%t.secs)
+    profile.debug("==> elapsed time for template maker: %s sec"%t.secs)
 
     # NOTE: The minus sign is present on both of these next two lines
     # to reflect the fact that the optimizer finds a minimum rather
@@ -270,9 +282,12 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
         opt_steps_dict[key].append(template_params[key])
     opt_steps_dict['llh'].append(neg_llh)
 
-    physics.debug("LLH is %.2f at: "%neg_llh)
-    for name, val in zip(names, opt_vals):
-        physics.debug(" %20s = %6.4f" %(name,val))
+    string = 'LLH at %.2f'%neg_llh
+    msg = '{}'.format(string.ljust(18))
+    for val in opt_vals:
+        string = '%2.4f'%(val)
+        msg += ' | {}'.format(string.ljust(8))
+    physics.info(msg)
 
     return neg_llh
 
