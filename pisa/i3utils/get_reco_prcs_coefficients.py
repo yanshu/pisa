@@ -19,7 +19,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
-from pisa.analysis.TemplateMaker_nutau_no_DomEff_HoleIce_Prcs import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
 from pisa.utils.params import get_values, change_nutau_norm_settings
 
@@ -90,7 +90,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
         template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
 
-        tmap = template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)))
+        tmap = template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)),no_sys_applied= True)
         tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
         tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
 

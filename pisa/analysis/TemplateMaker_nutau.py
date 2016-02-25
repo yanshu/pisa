@@ -173,7 +173,7 @@ class TemplateMaker:
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
         self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -190,6 +190,7 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
+                    elif (no_sys_applied and p in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']): step_changed[3] = True
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif p in ['atmos_mu_scale']: step_changed[5] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
@@ -248,7 +249,7 @@ class TemplateMaker:
         if any(step_changed[:4]):
             physics.info("STAGE 4: Getting event rate reco maps...")
             with Timer() as t:
-                self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins,self.reco_service,**params)
+                self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins, no_sys_applied, self.reco_service,**params)
             profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
         else:
             profile.info("STAGE 4: Reused from step before...")
@@ -274,16 +275,18 @@ class TemplateMaker:
             profile.info("STAGE 6: Reused from step before...")
 
         if not return_stages:
-            
-            # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
-            sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
-            sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
-            sys_maps = self.Resolution_e_up.apply_sys(sys_maps, params['e_reco_precision_up'])
-            sys_maps = self.Resolution_e_down.apply_sys(sys_maps, params['e_reco_precision_down'])
-            sys_maps = self.Resolution_cz_up.apply_sys(sys_maps, params['cz_reco_precision_up'])
-            sys_maps = self.Resolution_cz_down.apply_sys(sys_maps, params['cz_reco_precision_down'])
+            if no_sys_applied:
+                return self.final_event_rate
+            else: 
+                # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
+                sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
+                sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
+                sys_maps = self.Resolution_e_up.apply_sys(sys_maps, params['e_reco_precision_up'])
+                sys_maps = self.Resolution_e_down.apply_sys(sys_maps, params['e_reco_precision_down'])
+                sys_maps = self.Resolution_cz_up.apply_sys(sys_maps, params['cz_reco_precision_up'])
+                sys_maps = self.Resolution_cz_down.apply_sys(sys_maps, params['cz_reco_precision_down'])
 
-            return sys_maps
+                return sys_maps
 
 
         # Otherwise, return all stages as a simple tuple
