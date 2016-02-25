@@ -32,11 +32,12 @@ class PIDServiceKernelFile(PIDServiceBase):
 
 
     def get_pid_kernels(self, pid_kernelfile=None, **kwargs):
-        logging.info('Opening file: %s'%(pid_kernelfile))
-        try:
-            self.pid_kernels = from_json(find_resource(pid_kernelfile))
-        except IOError, e:
-            logging.error("Unable to open kernel file %s"%pid_kernelfile)
-            logging.error(e)
-            sys.exit(1)
+        if not hasattr(self, 'pid_kernels'):
+            logging.info('Opening file: %s'%(pid_kernelfile))
+            try:
+                self.pid_kernels = from_json(find_resource(pid_kernelfile))
+            except IOError, e:
+                logging.error("Unable to open kernel file %s"%pid_kernelfile)
+                logging.error(e)
+                sys.exit(1)
         return self.pid_kernels

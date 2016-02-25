@@ -28,20 +28,20 @@ class PIDServiceParam(PIDServiceBase):
     Systematic parameters 'PID_offset' and 'PID_scale' are supported.
     """
 
-    def __init__(self, ebins, czbins, **kwargs):
+    def __init__(self, ebins, czbins, PID_offset=0., PID_scale=1., pid_paramfile=None, **kwargs):
         """
         Parameters needed to initialize a PID service with parametrizations:
         * ebins: Energy bin edges
         * czbins: cos(zenith) bin edges
         * pid_paramfile: JSON containing the parametrizations
         """
-        PIDServiceBase.__init__(self, ebins, czbins, **kwargs)
+        self.offset = PID_offset
+        self.scale = PID_scale
+        self.paramfile = pid_paramfile
+        PIDServiceBase.__init__(self, ebins, czbins, PID_offset=self.offset, PID_scale=self.scale,
+			        pid_paramfile=self.paramfile, **kwargs)
 
-
-    def get_pid_kernels(self, pid_paramfile=None,
-                        PID_offset=0., PID_scale=1., **kwargs):
-
-        # load parametrization file
+    def kernel_from_paramfile(self, PID_offset=None, PID_scale=None, pid_paramfile=None, **kwargs):
         logging.info('Opening PID parametrization file %s'%pid_paramfile)
         try:
             param_str = from_json(find_resource(pid_paramfile))
@@ -50,12 +50,10 @@ class PIDServiceParam(PIDServiceBase):
                           %pid_paramfile)
             logging.error(e)
             raise
-
         ecen = get_bin_centers(self.ebins)
         czcen = get_bin_centers(self.czbins)
-
-        self.pid_kernels = {'binning': {'ebins': self.ebins,
-                                        'czbins': self.czbins}}
+        pid_kernels = {'binning': {'ebins': self.ebins,
+                                   'czbins': self.czbins}}
         for signature in param_str.keys():
             #Generate the functions
             to_trck_func = eval(param_str[signature]['trck'])
@@ -78,7 +76,28 @@ class PIDServiceParam(PIDServiceBase):
             _,to_trck_map = np.meshgrid(czcen, PID_scale*to_trck)
             _,to_cscd_map = np.meshgrid(czcen, PID_scale*to_cscd)
 
-            self.pid_kernels[signature] = {'trck':to_trck_map,
-                                           'cscd':to_cscd_map}
+            pid_kernels[signature] = {'trck':to_trck_map,
+                                      'cscd':to_cscd_map}
+        # now update
+        self.offset = PID_offset
+        self.scale = PID_scale
+        self.paramfile = pid_paramfile
+        return pid_kernels
 
-        return self.pid_kernels
+    def get_pid_kernels(self, PID_offset=None, PID_scale=None, pid_paramfile=None, **kwargs):
+        if all([hasattr(self, 'pid_kernels'), PID_offset==self.offset, PID_scale==self.scale, pid_paramfile==self.paramfile]):
+            logging.info('Using existing kernels for PID')
+            return self.pid_kernels
+
+        elif not pid_paramfile in [self.paramfile, None]:
+            logging.info('PID from non-default paramfile %s!'%pid_paramfile)
+            return kernel_from_paramfile(PID_offset, PID_scale, pid_paramfile,
+                                         **kwargs)
+
+        else:
+            logging.info('Using paramfile %s for default PID'%pid_paramfile)
+            logging.info('Scaling PID with %.3f, with offset %.3f'%(PID_scale,
+                                                                    PID_offset))
+            self.pid_kernels = self.kernel_from_paramfile(PID_offset, PID_scale,
+                                                          pid_paramfile,
+                                                          **kwargs)
