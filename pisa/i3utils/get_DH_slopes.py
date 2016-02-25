@@ -15,7 +15,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau_no_DomEff_HoleIce_Prcs import TemplateMaker
 from pisa.utils.params import get_values, change_nutau_norm_settings, select_hierarchy
 from pisa.utils.plot import show_map
 import os

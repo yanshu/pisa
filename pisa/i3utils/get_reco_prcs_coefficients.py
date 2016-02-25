@@ -19,7 +19,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
-from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau_no_DomEff_HoleIce_Prcs import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
 from pisa.utils.params import get_values, change_nutau_norm_settings
 
