@@ -14,7 +14,7 @@ class Resolution():
             for channel in ['cscd', 'trck']:
                 self.cubic_coeffs[var][channel] = {}
                 for direction in ['up','down']:
-                    self.cubic_coeffs[var][channel][direction] = cubic_coeffs['%s_reco_precision_%s'%(var,direction)][channel])
+                    self.cubic_coeffs[var][channel][direction] = cubic_coeffs['%s_reco_precision_%s'%(var,direction)][channel]
 
     def get_scales(self, channel, e_precision_up_val, e_precision_down_val, cz_precision_up_val, cz_precision_down_val):
         # get the sacles to be applied to a map

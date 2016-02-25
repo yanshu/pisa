@@ -193,7 +193,7 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif p in ['']: step_changed[4] = True
+                    elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif p in ['atmos_mu_scale']: step_changed[5] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*6

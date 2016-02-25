@@ -22,7 +22,7 @@ class DomEfficiency():
 
     def get_scales(self, channel, dom_eff_val):
         # get the sacles to be applied to a map
-        return self.slopes[channel]*(dom_eff_val - self.dom_eff_val_nominal) + self.fixed_ratios[channel] 
+        return self.slopes[channel]*(dom_eff_val - 0.91) + self.fixed_ratios[channel] 
 
     def apply_sys(self, maps, dom_eff_val):
         for channel in ['trck', 'cscd']:
