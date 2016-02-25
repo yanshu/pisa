@@ -135,11 +135,12 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
 
-    string = 'LLH'
-    msg = '{}'.format(string.ljust(18))
+    string = ''
+    msg = '\n{}'.format(string.ljust(18))
     for name in names:
-        msg += ' | {}'.format(name.ljust(8))
-    physics.info(msg)
+        msg += ' | {}'.format(name[:9].ljust(9))
+    #physics.info(msg)
+    print msg
 
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
@@ -163,8 +164,9 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         string = 'LLH'
         msg = '{}'.format(string.ljust(18))
         for name in names:
-            msg += ' | {}'.format(name.ljust(8))
-        physics.info(msg)
+            msg += ' | {}'.format(name[:7].ljust(8))
+        #physics.info(msg)
+        print msg
 
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
         display_optimizer_settings(free_params=free_params,
@@ -285,9 +287,12 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     string = 'LLH at %.2f'%neg_llh
     msg = '{}'.format(string.ljust(18))
     for val in opt_vals:
-        string = '%2.4f'%(val)
-        msg += ' | {}'.format(string.ljust(8))
-    physics.info(msg)
+        string = '%2.5f'%(val)
+        msg += ' | {}'.format(string.ljust(9))
+    #physics.info(msg)
+    sys.stdout.write(msg)
+    sys.stdout.flush()
+    sys.stdout.write("\b" * len(msg))
 
     return neg_llh
 
