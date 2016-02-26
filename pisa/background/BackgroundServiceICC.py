@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,energy_scale,aeff_scale,icc_bg_file=None,**kwargs):
+    def __init__(self,ebins,czbins,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
@@ -46,7 +46,7 @@ class BackgroundServiceICC:
                 cut = dLLH < 3.0 
             if flavor == 'trck':
                 cut = dLLH >= 3.0 
-            reco_energy = reco_energy_all[cut]*energy_scale
+            reco_energy = reco_energy_all[cut]
             reco_coszen = reco_coszen_all[cut]
 
             flavor_dict = {}
@@ -55,7 +55,7 @@ class BackgroundServiceICC:
             bins = (self.ebins,self.czbins)
             icc_bg_hist,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
 
-            self.icc_bg_dict[flavor] = icc_bg_hist*aeff_scale
+            self.icc_bg_dict[flavor] = icc_bg_hist
 
         return
 
