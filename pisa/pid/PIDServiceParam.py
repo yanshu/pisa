@@ -28,7 +28,8 @@ class PIDServiceParam(PIDServiceBase):
     Systematic parameters 'PID_offset' and 'PID_scale' are supported.
     """
 
-    def __init__(self, ebins, czbins, PID_offset=0., PID_scale=1., pid_paramfile=None, **kwargs):
+    def __init__(self, ebins, czbins, PID_offset=0., PID_scale=1.,
+                 pid_paramfile=None, **kwargs):
         """
         Parameters needed to initialize a PID service with parametrizations:
         * ebins: Energy bin edges
@@ -41,10 +42,12 @@ class PIDServiceParam(PIDServiceBase):
         self.offset = PID_offset
         self.scale = PID_scale
         self.paramfile = pid_paramfile
-        PIDServiceBase.__init__(self, ebins, czbins, PID_offset=self.offset, PID_scale=self.scale,
-			        pid_paramfile=self.paramfile, **kwargs)
+        PIDServiceBase.__init__(self, ebins, czbins, PID_offset=self.offset,
+                                PID_scale=self.scale,
+                                pid_paramfile=self.paramfile, **kwargs)
 
-    def kernel_from_paramfile(self, PID_offset=None, PID_scale=None, pid_paramfile=None, **kwargs):
+    def kernel_from_paramfile(self, PID_offset=None, PID_scale=None,
+                              pid_paramfile=None, **kwargs):
         logging.info('Opening PID parametrization file %s'%pid_paramfile)
         try:
             param_str = from_json(find_resource(pid_paramfile))
@@ -95,7 +98,6 @@ class PIDServiceParam(PIDServiceBase):
         if all([hasattr(self, 'pid_kernels'), PID_offset==self.offset,
                 PID_scale==self.scale, pid_paramfile==self.paramfile]):
             logging.info('Using existing kernels for PID')
-            return self.pid_kernels
 
         elif not pid_paramfile in [self.paramfile, None]:
             logging.info('PID from non-default paramfile %s!'%pid_paramfile)
@@ -109,3 +111,4 @@ class PIDServiceParam(PIDServiceBase):
             self.pid_kernels = self.kernel_from_paramfile(PID_offset, PID_scale,
                                                           pid_paramfile,
                                                           **kwargs)
+        return self.pid_kernels
