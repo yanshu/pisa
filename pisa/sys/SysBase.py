@@ -5,8 +5,9 @@ class SysBase(object):
 
     def apply_sys(self, maps, sys_val):
         output_maps = {}
+        output_maps['params'] = maps['params']
         for channel in ['trck', 'cscd']:
             output_maps[channel] = { 'map': (maps[channel]['map']) * self.get_scales(channel, sys_val),
                                      'ebins':maps[channel]['ebins'],
-                                     'czbins': maps[channel]['czbins'] }
+                                     'czbins': maps[channel]['czbins']}
         return output_maps

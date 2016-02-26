@@ -76,7 +76,11 @@ class TemplateMaker:
         self.event_rate_reco_maps = None
         self.event_rate_pid_maps = None
         self.hole_ice_maps = None
-        self.dom_eff_maps = None
+        self.domeff_maps = None
+        self.reco_prec_maps_e_up = None
+        self.reco_prec_maps_e_down = None
+        self.reco_prec_maps_cz_up = None
+        self.sys_maps = None
         self.final_event_rate = None
         
         self.ebins = ebins
@@ -180,11 +184,11 @@ class TemplateMaker:
         output from each stage as a simple tuple. 
         '''
         # just assume all steps changed
-        step_changed = [True]*6
+        step_changed = [True]*7
 
         # now see what really changed, if we have a cached map to decide from which step on we have to recalculate
         if self.cache_params:
-            step_changed = [False]*6
+            step_changed = [False]*7
             for p,v in params.items():
                 if self.cache_params[p] != v:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
@@ -192,9 +196,10 @@ class TemplateMaker:
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
                     elif (no_sys_applied and p in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']): step_changed[3] = True
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif p in ['atmos_mu_scale']: step_changed[5] = True
+                    elif p in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down', 'hole_ice','dom_eff']: step_changed[5] = True
+                    elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
-                    else: steps_changed = [True]*6
+                    else: steps_changed = [True]*7
 
         # update the cached.debugrmation
         self.cache_params = params
@@ -262,36 +267,35 @@ class TemplateMaker:
         else:
             profile.debug("STAGE 5: Reused from step before...")
 
-        #self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
-        # test
-        self.hole_ice_maps = self.event_rate_pid_maps 
-
         if any(step_changed[:6]):
-            physics.debug("STAGE 6: Getting bkgd maps...")
-            with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.hole_ice_maps, self.background_service,**params)
-            profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
+            physics.debug("STAGE 6: Applying systematics...")
+            if no_sys_applied:
+                self.sys_maps = self.event_rate_pid_maps
+            else: 
+                with Timer(verbose=False) as t:
+                    self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
+                    self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
+                    self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
+                    self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, params['e_reco_precision_down'])
+                    self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
+                    self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, params['cz_reco_precision_down'])
+            profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 6: Reused from step before...")
 
-        if not return_stages:
-            if no_sys_applied:
-                return self.final_event_rate
-            else: 
-                # right now this is after the bakgd stage, just for tests, these will move between stages 5 and 6
-                sys_maps = self.HoleIce.apply_sys(self.final_event_rate, params['hole_ice'])
-                sys_maps = self.DomEfficiency.apply_sys(sys_maps, params['dom_eff'])
-                sys_maps = self.Resolution_e_up.apply_sys(sys_maps, params['e_reco_precision_up'])
-                sys_maps = self.Resolution_e_down.apply_sys(sys_maps, params['e_reco_precision_down'])
-                sys_maps = self.Resolution_cz_up.apply_sys(sys_maps, params['cz_reco_precision_up'])
-                sys_maps = self.Resolution_cz_down.apply_sys(sys_maps, params['cz_reco_precision_down'])
+        if any(step_changed[:7]):
+            physics.debug("STAGE 7: Getting bkgd maps...")
+            with Timer(verbose=False) as t:
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service,**params)
+            profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
+        else:
+            profile.debug("STAGE 7: Reused from step before...")
 
-                return sys_maps
-
+        if not return_stages: return self.final_event_rate
 
         # Otherwise, return all stages as a simple tuple
         return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,
-                self.event_rate_reco_maps, self.final_event_rate)
+                self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
 
 
 if __name__ == '__main__':
