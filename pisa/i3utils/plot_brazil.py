@@ -31,7 +31,10 @@ def plot(data,name,hypos, asimov_hypos, params,trials):
 
     fig = plt.figure()
     fig.patch.set_facecolor('none')
-    ax = fig.add_subplot(111)
+    if name == 'llh':
+        ax = plt.subplot2grid((6,1), (0,0), rowspan=5)
+    else:
+        ax = fig.add_subplot(111)
     if len(hypos)>0:
         ax.fill_between(hypos,sigmam2,sigmap2,facecolor='b', linewidth=0, alpha=0.15, label='90% range')
         ax.fill_between(hypos,sigmam,sigmap,facecolor='b', linewidth=0, alpha=0.3, label='68% range')
@@ -39,12 +42,26 @@ def plot(data,name,hypos, asimov_hypos, params,trials):
     if len(asimov)>0:
         ax.plot(asimov_hypos,asimov, color='r', label='asimov')
     ax.legend(loc='upper center',ncol=3, frameon=False,numpoints=1)
-    ax.set_xlabel(r'$\mu$')
+    ax.set_xlabel(r'$\nu_{\tau}$ normalization')
     #ax.patch.set_facecolor('white')
     #ax.set_axis_bgcolor('white') 
     #ax.set_frame_on(False)
     if name == 'llh':
         ax.set_title('profile likelihood, 4 years, %s trials'%trials)
+        ax2 = plt.subplot2grid((6,1), (5,0),sharex=ax)
+        ax2.errorbar(np.array([1.42]),np.array([1.]),xerr=np.array([[0.47],[0.49]]),fmt='--o')
+        ax2.text(0.1,0.75,r'Super-K 2013 (68%)',size=10)
+        ax2.errorbar(np.array([1.8]),np.array([2.]),xerr=np.array([[1.1],[1.8]]),fmt='--o')
+        ax2.text(0.1,1.75,r'Opera 2015 (90%)',size=10)
+        ax2.set_ylim(0,3)
+        ax2.set_xlim(0,2)
+        fig.subplots_adjust(hspace=0)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        plt.setp(ax2.get_yticklabels(), visible=False)
+        ax2.set_xlabel(r'$\nu_{\tau}$ normalization')
+        for i in [0.5,1,1.5]:
+            ax2.axvline(i,color='k', linestyle=':',alpha=0.5)
+
     else:
         ax.set_title('nuisance pulls, 4 years, %s trials'%trials)
     if name == 'llh':
@@ -58,6 +75,7 @@ def plot(data,name,hypos, asimov_hypos, params,trials):
         if params.has_key(name):
             params_value = params[name]['value']
             ax.axhline(params_value, color='g')
+            ax.text(1.80,params_value,r'nominal',color='g',size=10)
             if params[name]['prior'].has_key('sigma'):
                 params_sigma = params[name]['prior']['sigma']
                 params_sigma = params[name]['prior']['sigma']

@@ -20,7 +20,7 @@ from pisa.utils.log import physics, profile, set_verbosity
 from pisa.resources.resources import find_resource
 from pisa.utils.params import get_fixed_params, get_free_params, get_values, select_hierarchy
 from pisa.utils.jsons import from_json, to_json, json_string
-from pisa.utils.utils import Timer
+from pisa.utils.utils import Timer, oversample_binning
 
 from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
 #from pisa.flux.HondaFluxService import HondaFluxService
@@ -58,7 +58,7 @@ class TemplateMaker:
     them later when needed.
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
-                 oversample_e=None, oversample_cz=None, **kwargs):
+                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, **kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
@@ -88,6 +88,10 @@ class TemplateMaker:
         self.anlys_ebins = anlys_ebins
         self.oversample_e = oversample_e
         self.oversample_cz = oversample_cz
+        self.actual_oversample_e = actual_oversample_e
+        self.actual_oversample_cz = actual_oversample_cz
+        self.oversample_ebins = oversample_binning(ebins, self.actual_oversample_e)
+        self.oversample_czbins = oversample_binning(czbins, self.actual_oversample_cz)
         physics.debug("Using %u bins in energy from %.2f to %.2f GeV"%
                       (len(self.ebins)-1, self.ebins[0], self.ebins[-1]))
         physics.debug("Using %u bins in cos(zenith) from %.2f to %.2f"%
@@ -101,17 +105,17 @@ class TemplateMaker:
         if osc_code == 'prob3':
             from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
             self.osc_service = Prob3OscillationService(
-                self.ebins, self.czbins, **template_settings)
+                self.oversample_ebins, self.oversample_czbins, **template_settings)
         elif osc_code == 'gpu':
             from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
             self.osc_service = Prob3GPUOscillationService(
-                self.ebins, self.czbins, oversample_e=self.oversample_e,
+                self.oversample_ebins, self.oversample_czbins, oversample_e=self.oversample_e,
                 oversample_cz=self.oversample_cz, **template_settings
             )
         elif osc_code == 'nucraft':
             from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
             self.osc_service = NucraftOscillationService(
-                self.ebins, self.czbins, **template_settings
+                self.oversample_ebins, self.oversample_czbins, **template_settings
             )
         else:
             error_msg = 'OscillationService NOT implemented for ' + \
@@ -177,6 +181,24 @@ class TemplateMaker:
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
         self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
+    def downsample_binning(self,maps):
+        # the ugliest way to handle this.....sorry
+        new_maps = {}
+        new_maps['params'] = maps['params']
+        for flavour in maps.keys():
+            if flavour == 'params': continue
+            new_maps[flavour] = {'ebins': self.ebins,
+                                  'czbins': self.czbins}
+            new_maps[flavour]['map'] = np.zeros((len(self.ebins)-1,len(self.czbins)-1))
+            for e in xrange(len(self.ebins)-1):
+                for cz in xrange(len(self.czbins)-1):
+                    for e_o in xrange(self.actual_oversample_e):
+                        for cz_o in xrange(self.actual_oversample_cz):
+                            new_maps[flavour]['map'][e][cz] += maps[flavour]['map'][e*self.actual_oversample_e+e_o][cz*self.actual_oversample_cz+cz_o]
+        return new_maps
+
+
+
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False):
         '''
         Runs entire template-making chain, using parameters found in
@@ -194,9 +216,9 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif (no_sys_applied and p in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']): step_changed[3] = True
+                    elif (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_reco_prcs']): step_changed[3] = True
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif p in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down', 'hole_ice','dom_eff']: step_changed[5] = True
+                    elif p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_reco_prcs', 'hole_ice','dom_eff']: step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
@@ -207,7 +229,7 @@ class TemplateMaker:
         if any(step_changed[:1]):
             physics.debug("STAGE 1: Getting Atm Flux maps...")
             with Timer() as t:
-                self.flux_maps = get_flux_maps(self.flux_service, self.ebins,self.czbins, **params)
+                self.flux_maps = get_flux_maps(self.flux_service, self.oversample_ebins,self.oversample_czbins, **params)
             profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 1: Reused from step before...")
@@ -216,8 +238,9 @@ class TemplateMaker:
             if any(step_changed[:2]):
                 physics.debug("STAGE 2: Getting osc prob maps...")
                 with Timer() as t:
-                    self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
+                    osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
                 profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
+                self.osc_flux_maps = self.downsample_binning(osc_flux_maps)
             else:
                 profile.debug("STAGE 2: Reused from step before...")
 
@@ -227,9 +250,13 @@ class TemplateMaker:
                 flavours = ['numu', 'numu_bar','nue','nue_bar']
                 test_map = flux_maps['nue']
                 for flav in flavours:
-                    self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
+                    osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
                                        'ebins': np.zeros_like(test_map['ebins']),
                                        'czbins': np.zeros_like(test_map['czbins'])}
+
+                self.osc_flux_maps = self.downsample_binning(osc_flux_maps)
+
+
 
         else:
             # Skipping oscillation stage...
@@ -276,9 +303,11 @@ class TemplateMaker:
                     self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
-                    self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, params['e_reco_precision_down'])
+                    e_param_down = 1. + params['up_down_reco_prcs']*(params['e_reco_precision_up']-1.)
+                    self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, e_param_down)
                     self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
-                    self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, params['cz_reco_precision_down'])
+                    cz_param_down = 1. + params['up_down_reco_prcs']*(params['cz_reco_precision_up']-1.)
+                    self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 6: Reused from step before...")

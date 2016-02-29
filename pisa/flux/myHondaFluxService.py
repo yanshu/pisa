@@ -87,7 +87,8 @@ class myHondaFluxService():
         self.czbins = czbins
 
         # do it once, but with much finer steps for 'integrating' the spline interpolation
-        N = 10
+        # this is now handlet externaly....controlled by the actual_oversampling parameter in the template settings file
+        N = 1
         small_ebins = []
         small_czbins = []
 

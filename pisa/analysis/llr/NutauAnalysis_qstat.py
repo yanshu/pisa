@@ -250,6 +250,7 @@ for itrial in xrange(1,args.ntrials+1):
     if not any([args.on, args.od]):
         results['q'] = 2*(llh[0]-llh[1])
         physics.info('found q value %.2f'%results['q'])
+        physics.info('sqrt(q) = %.2f'%np.sqrt(results['q']))
 
     # Store this trial
     trials += [results]

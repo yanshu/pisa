@@ -165,6 +165,7 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio, e
     # Initialize return dict
     maps = {'params': params}
 
+
     for prim in primaries:
 
         # Get the flux for this primary
