@@ -94,8 +94,8 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
         tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
 
-        MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings['binning']['anlys_ebins'], template_settings['binning']['czbins'], reco_mc_file)
-        tmap_MC = MCMap.get_mc_events_map(get_values(template_settings_Reco['params']), reco_mc_file)
+        MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings_Reco['binning']['anlys_ebins'], template_settings_Reco['binning']['czbins'], reco_mc_file)
+        tmap_MC = MCMap.get_mc_events_map(True, get_values(template_settings_Reco['params']), reco_mc_file)
         MCmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap_MC['trck']['map']
         MCmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap_MC['cscd']['map']
 
@@ -155,6 +155,6 @@ if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings
 
 #And write to file
-#to_json(output_template,'RecoPrcs_templates_up_down_10_by_16.json')
+to_json(output,'RecoPrcs_templates_up_down_10_by_16.json')
 to_json(coeffs,args.outfile)
 

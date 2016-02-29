@@ -61,7 +61,7 @@ class GetMCError:
         return
 
 
-    def get_mc_events_map(self, params, simfile, **kargs):
+    def get_mc_events_map(self, apply_reco_prcs, params, simfile, **kargs):
         '''
         '''
         logging.info('Opening file: %s'%(simfile))
@@ -73,13 +73,41 @@ class GetMCError:
             sys.exit(1)
        
         mc_event_maps = {'params': params}
+        e_reco_precision_up = params['e_reco_precision_up']
+        e_reco_precision_down = params['e_reco_precision_down']
+        cz_reco_precision_up = params['cz_reco_precision_up']
+        cz_reco_precision_down = params['cz_reco_precision_down']
         all_flavors_dict = {}
         for flavor in ['nue', 'numu','nutau']:
             flavor_dict = {}
             logging.debug("Working on %s "%flavor)
             for int_type in ['cc','nc']:
+                true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
+                true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
                 reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
                 reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                
+                if apply_reco_prcs:
+                    if e_reco_precision_up != 1:
+                        reco_energy[true_coszen<=0] *= e_reco_precision_up
+                        reco_energy[true_coszen<=0] -= (e_reco_precision_up - 1) * true_energy[true_coszen<=0]
+
+                    if e_reco_precision_down != 1:
+                        reco_energy[true_coszen>0] *= e_reco_precision_down
+                        reco_energy[true_coszen>0] -= (e_reco_precision_down - 1) * true_energy[true_coszen>0]
+
+                    if cz_reco_precision_up != 1:
+                        reco_coszen[true_coszen<=0] *= cz_reco_precision_up
+                        reco_coszen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_coszen[true_coszen<=0]
+
+                    if cz_reco_precision_down != 1:
+                        reco_coszen[true_coszen>0] *= cz_reco_precision_down
+                        reco_coszen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_coszen[true_coszen>0]
+
+                while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
+                    reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
+                    reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
+
                 bins = (self.ebins,self.czbins)
                 hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
                 flavor_dict[int_type] = hist_2d
@@ -115,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--template_settings', type=str,
                         metavar='JSONFILE', required=True,
                         help='''settings for the template generation''')
+    hselect.add_argument('--apply_reco_prcs', default=False,
+                        action='store_true', help="apply reco precision systematics")
     hselect = parser.add_mutually_exclusive_group(required=False)
     hselect.add_argument('--normal', dest='normal', default=True,
                         action='store_true', help="select the normal hierarchy")
@@ -148,7 +178,7 @@ if __name__ == '__main__':
 
     #Now get the actual template
     with Timer(verbose=False) as t:
-        template_maps = MC_error.get_mc_events_map(get_values(params),args.reco_mc_file)
+        template_maps = MC_error.get_mc_events_map(args.apply_reco_prcs, get_values(params),args.reco_mc_file)
     profile.info("==> elapsed time to get template: %s sec"%t.secs)
 
     logging.info("Saving file to %s"%args.outfile)
