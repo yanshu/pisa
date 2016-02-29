@@ -98,7 +98,7 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        self.flux_service = HondaFluxService(**template_settings)
+        self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
