@@ -79,7 +79,7 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
 
 def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
                       save_steps=False, normal_hierarchy=None,
-                      check_octant=False):
+                      check_octant=False, no_optimize=False):
     """
     Finds the template (and free systematic params) that maximize
     likelihood that the data came from the chosen template of true
@@ -108,21 +108,18 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     bounds = get_param_bounds(free_params)
     priors = get_param_priors(free_params)
     names  = sorted(free_params.keys())
-
-    if len(free_params)==0:
-        logging.warn("NO FREE PARAMS, returning LLH")
-        unscaled_opt_vals = [init_vals[i] for i in xrange(len(init_vals))]
-        true_fmap = get_true_template(template_params,template_maker)
-        neg_llh = -get_binwise_llh(fmap,true_fmap)
-        neg_llh -= sum([prior.llh(opt_val)
-                    for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
-        physics.debug("LLH is %.2f "%neg_llh)
-        return {'llh': [neg_llh]}
-
-
     # Scale init-vals and bounds to work with bfgs opt:
     init_vals = np.array(init_vals)*np.array(scales)
     bounds = [bounds[i]*scales[i] for i in range(len(bounds))]
+
+    if len(free_params)==0 or no_optimize:
+        f_opt_steps_dict = {key:[] for key in names}
+        f_opt_steps_dict['llh'] = []
+        logging.warn("NO FREE PARAMS, returning LLH")
+        neg_llh = llh_bfgs(init_vals, names, scales, fmap, fixed_params, template_maker, f_opt_steps_dict, priors)
+        print ''
+        return {'llh': [neg_llh]}
+
 
     opt_steps_dict = {key:[] for key in names}
     opt_steps_dict['llh'] = []
@@ -135,10 +132,17 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
 
+    string = ''
+    msg = '\n{}'.format(string.ljust(18))
+    for name in names:
+        msg += ' | {}'.format(name[:9].ljust(9))
+    #physics.info(msg)
+    print msg
+
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
-
+    print ''
     before_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
     if not save_steps:
         for key in opt_steps_dict.keys():
@@ -154,6 +158,13 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         init_vals = get_param_values(free_params)
         init_vals = np.array(init_vals)*np.array(scales)
 
+        string = 'LLH'
+        msg = '{}'.format(string.ljust(18))
+        for name in names:
+            msg += ' | {}'.format(name[:7].ljust(8))
+        #physics.info(msg)
+        print msg
+
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
         display_optimizer_settings(free_params=free_params,
                                    names=names,
@@ -165,6 +176,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
 
+        print ''
         after_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
         if not save_steps:
             for key in opt_steps_dict.keys():
@@ -255,7 +267,7 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     with Timer() as t:
         true_fmap = get_true_template(template_params,template_maker)
 
-    profile.info("==> elapsed time for template maker: %s sec"%t.secs)
+    profile.debug("==> elapsed time for template maker: %s sec"%t.secs)
 
     # NOTE: The minus sign is present on both of these next two lines
     # to reflect the fact that the optimizer finds a minimum rather
@@ -270,9 +282,15 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
         opt_steps_dict[key].append(template_params[key])
     opt_steps_dict['llh'].append(neg_llh)
 
-    physics.debug("LLH is %.2f at: "%neg_llh)
-    for name, val in zip(names, opt_vals):
-        physics.debug(" %20s = %6.4f" %(name,val))
+    string = 'LLH at %.2f'%neg_llh
+    msg = '{}'.format(string.ljust(18))
+    for val in opt_vals:
+        string = '%2.5f'%(val)
+        msg += ' | {}'.format(string.ljust(9))
+    #physics.info(msg)
+    sys.stdout.write(msg)
+    sys.stdout.flush()
+    sys.stdout.write("\b" * len(msg))
 
     return neg_llh
 

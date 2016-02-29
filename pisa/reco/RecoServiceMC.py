@@ -1,6 +1,11 @@
 #
 # Creates the pdfs of the reconstructed energy and coszen from the
 # true parameters. Provides reco event rate maps using these pdfs.
+# It has four reco precision parameters. Replace RecoServiceMC.py
+# with this script ONLY when we need to produce different templates
+# at different reco precision values ( and in order to get the cubic
+# fit coefficients), otherwise RecoServiceMC.py should not have 
+# reco precision parameters.
 #
 # author: Timothy C. Arlen
 #         tca3@psu.edu
@@ -35,10 +40,15 @@ class RecoServiceMC(RecoServiceBase):
         * reco_weight_file: HDF5 containing the MC events to construct the kernels
         """
         self.simfile = reco_mc_wt_file
-        RecoServiceBase.__init__(self, ebins, czbins, simfile=self.simfile, **kwargs)
+        self.ebins = ebins
+        self.czbins = czbins
+        self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_reco_prcs=1)
 
 
-    def kernel_from_simfile(self, simfile=None, **kwargs):
+    def kernel_from_simfile(self, simfile=None,e_reco_precision_up=None, cz_reco_precision_up= None,
+                            up_down_reco_prcs= None, **kwargs):
+        cz_reco_precision_down = 1+up_down_reco_prcs*(cz_reco_precision_up-1)
+        e_reco_precision_down = 1+up_down_reco_prcs*(e_reco_precision_up-1)
         logging.info('Opening file: %s'%(simfile))
         try:
             fh = h5py.File(find_resource(simfile),'r')
@@ -60,6 +70,26 @@ class RecoServiceMC(RecoServiceBase):
                 true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
                 reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
                 reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+
+                if e_reco_precision_up != 1:
+                    reco_energy[true_coszen<=0] *= e_reco_precision_up
+                    reco_energy[true_coszen<=0] -= (e_reco_precision_up - 1) * true_energy[true_coszen<=0]
+
+                if e_reco_precision_down != 1:
+                    reco_energy[true_coszen>0] *= e_reco_precision_down
+                    reco_energy[true_coszen>0] -= (e_reco_precision_down - 1) * true_energy[true_coszen>0]
+
+                if cz_reco_precision_up != 1:
+                    reco_coszen[true_coszen<=0] *= cz_reco_precision_up
+                    reco_coszen[true_coszen<=0] -= (cz_reco_precision_up - 1) * true_coszen[true_coszen<=0]
+
+                if cz_reco_precision_down != 1:
+                    reco_coszen[true_coszen>0] *= cz_reco_precision_down
+                    reco_coszen[true_coszen>0] -= (cz_reco_precision_down - 1) * true_coszen[true_coszen>0]
+
+                while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
+                    reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
+                    reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
 
                 # True binning, reco binning...
                 bins = (self.ebins,self.czbins,self.ebins,self.czbins)
@@ -83,19 +113,22 @@ class RecoServiceMC(RecoServiceBase):
         return kernels
 
 
-    def _get_reco_kernels(self, simfile=None, **kwargs):
+    def _get_reco_kernels(self, apply_reco_prcs, simfile=None, **kwargs):
 
         for reco_scale in ['e_reco_scale', 'cz_reco_scale']:
             if reco_scale in kwargs and kwargs[reco_scale] != 1:
                 raise ValueError('%s = %.2f, must be 1.0 for RecoServiceMC!'
-                                  %(reco_scale, kwargs[reco_scale]))
+                    %(reco_scale, kwargs[reco_scale]))
 
         if not simfile in [self.simfile, None]:
             logging.info('Reconstruction from non-default MC file %s!'%simfile)
-            return kernel_from_simfile(simfile=simfile)
+            return kernel_from_simfile(simfile=simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_reco_prcs = kwargs['up_down_reco_prcs'])
 
-        if not hasattr(self, 'kernels'):
+        if not hasattr(self, 'nominal_kernels'):
             logging.info('Using file %s for default reconstruction'%(simfile))
-            self.kernels = self.kernel_from_simfile(simfile=simfile)
+            self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_reco_prcs = 1)
 
-        return self.kernels
+        if kwargs['e_reco_precision_up'] ==1 and kwargs['cz_reco_precision_up'] == 1 and kwargs['up_down_reco_prcs'] == 1 or apply_reco_prcs == False:
+            return self.nominal_kernels
+        else:
+            return self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_reco_prcs = kwargs['up_down_reco_prcs'])

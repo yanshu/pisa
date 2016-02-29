@@ -143,13 +143,13 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         fmap = get_random_map(true_fmap, seed=Maps.get_seed())
     return fmap
 
-def get_true_template(template_params, template_maker):
+def get_true_template(template_params, template_maker, no_sys_applied=False):
     if template_params['theta23'] == 0.0:
         logging.info("Zero theta23, so generating no oscillations template...")
-        true_template = template_maker.get_template(template_params,no_osc_maps=True)
+        true_template = template_maker.get_template(template_params, no_osc_maps=True, no_sys_applied = no_sys_applied)
         true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
     else:
-        true_template = template_maker.get_template(template_params)  
+        true_template = template_maker.get_template(template_params, no_osc_maps=False, no_sys_applied= no_sys_applied)  
         true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
 
     return true_fmap

@@ -78,16 +78,17 @@ class myHondaFluxService():
             # check if this is the table we want
             if all(ebins == self.ebins) and all(self.czbins == czbins):
                 # if so, return it
-                profile.info('Reusing flux table %s'%prim)
+                profile.debug('Reusing flux table %s'%prim)
                 return self.final_tablesT[prim]
 
         # otherwise continue here, update chached values
-        profile.info('Calculating flux table %s'%prim)
+        profile.debug('Calculating flux table %s'%prim)
         self.ebins = ebins
         self.czbins = czbins
 
         # do it once, but with much finer steps for 'integrating' the spline interpolation
-        N = 10
+        # this is now handlet externaly....controlled by the actual_oversampling parameter in the template settings file
+        N = 1
         small_ebins = []
         small_czbins = []
 

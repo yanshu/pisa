@@ -43,12 +43,12 @@ class RecoServiceBase:
         self.kernels = self.get_reco_kernels(**kwargs)
 
 
-    def get_reco_kernels(self, **kwargs):
+    def get_reco_kernels(self, apply_reco_prcs, **kwargs):
         """
         Wrapper around _get_reco_kernels() that is to be used from outside,
         ensures that reco kernels are in correct shape and normalized
         """
-        kernels = self._get_reco_kernels(**kwargs)
+        kernels = self._get_reco_kernels(apply_reco_prcs, **kwargs)
         if kernels is None:
             logging.warn("No kernels defined yet...")
             return kernels
@@ -57,7 +57,7 @@ class RecoServiceBase:
             return kernels
 
 
-    def _get_reco_kernels(self, **kwargs):
+    def _get_reco_kernels(self, apply_reco_prcs, **kwargs):
         """
         This method is called to construct the reco kernels, i.e. a 4D
         histogram of true (1st and 2nd axis) vs. reconstructed (3rd and

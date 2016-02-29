@@ -15,7 +15,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, profile, physics
 from pisa.utils.jsons import from_json,to_json
-from pisa.analysis.TemplateMaker_nutau_noDomEff_HoleIce import TemplateMaker
+from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, change_nutau_norm_settings, select_hierarchy
 from pisa.utils.plot import show_map
 import os
@@ -52,11 +52,11 @@ fits_HoleIce = {}
 
 fits_DOMEff = {'trck':{'slopes':{}, 'fixed_ratios':{}},
                  'cscd':{'slopes':{}, 'fixed_ratios':{}},
-                 'nominal': 1
+                 'nominal_value': 1
                  }
 fits_HoleIce = {'trck':{'slopes':{}, 'fixed_ratios':{}},
                  'cscd':{'slopes':{}, 'fixed_ratios':{}},
-                 'nominal': 0.02
+                 'nominal_value': 0.02
                  }
 
 # Get templates from 8 MC sets
@@ -76,7 +76,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
 
     DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
 
-    template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,True, normal_hierarchy=True)))
+    template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,True, normal_hierarchy=True)),no_sys_applied=True)
 
     templates[str(run_num)]['trck'] = template['trck']['map']
     templates[str(run_num)]['cscd'] = template['cscd']['map']

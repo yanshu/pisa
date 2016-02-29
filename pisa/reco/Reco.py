@@ -34,7 +34,7 @@ from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
 from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 
 
-def get_reco_maps(true_event_maps, anlys_ebins, reco_service=None, **kwargs):
+def get_reco_maps(true_event_maps, anlys_ebins, apply_reco_prcs, reco_service=None, **kwargs):
     """
     Primary function for this stage, which returns the reconstructed
     event rate maps from the true event rate maps. The returned maps will
@@ -66,7 +66,7 @@ def get_reco_maps(true_event_maps, anlys_ebins, reco_service=None, **kwargs):
     anlys_elements.pop()
 
     # Retrieve all reconstruction kernels
-    reco_kernel_dict = reco_service.get_reco_kernels( **kwargs)
+    reco_kernel_dict = reco_service.get_reco_kernels(apply_reco_prcs, **kwargs)
 
     # DEBUG / HACK to store the computed kernels to a file
     #reco_service.store_kernels('reco_kernels.hdf5', fmt='hdf5')
