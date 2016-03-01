@@ -16,7 +16,9 @@ import numpy as np
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import Julian_year
 
-from pisa.utils.log import physics, profile, set_verbosity
+import h5py
+
+from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
 from pisa.utils.params import get_fixed_params, get_free_params, get_values, select_hierarchy
 from pisa.utils.jsons import from_json, to_json, json_string
@@ -82,6 +84,9 @@ class TemplateMaker:
         self.reco_prec_maps_cz_up = None
         self.sys_maps = None
         self.final_event_rate = None
+
+        self.reco_mc_wt_file = template_settings['reco_mc_wt_file']
+        self.params = template_settings
         
         self.ebins = ebins
         self.czbins = czbins
@@ -181,6 +186,8 @@ class TemplateMaker:
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
         self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
+        self.calc_mc_errors()
+
     def downsample_binning(self,maps):
         # the ugliest way to handle this.....sorry
         new_maps = {}
@@ -197,6 +204,46 @@ class TemplateMaker:
                             new_maps[flavour]['map'][e][cz] += maps[flavour]['map'][e*self.actual_oversample_e+e_o][cz*self.actual_oversample_cz+cz_o]
         return new_maps
 
+
+    def calc_mc_errors(self):
+        logging.info('Opening file: %s'%(self.reco_mc_wt_file))
+        try:
+            fh = h5py.File(find_resource(self.reco_mc_wt_file),'r')
+        except IOError,e:
+            logging.error("Unable to open event data file %s"%simfile)
+            logging.error(e)
+            sys.exit(1)
+        all_flavors_dict = {}
+        for flavor in ['nue', 'numu','nutau']:
+            flavor_dict = {}
+            logging.debug("Working on %s "%flavor)
+            for int_type in ['cc','nc']:
+                reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
+                reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
+                    reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
+                    reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
+
+                bins = (self.anlys_ebins,self.czbins)
+                hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
+                flavor_dict[int_type] = hist_2d
+            all_flavors_dict[flavor] = flavor_dict
+        numu_cc_map = all_flavors_dict['numu']['cc']
+        nue_cc_map = all_flavors_dict['nue']['cc']
+        nutau_cc_map = all_flavors_dict['nutau']['cc']
+        nuall_nc_map = all_flavors_dict['numu']['nc']
+
+        #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
+        mc_event_maps = {'params':self.params}
+        mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
+        mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
+        mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
+        mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
+
+        final_MC_event_rate = get_pid_maps(mc_event_maps, self.pid_service)
+        self.rel_error = {}
+        self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
+        self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False):
@@ -319,6 +366,11 @@ class TemplateMaker:
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")
+
+        self.final_event_rate['cscd']['sumw2_nu'] = self.final_event_rate['cscd']['map_nu']**2 * self.rel_error['cscd']
+        self.final_event_rate['trck']['sumw2_nu'] = self.final_event_rate['trck']['map_nu']**2 * self.rel_error['trck']
+        self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
+        self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
 
         if not return_stages: return self.final_event_rate
 
