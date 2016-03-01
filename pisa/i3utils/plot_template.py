@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     if args.fit_file:
         # replace with parameters determ,ined in fit
-        fit_file_tau = from_json(args.fit_file)
+        fit_file = from_json(args.fit_file)
         syslist = fit_file['trials'][0]['fit_results'][0].keys()
         for sys in syslist:
             if not sys == 'llh':
@@ -177,14 +177,23 @@ if __name__ == '__main__':
     template_maker = TemplateMaker(get_values(template_settings['params']),
                                         **template_settings['binning'])
     true_template = template_maker.get_template(get_values(select_hierarchy_and_nutau_norm(template_settings['params'],normal_hierarchy=True,nutau_norm_value=1.0)))
+    true_template['tot'] = {}
+    true_template['tot']['map'] = true_template['cscd']['map'] + true_template['trck']['map']
+    true_template['tot']['map_nu'] = true_template['cscd']['map_nu'] + true_template['trck']['map_nu']
+    true_template['tot']['map_mu'] = true_template['cscd']['map_mu'] + true_template['trck']['map_mu']
+    true_template['tot']['sumw2'] = true_template['cscd']['sumw2'] + true_template['trck']['sumw2']
+    true_template['tot']['sumw2_nu'] = true_template['cscd']['sumw2_nu'] + true_template['trck']['sumw2_nu']
+    true_template['tot']['sumw2_mu'] = true_template['cscd']['sumw2_mu'] + true_template['trck']['sumw2_mu']
 
     if args.burn_sample_file:
         burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'])
+        burn_sample_maps['tot'] = {}
+        burn_sample_maps['tot']['map'] = burn_sample_maps['cscd']['map'] + burn_sample_maps['trck']['map']
 
     myPlotter = plotter(livetime,args.outdir,logy=False) 
 
     for axis, bins in [('energy',anlys_ebins),('coszen',czbins)]:
-        for channel in ['cscd','trck']:
+        for channel in ['cscd','trck','tot']:
             if args.burn_sample_file:
                 plot_maps = [burn_sample_maps[channel]['map']] 
                 plot_sumw2 = [burn_sample_maps[channel]['map']]
@@ -199,6 +208,6 @@ if __name__ == '__main__':
             plot_maps.extend([true_template[channel]['map'],true_template[channel]['map_nu'],true_template[channel]['map_mu']])
             plot_sumw2.extend([true_template[channel]['sumw2'],true_template[channel]['sumw2_nu'],true_template[channel]['sumw2_mu']])
             plot_colors.extend(['b','g','r'])
-            plot_names.extend(['total','nutrinos','atmospheric muons'])
+            plot_names.extend(['total','neutrinos','atmospheric muons'])
             myPlotter.plot_1d_projection(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
             #myPlotter.plot_1d_slices(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
