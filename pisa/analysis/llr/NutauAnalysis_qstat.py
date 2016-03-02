@@ -94,20 +94,23 @@ anlys_ebins = template_settings['binning']['anlys_ebins']
 czbins = template_settings['binning']['czbins']
 anlys_bins = (anlys_ebins, czbins)
 
+pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
+template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
+
+
 # fix a nuisance parameter if requested
-fix_param = None
+fix_param_name = None
 fix_param_val = None
 if not args.f_param == '':
     f_param = args.f_param.split('=')
-    fix_param = f_param[0]
+    fix_param_name = f_param[0]
     if len(f_param) == 1:
-        template_settings['params'] = fix_param(template_settings['params'], fix_param)
-        print 'fixed param %s'%fix_param
+        template_settings['params'] = fix_param(template_settings['params'], fix_param_name)
+        print 'fixed param %s'%fix_param_name
     elif len(f_param) == 2:
         fix_param_val = float(f_param[1])
-        template_settings['params'] = fix_param(template_settings['params'], fix_param)
-        template_settings['params'][fix_param]['value'] = fix_param_val
-        print 'fixed param %s to %s'%(fix_param,fix_param_val)
+        template_settings['params'] = change_settings(template_settings['params'],fix_param_name,fix_param_val,True)
+        print 'fixed param %s to %s'%(fix_param_name,fix_param_val)
 
 # list of hypos to be scanned
 if not args.scan == '':
@@ -143,9 +146,6 @@ pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['para
                                     **pseudo_data_settings['binning'])
 
 # -----------------------------------
-
-pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
-template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
 
 
 # perform n trials
@@ -193,8 +193,8 @@ for itrial in xrange(1,args.ntrials+1):
         results['mu_data'] = float(args.mu_data)
     if not args.t_stat == 'llr':
         results[scan_param] = scan_list
-    if fix_param:
-        results[fix_param] = [fix_param_val]*len(scan_list)
+    if fix_param_name:
+        results[fix_param_name] = [fix_param_val]*len(scan_list)
 
     results['data_mass_hierarchy'] = 'inverted' if args.inv_h_data else 'normal'
     results['hypo_mass_hierarchy'] = 'inverted' if args.inv_h_hypo else 'normal'
