@@ -33,7 +33,7 @@ from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down, get_burn_sample, get_true_template
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, change_nutau_norm_settings, fix_param, fix_all_params
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, change_nutau_norm_settings, fix_param, fix_all_params, change_settings
 
 # --- parse command line arguments ---
 parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
@@ -65,9 +65,10 @@ parser.add_argument('--check_octant',action='store_true',default=False,
 parser.add_argument('-ts', '--test-statistics',choices=['llr', 'profile', 'asimov'], default='llr', dest='t_stat', help='''Choose test statistics from llh, profile or asimov''')
 parser.add_argument('--mu-data', default=1.0, dest='mu_data', help='''nu tau normalization for the psudodata''')
 parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo', help='''nu tau normalization for the test hypothesis''')
+parser.add_argument('--scan', default='', dest='scan', help='''parameter to be scanned, e.g. hole_ice=[0.,0.1,0.2,0.3]i, not available for llr''')
 parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data', help='''invert mass hierarchy in psudodata''')
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
-parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter''')
+parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
@@ -79,29 +80,45 @@ set_verbosity(args.verbose)
 
 # the below cases do not make much sense, therefor complain if the user tries to use them
 if args.t_stat == 'asimov':
-    assert(args.mu_data == 1.0)
     assert(args.bs == '')
-if args.t_stat == 'llr': 
-    assert(args.mu_hypo == 0.0)
 if args.bs:
     assert(args.pseudo_data_settings == None)
     assert(args.mu_data == 1.0)
 
 # Read in the settings
 template_settings = from_json(args.template_settings)
+pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
+minimizer_settings  = from_json(args.minimizer_settings)
 ebins = template_settings['binning']['ebins']
 anlys_ebins = template_settings['binning']['anlys_ebins']
 czbins = template_settings['binning']['czbins']
 anlys_bins = (anlys_ebins, czbins)
 
 # fix a nuisance parameter if requested
+fix_param = None
+fix_param_val = None
 if not args.f_param == '':
-    template_settings['params'] = fix_param(template_settings['params'], args.f_param)
-    print 'fixed param %s'%args.f_param
-    logging.info('fixed param %s'%args.f_param)
+    f_param = args.f_param.split('=')
+    fix_param = f_param[0]
+    if len(f_param) == 1:
+        template_settings['params'] = fix_param(template_settings['params'], fix_param)
+        print 'fixed param %s'%fix_param
+    elif len(f_param) == 2:
+        fix_param_val = float(f_param[1])
+        template_settings['params'] = fix_param(template_settings['params'], fix_param)
+        template_settings['params'][fix_param]['value'] = fix_param_val
+        print 'fixed param %s to %s'%(fix_param,fix_param_val)
 
-minimizer_settings  = from_json(args.minimizer_settings)
-pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
+# list of hypos to be scanned
+if not args.scan == '':
+    assert(args.t_stat != 'llr')
+    scan = args.scan.split('=')
+    scan_param = scan[0]
+    scan_list = eval(scan[1])
+else:
+    scan_param = 'nutau_norm'
+    scan_list = [float(args.mu_hypo)]
+
 
 # Workaround for old scipy versions
 import scipy
@@ -127,6 +144,8 @@ pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['para
 
 # -----------------------------------
 
+pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
+template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
 
 
 # perform n trials
@@ -136,36 +155,14 @@ for itrial in xrange(1,args.ntrials+1):
     profile.info("start trial %d"%itrial)
     logging.info(">"*10 + "Running trial: %05d"%itrial + "<"*10)
 
-    results = {}
-    
-    # save settings
-    results['test_statistics'] = args.t_stat
-    if not args.t_stat == 'asimov' or args.bs:
-        results['mu_data'] = float(args.mu_data)
-    if not args.t_stat == 'llr':
-        results['mu_hypo'] = float(args.mu_hypo)
-    results['data_mass_hierarchy'] = 'inverted' if args.inv_h_data else 'normal'
-    results['hypo_mass_hierarchy'] = 'inverted' if args.inv_h_hypo else 'normal'
-
-
     # --- Get the data, or psudeodata, and store it in fmap
 
     # Asimov dataset (exact expecation values)
     if args.t_stat == 'asimov':
-        fmap = get_true_template(get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                            normal_hierarchy=not(args.inv_h_data),
-                                            nutau_norm_value=float(args.mu_data))
-                                            ),
+        fmap = get_true_template(get_values(pseudo_data_settings['params']),
                                             pseudo_data_template_maker
                 )
         
-       # get_asimov_data_fmap_up_down(pseudo_data_template_maker,
-       #                                         get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-       #                                                     normal_hierarchy=not(args.inv_h_data),
-       #                                                     nutau_norm_value=float(args.mu_data))
-       #                                         ),
-       #                                         channel=channel
-       #                                     )
     # Real data
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
@@ -179,81 +176,99 @@ for itrial in xrange(1,args.ntrials+1):
             results['seed'] = get_seed()
         logging.info("  RNG seed: %ld"%results['seed'])
         fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
-                                    get_values(select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                                normal_hierarchy=not(args.inv_h_data),
-                                                nutau_norm_value=float(args.mu_data))),
+                                    get_values(pseudo_data_settings['params']),
                                     seed=results['seed'],
                                     channel=channel
                                     )
 
     # -----------------------------------
 
-
-    # --- perform the fits for the LLR: first numerator, then denominator
-
+    #keep results, with common denominator in second list
     fit_results = []
-    # common seetings
-    kwargs = {'normal_hierarchy':not(args.inv_h_hypo),'check_octant':args.check_octant, 'save_steps':args.save_steps}
-    largs = [fmap, template_maker, None , minimizer_settings]
+    results = {}
+    
+    # save settings
+    results['test_statistics'] = args.t_stat
+    if not args.t_stat == 'asimov' or args.bs:
+        results['mu_data'] = float(args.mu_data)
+    if not args.t_stat == 'llr':
+        results[scan_param] = scan_list
+    if fix_param:
+        results[fix_param] = [fix_param_val]*len(scan_list)
 
-    # - numerator (first fir for ratio)
-    if not args.od:
-        # LLH
-        if args.t_stat == 'llr':
-            physics.info("Finding best fit for hypothesis mu_tau = 0.0")
-            profile.info("start optimizer")
-            largs[2] = change_nutau_norm_settings( template_settings['params'], 0.0, True, not(args.inv_h_hypo))
+    results['data_mass_hierarchy'] = 'inverted' if args.inv_h_data else 'normal'
+    results['hypo_mass_hierarchy'] = 'inverted' if args.inv_h_hypo else 'normal'
+    # test all hypos
+    for value in scan_list:
+        physics.info('Scan point %.2f for %s'%(value,scan_param))
 
-        # profile LLH/Asimov
-        else:
-            physics.info("Finding best fit for hypothesis mu_tau = %s"%args.mu_hypo)
-            profile.info("start optimizer")
-            largs[2] = change_nutau_norm_settings( template_settings['params'],float(args.mu_hypo),True, not(args.inv_h_hypo))
-        
-        # execute optimizer
-        fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
-        profile.info("stop optimizer")
+
+        # --- perform the fits for the LLR: first numerator, then denominator
+
+        # common seetings
+        kwargs = {'normal_hierarchy':not(args.inv_h_hypo),'check_octant':args.check_octant, 'save_steps':args.save_steps}
+        largs = [fmap, template_maker, None , minimizer_settings]
+
+        # - numerator (first fir for ratio)
+        if not args.od:
+            # LLH
+            if args.t_stat == 'llr':
+                physics.info("Finding best fit for hypothesis mu_tau = 0.0")
+                profile.info("start optimizer")
+                largs[2] = change_settings( template_settings['params'], scan_param, 0.0, True)
+
+            # profile LLH/Asimov
+            else:
+                physics.info("Finding best fit for hypothesis %s = %s"%(scan_param, value))
+                profile.info("start optimizer")
+                largs[2] = change_settings( template_settings['params'],scan_param, value,True)
             
-    # - denominator (second fit for ratio)
+            res = find_max_llh_bfgs(*largs, **kwargs)
+            # execute optimizer
+            if len(fit_results) == 0:
+                fit_results.append(res)
+            else:
+                for key,value in res.items():
+                    fit_results[0][key].append(value[0])
+                
+            profile.info("stop optimizer")
+                
+        # - denominator (second fit for ratio)
 
-    # LLR method 
-    if not args.on:
-        if args.t_stat == 'llr':
-            physics.info("Finding best fit for hypothesis mu_tau = 1.0")
-            profile.info("start optimizer")
-            largs[2] = change_nutau_norm_settings( template_settings['params'], 1.0, True, not(args.inv_h_hypo))
-        # profile LLH
-        elif args.t_stat == 'profile':
-            physics.info("Finding best fit while profiling mu_tau")
-            profile.info("start optimizer")
-            largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_hypo), False, not(args.inv_h_hypo))
-        # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
-        elif args.t_stat == 'asimov':
-            profile.info("clculate llh without fitting")
-            largs[2] = change_nutau_norm_settings(template_settings['params'], float(args.mu_data), True, not(args.inv_h_hypo))
-            kwargs['no_optimize']=True
+        # LLR method 
+        if not args.on and len(fit_results) == 1:
+            if args.t_stat == 'llr':
+                physics.info("Finding best fit for hypothesis mu_tau = 1.0")
+                profile.info("start optimizer")
+                largs[2] = change_nutau_norm_settings(template_settings['params'], scan_param, 1.0, True)
+            # profile LLH
+            elif args.t_stat == 'profile':
+                physics.info("Finding best fit while profiling %"%scan_param)
+                profile.info("start optimizer")
+                largs[2] = change_settings(template_settings['params'],scan_param,value, False)
+            # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
+            elif args.t_stat == 'asimov':
+                profile.info("clculate llh without fitting")
+                largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
+                kwargs['no_optimize']=True
 
-        # execute optimizer
-        fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
-        profile.info("stop optimizer")
+            # execute optimizer
+            fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+            profile.info("stop optimizer")
 
-    # -----------------------------------
+        # -----------------------------------
 
 
     # store fit results
     results['fit_results'] = fit_results
-    llh = []
-    for res in fit_results:
-        llh.append(res['llh'][0])
     # store the value of interest, q = -2log(lh[0]/lh[1]) , llh here is already negative, so no need for the minus sign
-    results['llh'] = llh
     if not any([args.on, args.od]):
-        results['q'] = 2*(llh[0]-llh[1])
-        physics.info('found q value %.2f'%results['q'])
-        physics.info('sqrt(q) = %.2f'%np.sqrt(results['q']))
+        results['q'] = np.array([2*(llh-fit_results[1]['llh'][0]) for llh in fit_results[0]['llh']])
+        physics.info('found q values %s'%results['q'])
+        physics.info('sqrt(q) = %s'%np.sqrt(results['q']))
 
     # Store this trial
-    trials += [results]
+    trials.append(results)
     profile.info("stop trial %d"%itrial)
 
 # Assemble output dict
