@@ -69,6 +69,7 @@ parser.add_argument('--scan', default='', dest='scan', help='''parameter to be s
 parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data', help='''invert mass hierarchy in psudodata''')
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
+parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusance parameter to a value by e.g. -f nuisance_p=1.2 for grid point calculations''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
@@ -111,6 +112,12 @@ if not args.f_param == '':
         fix_param_val = float(f_param[1])
         template_settings['params'] = change_settings(template_settings['params'],fix_param_name,fix_param_val,True)
         print 'fixed param %s to %s'%(fix_param_name,fix_param_val)
+
+fix_param_scan_name = None
+fix_param_scan_val = None
+if not args.f_param_scan == '':
+    fix_param_scan_name,val = args.f_param_scan.split('=')
+    fix_param_scan_val = float(val)
 
 # list of hypos to be scanned
 if not args.scan == '':
@@ -193,14 +200,14 @@ for itrial in xrange(1,args.ntrials+1):
         results['mu_data'] = float(args.mu_data)
     if not args.t_stat == 'llr':
         results[scan_param] = scan_list
-    if fix_param_name:
-        results[fix_param_name] = [fix_param_val]*len(scan_list)
+    if fix_param_scan_name:
+        results[fix_param_scan_name] = [fix_param_scan_val]*len(scan_list)
 
     results['data_mass_hierarchy'] = 'inverted' if args.inv_h_data else 'normal'
     results['hypo_mass_hierarchy'] = 'inverted' if args.inv_h_hypo else 'normal'
     # test all hypos
     for value in scan_list:
-        physics.info('Scan point %.2f for %s'%(value,scan_param))
+        physics.info('Scan point %s for %s'%(value,scan_param))
 
 
         # --- perform the fits for the LLR: first numerator, then denominator
@@ -221,7 +228,10 @@ for itrial in xrange(1,args.ntrials+1):
             else:
                 physics.info("Finding best fit for hypothesis %s = %s"%(scan_param, value))
                 profile.info("start optimizer")
-                largs[2] = change_settings( template_settings['params'],scan_param, value,True)
+                largs[2] = change_settings(template_settings['params'],scan_param, value,True)
+                if fix_param_scan_name:
+                    largs[2] = change_settings(largs[2],fix_param_scan_name,fix_param_scan_val,True)
+
             
             res = find_max_llh_bfgs(*largs, **kwargs)
             # execute optimizer
