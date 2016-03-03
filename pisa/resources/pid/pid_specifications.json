@@ -1,0 +1,43 @@
+{
+  "PINGU": {
+    "V36": {
+      "V5": {
+        "1": {
+          "field_map": {
+            "pid": "PINGU_PID_Score/PID_Train_V36_baseline_HE_CutsV4_BDTG.weights.xml"
+          },
+          "criteria": {
+            "cscd": "pid <= 0.15",
+            "trck": "pid > 0.15"
+          }
+        }
+      }
+    },
+    "V38": {
+      "V5.1": {
+        "1": {
+          "field_map": {
+            "pid": "PINGU_PID_Score/PID_PINGU_V38_HE_E2wgt_MLPBNN.weights.xml"
+          },
+          "criteria": {
+            "cscd": "pid <= 0.55",
+            "trck": "pid > 0.55"
+          }
+        }
+      }
+    },
+    "V39": {
+      "V5.1": {
+        "1": {
+          "field_map": {
+            "pid": "PINGU_PID_Score/PID_PINGU_V39_HE_E2wgt_MLPBNN.weights.xml"
+          },
+          "criteria": {
+            "cscd": "pid <= 0.55",
+            "trck": "pid > 0.55"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "pingu": {
-    "3": {
+  "PINGU": {
+    "V3": {
       "field_map": {
         "run": "I3EventHeader/Run",
         "nu_code": "MCNeutrino/type",
@@ -49,7 +49,7 @@
         }
       }
     },
-    "4": {
+    "V4": {
       "field_map": {
         "run": "I3EventHeader/Run",
         "nu_code": "MCNeutrino/pdg_encoding",
@@ -90,7 +90,7 @@
         }
       }
     },
-    "5": {
+    "V5": {
       "field_map": {
         "run": "I3EventHeader/Run",
         "nu_code": "MCNeutrino/pdg_encoding",
@@ -146,7 +146,7 @@
         }
       }
     },
-    "5.1": {
+    "V5.1": {
       "field_map": {
         "run": "I3EventHeader/Run",
         "nu_code": "MCNeutrino/pdg_encoding",

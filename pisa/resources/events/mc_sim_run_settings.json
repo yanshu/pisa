@@ -1,7 +1,7 @@
 {
-  "pingu": {
+  "PINGU": {
     "388": {
-      "geom": "v36",
+      "geom": "V36",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -21,7 +21,7 @@
       "zenith_min": 0
     },
     "389": {
-      "geom": "v36",
+      "geom": "V36",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -41,7 +41,7 @@
       "zenith_min": 0
     },
     "390": {
-      "geom": "v36",
+      "geom": "V36",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -61,7 +61,7 @@
       "zenith_min": 0
     },
     "600": {
-      "geom": "v38",
+      "geom": "V38",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -81,7 +81,7 @@
       "zenith_min": 0
     },
     "601": {
-      "geom": "v38",
+      "geom": "V38",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -101,7 +101,7 @@
       "zenith_min": 0
     },
     "602": {
-      "geom": "v38",
+      "geom": "V38",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -121,7 +121,7 @@
       "zenith_min": 0
     },
     "620": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -141,7 +141,7 @@
       "zenith_min": 0
     },
     "621": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -161,7 +161,7 @@
       "zenith_min": 0
     },
     "622": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -181,7 +181,7 @@
       "zenith_min": 0
     },
     "620": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -201,7 +201,7 @@
       "zenith_min": 0
     },
     "621": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
@@ -221,7 +221,7 @@
       "zenith_min": 0
     },
     "622": {
-      "geom": "v39",
+      "geom": "V39",
       "all_gen_events_file": null,
       "azimuth_max": "2*pi",
       "azimuth_min": 0,
