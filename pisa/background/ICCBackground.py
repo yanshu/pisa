@@ -40,7 +40,13 @@ def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,liv
         ebins, czbins = get_binning(event_rate_pid_maps[flav])
         event_rate_pid_map = event_rate_pid_maps[flav]['map']
         event_rate = event_rate_pid_map + background_dict[flav] * atmos_mu_scale * livetime
+        sumw2 = background_dict[flav] * atmos_mu_scale**2 * livetime**2
         event_rate_maps[flav] = {'map':event_rate,
+                                 'sumw2':sumw2,
+                                 'map_nu':event_rate_pid_map,
+                                 'map_mu':background_dict[flav] * atmos_mu_scale * livetime,
+                                 'sumw2_nu':np.zeros(np.shape(sumw2)),
+                                 'sumw2_mu':sumw2,
                                  'ebins':ebins,
                                  'czbins':czbins}
     return event_rate_maps

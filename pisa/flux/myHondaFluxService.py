@@ -31,11 +31,13 @@ class myHondaFluxService():
        input files.
     """
 
-    def __init__(self, flux_file=None, smooth=0.05, **params):
+    def __init__(self, flux_file=None, smooth=0.05, oversample_e=1, oversample_cz=1,**params):
 
         self.final_tablesT = {}
         self.ebins = None
         self.czbins = None
+        self.oversample_e = oversample_e
+        self.oversample_cz = oversample_cz
         logging.info("Loading atmospheric flux table %s" %flux_file)
 
         #Load the data table
@@ -88,15 +90,14 @@ class myHondaFluxService():
 
         # do it once, but with much finer steps for 'integrating' the spline interpolation
         # this is now handlet externaly....controlled by the actual_oversampling parameter in the template settings file
-        N = 1
         small_ebins = []
         small_czbins = []
 
         for i in  xrange(len(ebins)-1):
             binsize = abs(ebins[i+1]-ebins[i])
-            small_binsize=binsize/float(N)
+            small_binsize=binsize/float(self.oversample_e)
             val = ebins[i]
-            for j in xrange(N):
+            for j in xrange(self.oversample_e):
                 small_ebins.append(val)
                 val += small_binsize
         small_ebins.append(ebins[-1])
@@ -104,9 +105,9 @@ class myHondaFluxService():
 
         for i in  xrange(len(czbins)-1):
             binsize = abs(czbins[i+1]-czbins[i])
-            small_binsize=binsize/float(N)
+            small_binsize=binsize/float(self.oversample_cz)
             val = czbins[i]
-            for j in xrange(N):
+            for j in xrange(self.oversample_cz):
                 small_czbins.append(val)
                 val += small_binsize
         small_czbins.append(czbins[-1])
@@ -134,15 +135,15 @@ class myHondaFluxService():
         
         # sum up energy bins
         for i in xrange(len(ebins)-1):
-            for j in xrange(N):
-                final_table_e.T[i] += return_table.T[i*N +j]
+            for j in xrange(self.oversample_e):
+                final_table_e.T[i] += return_table.T[i*self.oversample_e +j]
         
         final_table = np.zeros((len(czbins)-1,len(ebins)-1))
         
         # sum up cz bins
         for i in xrange(len(czbins)-1):
-            for j in xrange(N):
-                final_table[i] += final_table_e[i*N +j]
+            for j in xrange(self.oversample_cz):
+                final_table[i] += final_table_e[i*self.oversample_cz +j]
 
         self.final_tablesT[prim] = final_table.T
 

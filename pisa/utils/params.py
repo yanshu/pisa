@@ -273,6 +273,14 @@ def change_nutau_norm_settings(params,nutau_norm_val,nutau_norm_fix,normal_hiera
         newparams["nutau_norm"]["range"] = np.array([-2.5, 2.5])
     return newparams
 
+def change_settings(params,name,val,fix):
+    if not isinstance(fix, bool):
+                raise ValueError('fix must be boolean value')
+    newparams = deepcopy(params)
+    newparams[name]["value"] = val
+    newparams[name]["fixed"] = fix
+    return newparams
+
 def get_fixed_params(params):
     """
     Finds all fixed parameters in params dict and returns them in a
