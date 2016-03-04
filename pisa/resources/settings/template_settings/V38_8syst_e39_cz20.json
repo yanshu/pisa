@@ -140,7 +140,6 @@
     "aeff_egy_par": {
       "fixed": true,
       "value": "aeff/pingu_V38/aeff_energy_dependence__pingu_v38__runs_600-602__proc_v5.1.json"
-      }
     },
     "aeff_mode": {
       "fixed": true,
