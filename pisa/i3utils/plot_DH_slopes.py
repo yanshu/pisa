@@ -81,7 +81,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
     DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
     DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_up 
-    DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_down
+    DH_template_settings['params']['pid_paramfile_down']['value'] = pid_param_file_down
     DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
 
     DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
@@ -136,8 +136,7 @@ for flav in ['trck','cscd']:
 
             fixed_r_val = bin_ratio_values[0]
 
-            
-            def dom_eff_linear_through_point(x, k, fixed_r_val):
+            def dom_eff_linear_through_point(x, k):
                 # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
                 return k*x + fixed_r_val - k*0.91
 
@@ -162,7 +161,7 @@ for flav in ['trck','cscd']:
             fixed_ratio[i][j]= fixed_r_val
 
             dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
-            best_fit = dom_eff_linear_through_point(dom_func_plot_x, k1, fixed_r_val)
+            best_fit = dom_eff_linear_through_point(dom_func_plot_x, k1)
             dom_func_plot, = plt.plot(dom_func_plot_x, best_fit, 'r-')
             if(fig_num == n_czbins * n_ebins-1):
                 plt.savefig(png_name + '_domeff_%s.png'%flav )
@@ -188,7 +187,7 @@ for flav in ['trck','cscd']:
 
             fixed_r_val = bin_ratio_values[0]
 
-            def hole_ice_linear_through_point(x, k, fixed_r_val):
+            def hole_ice_linear_through_point(x, k):
                 # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
                 return k*x + fixed_r_val - k*0.02  
 
@@ -213,7 +212,7 @@ for flav in ['trck','cscd']:
             k_HI[i][j]= k2
 
             ice_func_plot_x = np.arange(-0.02, 0.06 + x_steps, x_steps)
-            best_fit = hole_ice_linear_through_point(ice_func_plot_x, k2, fixed_r_val)
+            best_fit = hole_ice_linear_through_point(ice_func_plot_x, k2)
             ice_func_plot, = plt.plot(ice_func_plot_x, best_fit, 'r-')
 
             if(fig_num==n_czbins * n_ebins-1):
