@@ -88,6 +88,7 @@ for flav in ['trck','cscd']:
     k_DE = np.empty(np.shape(templates['60']['trck'])) 
     fixed_ratio = np.empty(np.shape(templates['60']['trck'])) 
     k_HI = np.empty(np.shape(templates['60']['trck'])) 
+    p_HI = np.empty(np.shape(templates['60']['trck'])) 
     for run_num in [50,60,61,64,65,70,71,72]:
         # (DOM efficiency, HoleIce Scattering): (0.91,50), (1.0,50), (0.95,50), (1.1,50), (1.05,50),(0.91,no),(0.91,30),(0.91,100)
         templ_list.append(templates[str(run_num)][flav])
@@ -111,7 +112,7 @@ for flav in ['trck','cscd']:
             fixed_r_val = bin_ratio_values[0]
 
             # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-            exec('def hole_ice_linear_through_point(x, k): return k*x + %s - k*0.02'%fixed_r_val)
+            exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-0.02) + p*(x-0.02)**2 + %s'%fixed_r_val)
             
             # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
             exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
@@ -130,12 +131,15 @@ for flav in ['trck','cscd']:
             ice_x = np.array([hole_ice[0],hole_ice[5],hole_ice[6],hole_ice[7]])
             ice_y = np.array([fixed_r_val,bin_ratio_values[5],bin_ratio_values[6],bin_ratio_values[7]])
     
-            popt_2, pcov_2 = curve_fit(hole_ice_linear_through_point,ice_x,ice_y)
+            popt_2, pcov_2 = curve_fit(hole_ice_quadratic_through_point,ice_x,ice_y)
             k2 = popt_2[0]
+            p2 = popt_2[1]
             k_HI[i][j]= k2
+            p_HI[i][j]= p2
 
     fits_DOMEff[flav]['slopes'] = k_DE 
-    fits_HoleIce[flav]['slopes'] = k_HI
+    fits_HoleIce[flav]['linear'] = k_HI
+    fits_HoleIce[flav]['quadratic'] = p_HI
     fits_DOMEff[flav]['fixed_ratios'] = fixed_ratio 
     fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
@@ -145,5 +149,5 @@ output_template = {'templates' : templates,
 #And write to file
 to_json(output_template,'DomEff_templates_up_down_10_by_16.json')
 to_json(fits_DOMEff,'DomEff_linear_fits_10_by_16.json')
-to_json(fits_HoleIce,'HoleIce_linear_fits_10_by_16.json')
+to_json(fits_HoleIce,'HoleIce_quadratic_fits_10_by_16.json')
 
