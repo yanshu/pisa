@@ -135,11 +135,11 @@
     },
     "aeff_coszen_par": {
       "fixed": true,
-      "value": "aeff/pingu_V38/aeff_coszen_dependence__pingu_v38__runs_600-602__proc_v5.1.json"
+      "value": "aeff/pingu_v38/aeff_coszen_dependence__pingu_v38__runs_600-602__proc_v5.1.json"
     },
     "aeff_egy_par": {
       "fixed": true,
-      "value": "aeff/pingu_V38/aeff_energy_dependence__pingu_v38__runs_600-602__proc_v5.1.json"
+      "value": "aeff/pingu_v38/aeff_energy_dependence__pingu_v38__runs_600-602__proc_v5.1.json"
     },
     "aeff_mode": {
       "fixed": true,
@@ -322,12 +322,12 @@
 	"pid_constructor_params": {
       "fixed": true,
       "value": {
-        "energy_dep": "aeff/pingu_V38/pid_energy_dependence__pingu_v38__runs_600-602__proc_5.1__pid_1.json",
+        "pid_energy_dep": "pid/pingu_v38/pid_energy_dependence__pingu_v38__runs_600-602__proc_5.1__pid_1.json",
         "kernelfile": null,
-        "events": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5",
+        "events": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5",
 		"pid_ver": "1",
 		"remove_true_downgoing": true,
-        "mode": "param"
+        "pid_mode": "param"
 	  }
 	},
     "prop_height": {
@@ -340,7 +340,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -352,7 +352,7 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "theta12": {
       "fixed": true,
