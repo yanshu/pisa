@@ -337,7 +337,7 @@
     },
     "reco_kernel_file": {
       "fixed": true,
-      "value": null
+      "value": "reco/pingu_v38/reco_kernels__pingu_v38__runs_600-602__proc_v5.1__vbwkde.hdf5"
     },
     "reco_mc_wt_file": {
       "fixed": true,
@@ -345,7 +345,7 @@
     },
     "reco_mode": {
       "fixed": true,
-      "value": "vbwkde"
+      "value": "stored"
     },
     "reco_param_file": {
       "fixed": true,
