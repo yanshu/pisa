@@ -73,7 +73,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
     DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
     DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_up 
-    DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_down
+    DH_template_settings['params']['pid_paramfile_down']['value'] = pid_param_file_down
     DH_template_settings['params']['atmos_mu_scale']['value'] = 0
 
     DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
@@ -110,13 +110,11 @@ for flav in ['trck','cscd']:
 
             fixed_r_val = bin_ratio_values[0]
 
-            def hole_ice_linear_through_point(x, k, fixed_r_val):
-                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-                return k*x + fixed_r_val - k*0.02  
+            # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
+            exec('def hole_ice_linear_through_point(x, k): return k*x + %s - k*0.02'%fixed_r_val)
             
-            def dom_eff_linear_through_point(x, k, fixed_r_val):
-                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-                return k*x + fixed_r_val - k*0.91
+            # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
+            exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
 
 
             ########### DOM efficiency #############
