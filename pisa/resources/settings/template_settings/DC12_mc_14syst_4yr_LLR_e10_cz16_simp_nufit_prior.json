@@ -50,7 +50,9 @@
       100.0
     ],
     "oversample_cz": 10,
-    "oversample_e": 10
+    "oversample_e": 10,
+    "actual_oversample_cz": 1,
+    "actual_oversample_e": 1
   },
   "params": {
     "PID_offset": {
@@ -343,7 +345,7 @@
       },
       "range": [
         0.0,
-        0.5
+        0.05
       ],
       "scale": 10.0,
       "value": 0.02
@@ -455,6 +457,10 @@
     "reco_prcs_coeff_file": {
       "fixed": true,
       "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+    },
+    "up_down_reco_prcs":{
+        "fixed": true,
+        "value": 1
     },
     "residual_up_down": {
       "fixed": true,
