@@ -160,7 +160,7 @@
     },
     "aeff_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "smooth"
     },
     "aeff_scale": {
       "fixed": false,
@@ -334,7 +334,7 @@
     },
     "osc_code": {
       "fixed": true,
-      "value": "gpu"
+      "value": "prob3"
     },
     "pid_mode": {
       "fixed": true,
@@ -354,7 +354,7 @@
     },
     "pid_events": {
       "fixed": true,
-      "events": "events/pingu_v36/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v36/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "pid_remove_true_downgoing": {
       "fixed": true,
@@ -362,7 +362,7 @@
     },
     "pid_ver": {
       "fixed": true,
-      "pid_ver": "1"
+      "value": "1"
     },
     "prop_height": {
       "fixed": true,
