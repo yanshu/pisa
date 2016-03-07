@@ -42,13 +42,13 @@ class RecoServiceMC(RecoServiceBase):
         self.simfile = reco_mc_wt_file
         self.ebins = ebins
         self.czbins = czbins
-        self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_reco_prcs=1)
+        self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_e_reco_prcs=1,up_down_cz_reco_prcs=1)
 
 
     def kernel_from_simfile(self, simfile=None,e_reco_precision_up=None, cz_reco_precision_up= None,
-                            up_down_reco_prcs= None, **kwargs):
-        cz_reco_precision_down = 1+up_down_reco_prcs*(cz_reco_precision_up-1)
-        e_reco_precision_down = 1+up_down_reco_prcs*(e_reco_precision_up-1)
+                            up_down_e_reco_prcs= None, up_down_cz_reco_prcs=None, **kwargs):
+        cz_reco_precision_down = 1+up_down_e_reco_prcs*(cz_reco_precision_up-1)
+        e_reco_precision_down = 1+up_down_cz_reco_prcs*(e_reco_precision_up-1)
         logging.info('Opening file: %s'%(simfile))
         try:
             fh = h5py.File(find_resource(simfile),'r')
@@ -122,13 +122,13 @@ class RecoServiceMC(RecoServiceBase):
 
         if not simfile in [self.simfile, None]:
             logging.info('Reconstruction from non-default MC file %s!'%simfile)
-            return kernel_from_simfile(simfile=simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_reco_prcs = kwargs['up_down_reco_prcs'])
+            return kernel_from_simfile(simfile=simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_e_reco_prcs = kwargs['up_down_e_reco_prcs'],up_down_cz_reco_prcs=kwargs['up_down_cz_reco_prcs'])
 
         if not hasattr(self, 'nominal_kernels'):
             logging.info('Using file %s for default reconstruction'%(simfile))
-            self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_reco_prcs = 1)
+            self.nominal_kernels = self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = 1, cz_reco_precision_up= 1, up_down_e_reco_prcs = 1, up_down_cz_reco_prcs= 1)
 
-        if kwargs['e_reco_precision_up'] ==1 and kwargs['cz_reco_precision_up'] == 1 and kwargs['up_down_reco_prcs'] == 1 or apply_reco_prcs == False:
+        if kwargs['e_reco_precision_up'] ==1 and kwargs['cz_reco_precision_up'] == 1 and kwargs['up_down_e_reco_prcs'] == 1 and kwargs['up_down_cz_reco_prcs'] == 1 or apply_reco_prcs == False:
             return self.nominal_kernels
         else:
-            return self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_reco_prcs = kwargs['up_down_reco_prcs'])
+            return self.kernel_from_simfile(simfile=self.simfile, e_reco_precision_up = kwargs['e_reco_precision_up'], cz_reco_precision_up= kwargs['cz_reco_precision_up'], up_down_e_reco_prcs = kwargs['up_down_e_reco_prcs'],up_down_cz_reco_prcs=kwargs['up_down_cz_reco_prcs'])

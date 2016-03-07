@@ -42,7 +42,7 @@ from pisa.aeff.Aeff import get_event_rates
 from pisa.reco.RecoServiceMC import RecoServiceMC
 from pisa.reco.RecoServiceParam import RecoServiceParam
 from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
-from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
+#from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 from pisa.reco.Reco import get_reco_maps
 
 from pisa.pid.PIDServiceParam import PIDServiceParam
