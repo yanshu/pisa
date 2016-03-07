@@ -160,7 +160,7 @@
     },
     "aeff_mode": {
       "fixed": true,
-      "value": "smooth"
+      "value": "param"
     },
     "aeff_scale": {
       "fixed": false,
@@ -338,7 +338,7 @@
     },
     "pid_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "smooth"
     },
     "pid_paramfile": {
       "fixed": true,
