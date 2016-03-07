@@ -135,11 +135,28 @@
     },
     "aeff_coszen_par": {
       "fixed": true,
-      "value": "aeff/pingu_v36/aeff_coszen_dependence__pingu_v36__runs_388-390__proc_v5.json"
+      "value": "aeff/V36/V36_aeff_cz.json"
     },
     "aeff_egy_par": {
       "fixed": true,
-      "value": "aeff/pingu_v36/aeff_energy_dependence__pingu_v36__runs_388-390__proc_v5.json"
+      "value": {
+        "NC": "aeff/V36/cuts_V5/a_eff_nuall_nc.dat",
+        "NC_bar": "aeff/V36/cuts_V5/a_eff_nuallbar_nc.dat",
+        "nue": "aeff/V36/cuts_V5/a_eff_nue.dat",
+        "nue_bar": "aeff/V36/cuts_V5/a_eff_nuebar.dat",
+        "numu": "aeff/V36/cuts_V5/a_eff_numu.dat",
+        "numu_bar": "aeff/V36/cuts_V5/a_eff_numubar.dat",
+        "nutau": "aeff/V36/cuts_V5/a_eff_nutau.dat",
+        "nutau_bar": "aeff/V36/cuts_V5/a_eff_nutaubar.dat"
+      }
+    },
+    "aeff_coszen_smooth": {
+      "fixed": true,
+      "value": "aeff/pingu_v36/aeff_coszen_smooth__pingu_v36__runs_388-390__proc_v5.json"
+    },
+    "aeff_energy_smooth": {
+      "fixed": true,
+      "value": "aeff/pingu_v36/aeff_energy_smooth__pingu_v36__runs_388-390__proc_v5.json"
     },
     "aeff_mode": {
       "fixed": true,
@@ -319,16 +336,33 @@
       "fixed": true,
       "value": "gpu"
     },
-    "pid_constructor_params": {
+    "pid_mode": {
       "fixed": true,
-      "value": {
-        "pid_energy_dep": "pid/pingu_v36/pid_energy_dependence__pingu_v36__runs_388-390__proc_5__pid_1.json",
-        "kernelfile": null,
-        "events": "events/pingu_v36/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5",
-        "pid_ver": "1",
-        "remove_true_downgoing": true,
-        "pid_mode": "param"
-      }
+      "value": "param"
+    },
+    "pid_paramfile": {
+      "fixed": true,
+      "value": "pid/V36_pid_recoEgy.json"
+    },
+    "pid_energy_smooth": {
+      "fixed": true,
+      "value": "pid/pingu_v36/pid_energy_smooth__pingu_v36__runs_388-390__proc_5__pid_1.json"
+    },
+    "pid_kernelfile": {
+      "fixed": true,
+      "value": null
+    },
+    "pid_events": {
+      "fixed": true,
+      "events": "events/pingu_v36/events__pingu__v36__runs_388-390__proc_v5__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
+    "pid_remove_true_downgoing": {
+      "fixed": true,
+      "value": null
+    },
+    "pid_ver": {
+      "fixed": true,
+      "pid_ver": "1"
     },
     "prop_height": {
       "fixed": true,
