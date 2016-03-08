@@ -13,7 +13,6 @@
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import numpy as np
-import h5py
 from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.utils import check_binning, get_binning
 from pisa.utils.jsons import from_json,to_json

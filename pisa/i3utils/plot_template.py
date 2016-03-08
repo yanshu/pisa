@@ -1,21 +1,11 @@
 #! /usr/bin/env python
-import copy
 import numpy as np
-import os
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from scipy import stats
 from matplotlib.offsetbox import AnchoredText
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
-from pisa.utils.log import set_verbosity,logging,profile
-from pisa.utils.jsons import from_json
-from pisa.utils.plot import show_map, sum_map, ratio_map, delta_map
-from pisa.analysis.stats.Maps import flatten_map
-from pisa.analysis.stats.Maps_nutau import get_true_template, get_burn_sample
-from pisa.utils.utils import Timer, is_linear, is_logarithmic, get_bin_centers, get_bin_sizes
+from pisa.utils.utils import get_bin_centers, get_bin_sizes
 
 class plotter(object):
 
@@ -36,19 +26,22 @@ class plotter(object):
                 output_array += map_2d[:,i]
         return output_array
 
-    def plot_1d(self,maps, errors, colors, names, axis, x_bin_edges, outname):
+    def plot_1d(self,maps, errors, colors, names, axis, x_bin_edges, outname,linestyles=None):
+        if not linestyles:
+            linestyles=['-']*len(maps)
         x_bin_centers = get_bin_centers(x_bin_edges)
         x_bin_width = get_bin_sizes(x_bin_edges)
         fig = plt.figure(figsize=(8,8))
+        fig.patch.set_facecolor('none')
         if len(maps) == 1:
             ax1 = fig.add_subplot(111)
         else:
             ax1 = plt.subplot2grid((4,1), (0,0), rowspan=3)
-        for map, error, color, name in zip(maps,errors,colors,names):
+        for map, error, color, name, linestyle in zip(maps,errors,colors,names,linestyles):
             if name == 'data':
                 ax1.errorbar(x_bin_centers,map,yerr=error,fmt='o',color='black', markersize='4',label=name)
             else:
-                hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1,color=color,linestyle='solid', label=name)
+                hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1,color=color,linestyle=linestyle, label=name)
                 ax1.bar(x_bin_edges[:-1],2*error, bottom=map-error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
         ax1.grid()
         ax1.set_ylabel('# entries')
@@ -62,7 +55,7 @@ class plotter(object):
         else:
             ax1.set_ylim(minimum, 1.5*maximum)
         ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1,fontsize=10)
-        a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years\nPreliminary'%self.livetime, loc=2, frameon=False)
+        a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s\nPreliminary'%(self.livetime,self.channel), loc=2, frameon=False)
         ax1.add_artist(a_text)
         if axis == 'energy':
             ax1.set_xlabel('Energy (GeV)')
@@ -73,7 +66,9 @@ class plotter(object):
 
         if len(maps) >1:
             ax2 = plt.subplot2grid((4,1), (3,0),sharex=ax1)
-            for map, error, color in zip(maps, errors, colors):
+            minimum = 10
+            maximum = 0
+            for map, error, color,linestyle in zip(maps, errors, colors,linestyles):
                 ratio = np.zeros_like(map)
                 ratio_error = np.zeros_like(map)
                 for i in range(len(map)):
@@ -85,7 +80,9 @@ class plotter(object):
                     else:
                         ratio[i] = map[i]/maps[0][i]
                         ratio_error[i] = error[i]/maps[0][i]
-                hist,_,_ = ax2.hist(x_bin_centers,weights= ratio,bins=x_bin_edges,histtype='step',lw=1,color=color,linestyle='solid')
+                        minimum = min(minimum,ratio[i])
+                        maximum = max(maximum,ratio[i])
+                hist,_,_ = ax2.hist(x_bin_centers,weights= ratio,bins=x_bin_edges,histtype='step',lw=1,color=color,linestyle=linestyle)
                 ax2.bar(x_bin_edges[:-1],2*ratio_error, bottom=ratio-ratio_error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
             
             if axis == 'energy':
@@ -95,27 +92,37 @@ class plotter(object):
             if axis == 'coszen':
                 ax2.set_xlabel('cos(zen)')
             ax2.grid()
-            ax2.set_ylim(0.5,1.5)
+            minimum = 1+ 2.*(minimum-1)
+            maximum = 1+ 2.*(maximum-1)
+            if maximum == 1:
+                maximum += 0.5*(maximum-minimum)
+            minimum = min(minimum,0.98)
+            minimum = max(minimum,0)
+            maximum = max(maximum,1.02)
+            ax2.set_ylim(minimum, maximum)
+            #ax2.set_ylim(0.8,1.2)
             ax2.set_ylabel('ratio over %s'%names[0])
             fig.subplots_adjust(hspace=0)
             plt.setp(ax1.get_xticklabels(), visible=False)
 
-        plt.savefig(self.outdir+'/'+outname+'.'+self.fmt, dpi=150)
+        plt.savefig(self.outdir+'/'+outname+'.'+self.fmt, dpi=150, edgecolor='none',facecolor=fig.get_facecolor())
         plt.clf()
         plt.close(fig)
 
 
-    def plot_1d_projection(self,maps, errors, colors, names, axis, x_bin_edges, channel):
+    def plot_1d_projection(self,maps, errors, colors, names, axis, x_bin_edges, channel,outname='',linestyles=None):
         # iterate
-        outname = '%s_%s'%(channel, axis)
+        outname = '%s%s_%s'%(outname,channel, axis)
+        self.channel = channel
         pmaps = []
         perrors = []
         for map, error in zip(maps,errors):
             pmaps.append(self.get_1D_projection(map,axis))
             perrors.append(np.sqrt(self.get_1D_projection(error,axis)))
-        self.plot_1d(pmaps, perrors, colors, names, axis, x_bin_edges, outname)
+        self.plot_1d(pmaps, perrors, colors, names, axis, x_bin_edges, outname,linestyles=linestyles)
 
     def plot_1d_slices(self,maps, errors, colors, names, axis, x_bin_edges, channel):
+        self.channel = channel
         # iterate
         if axis == 'coszen':
                 idx = range(0, maps[0].shape[0])
@@ -136,6 +143,12 @@ class plotter(object):
 
 
 if __name__ == '__main__':
+    from pisa.utils.log import set_verbosity,logging,profile
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+    from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+    from pisa.analysis.stats.Maps_nutau import get_true_template, get_burn_sample
+    from pisa.utils.jsons import from_json
+    from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
     set_verbosity(0)
     parser = ArgumentParser(description='''Quick check if all components are working reasonably well, by
                                             making the final level hierarchy asymmetry plots from the input settings file. ''')
@@ -210,4 +223,4 @@ if __name__ == '__main__':
             plot_colors.extend(['b','g','r'])
             plot_names.extend(['total','neutrinos','atmospheric muons'])
             myPlotter.plot_1d_projection(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
-            #myPlotter.plot_1d_slices(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
+            myPlotter.plot_1d_slices(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)

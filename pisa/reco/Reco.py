@@ -31,7 +31,7 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.reco.RecoServiceMC import RecoServiceMC
 from pisa.reco.RecoServiceParam import RecoServiceParam
 from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
-from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
+#from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 
 
 def get_reco_maps(true_event_maps, anlys_ebins, apply_reco_prcs, reco_service=None, **kwargs):
