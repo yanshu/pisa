@@ -254,7 +254,11 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
         for flavor in ['nue', 'numu', 'nutau']:
             cut_pid[flavor]={}
             cut_pid[flavor]['trck'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]>= 3.0)
+            # This is only temporaty, the correct way is to throw away events with deltaLLH < -3.0
             cut_pid[flavor]['cscd'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< 3.0)
+
+            # This is the correct way, but right now in PID stage, PISA couldn't throw away events with deltaLLH < -3.
+            #cut_pid[flavor]['cscd'] = np.logical_and(np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< 3.0), deltaLLH[flavor]>= -3.0)
 
         for channel in ['cscd','trck']:
             reco_energy_pid = np.array([])
