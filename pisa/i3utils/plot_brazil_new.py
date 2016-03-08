@@ -45,13 +45,14 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
     #colors = {'asimov_hole_ice_no_prior':'red','asimov_no_holeice':'k','asimov_hole_ice_tight_prior':'mediumvioletred','asimov_hole_ice_prior':'peru','asimov_scan_nutau_norm':'r'}
     #labels = {'asimov_hole_ice_no_prior':'HI no prior','asimov_no_holeice':'no HI','asimov_hole_ice_tight_prior':'HI tight prior','asimov_hole_ice_prior':'HI normal prior','asimov_scan_nutau_norm':'asimov'}
     for key in asimov.keys():
-        print key
+        #print key
         if asimov[key].has_key(name):
             text = key.split('_')
-            if len(text) == 2:
-                label = 'nominal'
-            else:
-                label = '_'.join(text[:-2]) + ' fixed'
+            #if len(text) == 2:
+            #    label = 'nominal'
+            #else:
+            #    label = '_'.join(text[:-2]) + ' fixed'
+            label = key
             ax.plot(asimov_hypos[key],asimov[key][name], label=label)
     ax.legend(loc='upper center',ncol=2, frameon=False,numpoints=1,fontsize=10)
     ax.set_xlabel(r'$\nu_{\tau}$ normalization')
@@ -105,6 +106,7 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
         ax.axvline(i,color='k', linestyle=':',alpha=0.5)
     plt.show()
     plt.savefig('q1_%s.png'%name, facecolor=fig.get_facecolor(), edgecolor='none')
+    plt.savefig('q1_%s.pdf'%name, facecolor=fig.get_facecolor(), edgecolor='none')
 
 def dist(data,name,hypos, asimov_hypos, params,trials):
 
@@ -153,7 +155,7 @@ if __name__ == '__main__':
                     asimov_hypos[name] = trial['nutau_norm']
                     asimov_results[name] = trial['fit_results'][0]
                     asimov_results[name]['llh'] = trial['q']
-                    if name == 'nufit_prior' or name =='no_prior':
+                    if name == 'nufit_prior' or name =='no_prior' or name == 'nominal':
                         sys = asimov_results[name].keys()
                 elif ts == 'profile':
                     hypos = trial['nutau_norm']

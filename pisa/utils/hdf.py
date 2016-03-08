@@ -48,6 +48,12 @@ def from_hdf(val, return_attrs=False):
     def visit_group(obj, sdict):
         name = obj.name.split('/')[-1]
         if type(obj) in [h5py.Dataset]:
+            # the commented out section was just a test for using subsets of the MC files
+            #if hasattr(obj.value, "__len__"):
+            #    # statistical uncert. test (REMOVE for analysis!!!)
+            #    #sdict[name] = obj.value[len(obj.value)/2:]
+            #    sdict[name] = obj.value[1::2]
+            #else:
             sdict[name] = obj.value
         if type(obj) in [h5py.Group, h5py.File]:
             sdict[name] = {}

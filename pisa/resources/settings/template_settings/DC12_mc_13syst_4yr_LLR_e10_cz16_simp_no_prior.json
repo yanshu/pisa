@@ -200,7 +200,21 @@
       "scale": 1,
       "value": 1.0
     },
-    "up_down_reco_prcs": {
+    "up_down_e_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "up_down_cz_reco_prcs": {
       "fixed": false,
       "prior": {
         "fiducial": 1.0,
@@ -382,7 +396,7 @@
     },
     "osc_code": {
       "fixed": true,
-      "value": "prob3"
+      "value": "gpu"
     },
     "pid_kernelfile": {
       "fixed": true,
