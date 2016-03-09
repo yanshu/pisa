@@ -160,7 +160,7 @@
     },
     "aeff_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "slice_smooth"
     },
     "aeff_scale": {
       "fixed": false,
@@ -174,9 +174,13 @@
       "scale": 1.0,
       "value": 1.0
     },
+	"aeff_slice_smooth": {
+      "fixed": true,
+      "value": "aeff/pingu_v36/aeff_slice_smooth__pingu_v36__runs_388-390__proc_5.hdf5"
+	},
     "aeff_weight_file": {
       "fixed": true,
-      "value": null
+      "value": "events/pingu_v36/events__pingu__v36__runs_388-390__proc_v5__joined_G_nuall_nc_G_nuallbar_nc.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -338,7 +342,7 @@
     },
     "pid_mode": {
       "fixed": true,
-      "value": "smooth"
+      "value": "param"
     },
     "pid_paramfile": {
       "fixed": true,
