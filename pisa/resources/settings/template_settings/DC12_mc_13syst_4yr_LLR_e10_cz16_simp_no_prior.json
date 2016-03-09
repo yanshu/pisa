@@ -396,7 +396,7 @@
     },
     "osc_code": {
       "fixed": true,
-      "value": "gpu"
+      "value": "prob3"
     },
     "pid_kernelfile": {
       "fixed": true,

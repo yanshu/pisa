@@ -22,8 +22,8 @@
 #         Feifei Huang - fxh140@psu.edu
 #
 # date:   8-Feb-2016
-from pympler.tracker import SummaryTracker
-tracker = SummaryTracker()
+#from pympler.tracker import SummaryTracker
+#tracker = SummaryTracker()
 import gc
 import numpy as np
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -295,4 +295,4 @@ if args.pseudo_data_settings is not None:
 
 # And write to file
 to_json(output,args.outfile)
-tracker.print_diff()
+#tracker.print_diff()
