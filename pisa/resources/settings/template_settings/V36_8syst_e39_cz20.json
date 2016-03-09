@@ -342,7 +342,7 @@
     },
     "pid_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "smooth"
     },
     "pid_paramfile": {
       "fixed": true,
