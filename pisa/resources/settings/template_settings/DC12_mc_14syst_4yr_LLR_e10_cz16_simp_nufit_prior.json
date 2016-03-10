@@ -49,10 +49,10 @@
       74.98942093,
       100.0
     ],
-    "oversample_cz": 10,
-    "oversample_e": 10,
-    "actual_oversample_cz": 1,
-    "actual_oversample_e": 1
+    "oversample_cz": 1,
+    "oversample_e": 1,
+    "actual_oversample_cz": 10,
+    "actual_oversample_e": 10
   },
   "params": {
     "PID_offset": {
@@ -154,7 +154,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__unjoined.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -336,6 +336,14 @@
       "fixed": true,
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
     },
+    "NuFluxIP_file": {
+        "fixed": true,
+        "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160.json"
+    },
+    "ocelot_file": {
+        "fixed": true,
+        "value": "oscillations/osc_probabilities_e140_cz160_good.json"
+    },
     "hole_ice": {
       "fixed": false,
       "prior": {
@@ -432,7 +440,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -444,7 +452,7 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "domeff_slope_file": {
       "fixed": true,
@@ -457,6 +465,14 @@
     "reco_prcs_coeff_file": {
       "fixed": true,
       "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+    },
+    "up_down_e_reco_prcs":{
+        "fixed": true,
+        "value": 1
+    },
+    "up_down_cz_reco_prcs":{
+        "fixed": true,
+        "value": 1
     },
     "up_down_reco_prcs":{
         "fixed": true,
