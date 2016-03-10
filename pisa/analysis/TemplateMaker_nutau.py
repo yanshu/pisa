@@ -23,6 +23,8 @@ from pisa.resources.resources import find_resource
 from pisa.utils.params import get_fixed_params, get_free_params, get_values, select_hierarchy
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.utils import Timer, oversample_binning
+import pisa.utils.flavInt as flavInt
+import pisa.utils.events as events
 
 from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
 #from pisa.flux.HondaFluxService import HondaFluxService
@@ -37,7 +39,7 @@ from pisa.aeff.Aeff import get_event_rates
 from pisa.reco.RecoServiceMC import RecoServiceMC
 from pisa.reco.RecoServiceParam import RecoServiceParam
 from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
-from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
+#from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 from pisa.reco.Reco import get_reco_maps
 
 from pisa.pid.PIDServiceParam import PIDServiceParam
@@ -208,7 +210,8 @@ class TemplateMaker:
     def calc_mc_errors(self):
         logging.info('Opening file: %s'%(self.reco_mc_wt_file))
         try:
-            fh = h5py.File(find_resource(self.reco_mc_wt_file),'r')
+            #fh = h5py.File(find_resource(self.reco_mc_wt_file),'r')
+            evts = events.Events(self.reco_mc_wt_file)
         except IOError,e:
             logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
@@ -218,14 +221,14 @@ class TemplateMaker:
             flavor_dict = {}
             logging.debug("Working on %s "%flavor)
             for int_type in ['cc','nc']:
-                reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
-                reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
-                while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
-                    reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
-                    reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
-
+                #reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
+                #reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                #while np.any(reco_coszen<-1) or np.any(reco_coszen>1):
+                #    reco_coszen[reco_coszen>1] = 2-reco_coszen[reco_coszen>1]
+                #    reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
                 bins = (self.anlys_ebins,self.czbins)
-                hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
+                #hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
+                hist_2d,_,_ = np.histogram2d(evts.get(flavor +'_'+int_type, 'reco_energy')+evts.get(flavor+'_bar_'+int_type, 'reco_energy'),evts.get(flavor +'_'+int_type,'reco_coszen')+evts.get(flavor +'_bar_'+int_type,'reco_coszen'),bins=bins)
                 flavor_dict[int_type] = hist_2d
             all_flavors_dict[flavor] = flavor_dict
         numu_cc_map = all_flavors_dict['numu']['cc']
@@ -263,9 +266,9 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_reco_prcs']): step_changed[3] = True
+                    elif (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_reco_prcs', 'hole_ice','dom_eff']: step_changed[5] = True
+                    elif p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']: step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
@@ -350,10 +353,10 @@ class TemplateMaker:
                     self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
-                    e_param_down = 1. + params['up_down_reco_prcs']*(params['e_reco_precision_up']-1.)
+                    e_param_down = 1. + params['up_down_e_reco_prcs']*(params['e_reco_precision_up']-1.)
                     self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, e_param_down)
                     self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
-                    cz_param_down = 1. + params['up_down_reco_prcs']*(params['cz_reco_precision_up']-1.)
+                    cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)
                     self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:

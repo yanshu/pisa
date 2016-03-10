@@ -30,6 +30,8 @@ parser = ArgumentParser(description='''Get the slopes for DOMeff and HoleIce fit
 parser.add_argument('-t','--template_settings',type=str,
                     metavar='JSONFILE', required = True,
                     help='''Settings related to the template generation and systematics.''')
+parser.add_argument('--plot',action='store_true',default=False,
+                    help="Plot the fits of DOM efficiency and hole ice for each bin.")
 args = parser.parse_args()
 
 def func_plane(param,a,b,c,d):
@@ -39,7 +41,7 @@ def func_plane(param,a,b,c,d):
 
 #Read in the settings
 
-png_name = "HoleIce_DOMeff_slopes"
+png_name = "slopes_plots"
 
 template_settings = from_json(args.template_settings)
 czbin_edges = template_settings['binning']['czbins']
@@ -81,7 +83,7 @@ for run_num in [50,60,61,64,65,70,71,72]:
     DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
     DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
     DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_up 
-    DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_down
+    DH_template_settings['params']['pid_paramfile_down']['value'] = pid_param_file_down
     DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
 
     DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
@@ -136,37 +138,36 @@ for flav in ['trck','cscd']:
 
             fixed_r_val = bin_ratio_values[0]
 
-            
-            def dom_eff_linear_through_point(x, k, fixed_r_val):
-                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-                return k*x + fixed_r_val - k*0.91
+            # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
+            exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
 
             ########### DOM efficiency #############
-    
-            fig_num = i * n_czbins+ j
-            if (fig_num == 0 or fig_num == n_czbins * n_ebins):
-                plt.figure(num=1, figsize=( 5*n_czbins, 4*n_ebins))
-            subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
-            #print 'subplot_idx = ', subplot_idx
-            plt.subplot(n_ebins, n_czbins, subplot_idx)
-            plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
-            plt.scatter(dom_eff[0:5], bin_ratio_values[0:5], color='blue')
-            plt.errorbar(dom_eff[0:5], bin_ratio_values[0:5], yerr=bin_ratio_err[0:5],fmt='none')
-            plt.xlim(0.7,1.2)
-            #plt.ylim(0.6,1.5)
-            plt.ylim(y_val_min,y_val_max)
 
             popt_1, pcov_1 = curve_fit(dom_eff_linear_through_point,dom_eff[0:5],bin_ratio_values[0:5])
             k1 = popt_1[0]
             k_DE[i][j]= k1
             fixed_ratio[i][j]= fixed_r_val
+   
+            if args.plot:
+                fig_num = i * n_czbins+ j
+                if (fig_num == 0 or fig_num == n_czbins * n_ebins):
+                    plt.figure(num=1, figsize=( 5*n_czbins, 4*n_ebins))
+                subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
+                #print 'subplot_idx = ', subplot_idx
+                plt.subplot(n_ebins, n_czbins, subplot_idx)
+                plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                plt.scatter(dom_eff[0:5], bin_ratio_values[0:5], color='blue')
+                plt.errorbar(dom_eff[0:5], bin_ratio_values[0:5], yerr=bin_ratio_err[0:5],fmt='none')
+                plt.xlim(0.7,1.2)
+                #plt.ylim(0.6,1.5)
+                plt.ylim(y_val_min,y_val_max)
 
-            dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
-            best_fit = dom_eff_linear_through_point(dom_func_plot_x, k1, fixed_r_val)
-            dom_func_plot, = plt.plot(dom_func_plot_x, best_fit, 'r-')
-            if(fig_num == n_czbins * n_ebins-1):
-                plt.savefig(png_name + '_domeff_%s.png'%flav )
-                plt.clf()
+                dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
+                best_fit = dom_eff_linear_through_point(dom_func_plot_x, k1)
+                dom_func_plot, = plt.plot(dom_func_plot_x, best_fit, 'r-')
+                if(fig_num == n_czbins * n_ebins-1):
+                    plt.savefig(png_name + '_domeff_%s.png'%flav )
+                    plt.clf()
 
     
             ########### Hole Ice #############
@@ -188,37 +189,37 @@ for flav in ['trck','cscd']:
 
             fixed_r_val = bin_ratio_values[0]
 
-            def hole_ice_linear_through_point(x, k, fixed_r_val):
-                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-                return k*x + fixed_r_val - k*0.02  
-
+            # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
+            exec('def hole_ice_linear_through_point(x, k): return k*x + %s - k*0.02'%fixed_r_val)
+            
             # get x values and y values
             ice_x = np.array([hole_ice[0],hole_ice[5],hole_ice[6],hole_ice[7]])
             ice_y = np.array([bin_ratio_values[0],bin_ratio_values[5],bin_ratio_values[6],bin_ratio_values[7]])
             ice_y_err = np.array([bin_ratio_err[0],bin_ratio_err[5],bin_ratio_err[6],bin_ratio_err[7]])
 
-            fig_num = i * n_czbins+ j
-            if (fig_num == 0 or fig_num == n_czbins * n_ebins):
-                plt.figure(num=2, figsize=( 5*n_czbins, 4*n_ebins))
-            subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
-            plt.subplot(n_ebins, n_czbins, subplot_idx)
-            plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
-            plt.scatter(ice_x, ice_y, color='blue')
-            plt.errorbar(ice_x, ice_y, yerr=ice_y_err,fmt='none')
-            plt.xlim(-0.02,0.06)
-            plt.ylim(0.6,1.5)
+            if args.plot:
+                fig_num = i * n_czbins+ j
+                if (fig_num == 0 or fig_num == n_czbins * n_ebins):
+                    plt.figure(num=2, figsize=( 5*n_czbins, 4*n_ebins))
+                subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
+                plt.subplot(n_ebins, n_czbins, subplot_idx)
+                plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                plt.scatter(ice_x, ice_y, color='blue')
+                plt.errorbar(ice_x, ice_y, yerr=ice_y_err,fmt='none')
+                plt.xlim(-0.02,0.06)
+                plt.ylim(0.5,1.5)
 
-            popt_2, pcov_2 = curve_fit(hole_ice_linear_through_point,ice_x,ice_y)
-            k2 = popt_2[0]
-            k_HI[i][j]= k2
+                popt_2, pcov_2 = curve_fit(hole_ice_linear_through_point,ice_x,ice_y)
+                k2 = popt_2[0]
+                k_HI[i][j]= k2
 
-            ice_func_plot_x = np.arange(-0.02, 0.06 + x_steps, x_steps)
-            best_fit = hole_ice_linear_through_point(ice_func_plot_x, k2, fixed_r_val)
-            ice_func_plot, = plt.plot(ice_func_plot_x, best_fit, 'r-')
+                ice_func_plot_x = np.arange(-0.02, 0.06 + x_steps, x_steps)
+                best_fit = hole_ice_linear_through_point(ice_func_plot_x, k2)
+                ice_func_plot, = plt.plot(ice_func_plot_x, best_fit, 'r-')
 
-            if(fig_num==n_czbins * n_ebins-1):
-                plt.savefig(png_name + '_holeice_%s.png'%flav )
-                plt.clf()
+                if(fig_num==n_czbins * n_ebins-1):
+                    plt.savefig(png_name + '_holeice_%s.png'%flav )
+                    plt.clf()
 
 
     fits_DOMEff[flav]['slopes'] = k_DE 

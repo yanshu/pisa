@@ -31,6 +31,9 @@ from pisa.utils.utils import is_logarithmic, check_fine_binning, oversample_binn
 import pycuda.driver as cuda
 import pycuda.compiler
 from pycuda.compiler import SourceModule
+print 'trying to autoinit'
+import pycuda.autoinit
+print 'autoinit done'
 
 #
 # NOTE: Unlike the other oscillation services, this GPU version does NOT inherit from
@@ -58,13 +61,13 @@ class Prob3GPUOscillationService():
         """
 
         self.gpu_id = gpu_id
-        try:
-            import pycuda.autoinit
-            self.context = cuda.Device(self.gpu_id).make_context()
-            print "Initializing PyCUDA using gpu id: %d"%self.gpu_id
-        except:
-            import pycuda.autoinit
-            print "Auto initializing PyCUDA..."
+        #try:
+        #    import pycuda.autoinit
+        #    self.context = cuda.Device(self.gpu_id).make_context()
+        #    print "Initializing PyCUDA using gpu id: %d"%self.gpu_id
+        #except:
+        #    import pycuda.autoinit
+        #    print "Auto initializing PyCUDA..."
 
         #mfree,mtot = cuda.mem_get_info()
         #print "free memory: %s mb",mfree/1.0e6

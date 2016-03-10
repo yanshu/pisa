@@ -22,18 +22,18 @@
 #         Feifei Huang - fxh140@psu.edu
 #
 # date:   8-Feb-2016
-
+#from pympler.tracker import SummaryTracker
+#tracker = SummaryTracker()
+import gc
 import numpy as np
-import copy
-import random as rnd
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_asimov_data_fmap_up_down, get_burn_sample, get_true_template
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample, get_true_template
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, change_nutau_norm_settings, fix_param, fix_all_params, change_settings
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, change_nutau_norm_settings, fix_param, change_settings
 
 # --- parse command line arguments ---
 parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
@@ -158,6 +158,7 @@ pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['para
 # perform n trials
 trials = []
 for itrial in xrange(1,args.ntrials+1):
+    results = {}
 
     profile.info("start trial %d"%itrial)
     logging.info(">"*10 + "Running trial: %05d"%itrial + "<"*10)
@@ -192,7 +193,6 @@ for itrial in xrange(1,args.ntrials+1):
 
     #keep results, with common denominator in second list
     fit_results = []
-    results = {}
     
     # save settings
     results['test_statistics'] = args.t_stat
@@ -253,7 +253,7 @@ for itrial in xrange(1,args.ntrials+1):
                 largs[2] = change_nutau_norm_settings(template_settings['params'], scan_param, 1.0, True)
             # profile LLH
             elif args.t_stat == 'profile':
-                physics.info("Finding best fit while profiling %"%scan_param)
+                physics.info("Finding best fit while profiling %s"%scan_param)
                 profile.info("start optimizer")
                 largs[2] = change_settings(template_settings['params'],scan_param,value, False)
             # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
@@ -265,6 +265,9 @@ for itrial in xrange(1,args.ntrials+1):
             # execute optimizer
             fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
             profile.info("stop optimizer")
+
+        del largs
+        del kwargs
 
         # -----------------------------------
 
@@ -280,6 +283,7 @@ for itrial in xrange(1,args.ntrials+1):
     # Store this trial
     trials.append(results)
     profile.info("stop trial %d"%itrial)
+    gc.collect()
 
 # Assemble output dict
 output = {}
@@ -291,3 +295,4 @@ if args.pseudo_data_settings is not None:
 
 # And write to file
 to_json(output,args.outfile)
+#tracker.print_diff()

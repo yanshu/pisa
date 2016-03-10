@@ -1,0 +1,518 @@
+{
+  "binning": {
+    "czbins": [
+      -1.0,
+      -0.875,
+      -0.75,
+      -0.625,
+      -0.5,
+      -0.375,
+      -0.25,
+      -0.125,
+      0.0,
+      0.125,
+      0.25,
+      0.375,
+      0.5,
+      0.625,
+      0.75,
+      0.875,
+      1.0
+    ],
+    "ebins": [
+      3.16227766,
+      4.21696503,
+      5.62341325,
+      7.49894209,
+      10.0,
+      13.33521432,
+      17.7827941,
+      23.71373706,
+      31.6227766,
+      42.16965034,
+      56.23413252,
+      74.98942093,
+      100.0,
+      133.35214322,
+      177.827941
+    ],
+    "anlys_ebins": [
+      5.62341325,
+      7.49894209,
+      10.0,
+      13.33521432,
+      17.7827941,
+      23.71373706,
+      31.6227766,
+      42.16965034,
+      56.23413252,
+      74.98942093,
+      100.0
+    ],
+    "oversample_cz": 10,
+    "oversample_e": 10,
+    "actual_oversample_cz": 1,
+    "actual_oversample_e": 1
+  },
+  "params": {
+    "PID_offset": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 0.0,
+        "kind": "gaussian",
+        "sigma": 0.02
+      },
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
+    "PID_scale": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.02
+      },
+      "range": [
+        0.9,
+        1.1
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "YeI": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.46,
+        0.47
+      ],
+      "scale": 1.0,
+      "value": 0.4656
+    },
+    "YeM": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.496,
+        0.495
+      ],
+      "scale": 1.0,
+      "value": 0.4957
+    },
+    "YeO": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.46,
+        0.47
+      ],
+      "scale": 1.0,
+      "value": 0.4656
+    },
+    "aeff_coszen_par": {
+      "fixed": true,
+      "value": "aeff/DC12/"
+    },
+    "aeff_egy_par": {
+      "fixed": true,
+      "value": {
+        "NC": "aeff/DC12/nocuts/a_eff_nuall_nc.dat",
+        "NC_bar": "aeff/DC12/nocuts/a_eff_nuallbar_nc.dat",
+        "nue": "aeff/DC12/nocuts/a_eff_nue.dat",
+        "nue_bar": "aeff/DC12/nocuts/a_eff_nuebar.dat",
+        "numu": "aeff/DC12/nocuts/a_eff_numu.dat",
+        "numu_bar": "aeff/DC12/nocuts/a_eff_numubar.dat",
+        "nutau": "aeff/DC12/nocuts/a_eff_nutau.dat",
+        "nutau_bar": "aeff/DC12/nocuts/a_eff_nutaubar.dat"
+      }
+    },
+    "aeff_mode": {
+      "fixed": true,
+      "value": "MC"
+    },
+    "aeff_scale": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "aeff_weight_file": {
+      "fixed": true,
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__unjoined.hdf5"
+    },
+    "atm_delta_index": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 0.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        -0.2,
+        0.2
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
+    "atmos_mu_scale": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        1.0
+      ],
+      "scale": 1.0,
+      "value": 0.37
+    },
+    "channel": {
+      "fixed": true,
+      "value": "all"
+    },
+    "cz_reco_precision_up": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "up_down_e_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "up_down_cz_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "deltacp": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        360.0
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
+    "deltam21": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 7.5e-05,
+        "kind": "gaussian",
+        "sigma": 2e-06
+      },
+      "range": [
+        7e-05,
+        8e-05
+      ],
+      "scale": 10000.0,
+      "value": 7.5e-05
+    },
+    "deltam31_ih": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        -0.1,
+        0.00
+      ],
+      "scale": 100.0,
+      "value": -0.00237
+    },
+    "deltam31_nh": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        0.1
+      ],
+      "scale": 100.0,
+      "value": 0.00246
+    },
+    "detector_depth": {
+      "fixed": true,
+      "value": 2.0
+    },
+    "dom_eff": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.1
+      },
+      "range": [
+        0.85,
+        1.15
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "e_reco_precision_up": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "earth_model": {
+      "fixed": true,
+      "value": "oscillations/PREM_12layer.dat"
+    },
+    "energy_scale": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.1
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "flux_file": {
+      "fixed": true,
+      "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
+    },
+    "hole_ice": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 0.02,
+        "kind": "gaussian",
+        "sigma": 0.01
+      },
+      "range": [
+        0.0,
+        0.05
+      ],
+      "scale": 10.0,
+      "value": 0.02
+    },
+    "icc_bg_file": {
+      "fixed": true,
+      "value": "background/Matt_L5b_icc_data_IC86_2_3_4.hdf5"
+    },
+    "livetime": {
+      "fixed": true,
+      "value": 4.0
+    },
+    "nu_nubar_ratio": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.1
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "nue_numu_ratio": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.2
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "nutau_norm": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        2.5
+      ],
+      "scale": 0.1,
+      "value": 1.0
+    },
+    "osc_code": {
+      "fixed": true,
+      "value": "prob3"
+    },
+    "pid_kernelfile": {
+      "fixed": true,
+      "value": null
+    },
+    "pid_mode": {
+      "fixed": true,
+      "value": "param"
+    },
+    "pid_paramfile_up": {
+      "fixed": true,
+      "value": "pid/1X60_pid.json"
+    },
+    "pid_paramfile_down": {
+      "fixed": true,
+      "value": "pid/1X60_pid_down.json"
+    },
+    "prop_height": {
+      "fixed": true,
+      "value": 20.0
+    },
+    "ratio_up_down": {
+      "fixed": true,
+      "value": false
+    },
+    "reco_kernel_file": {
+      "fixed": true,
+      "value": null
+    },
+    "reco_mc_wt_file": {
+      "fixed": true,
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
+    "reco_mode": {
+      "fixed": true,
+      "value": "MC"
+    },
+    "reco_param_file": {
+      "fixed": true,
+      "value": "reco/V36.json"
+    },
+    "reco_vbwkde_evts_file": {
+      "fixed": true,
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
+    "domeff_slope_file": {
+      "fixed": true,
+      "value": "domeff_holeice/DomEff_linear_fits_10_by_16.json"
+    },
+    "holeice_slope_file": {
+      "fixed": true,
+      "value": "domeff_holeice/HoleIce_quadratic_fits_10_by_16.json"
+    },
+    "reco_prcs_coeff_file": {
+      "fixed": true,
+      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+    },
+    "residual_up_down": {
+      "fixed": true,
+      "value": false
+    },
+    "simp_up_down": {
+      "fixed": true,
+      "value": true
+    },
+    "theta12": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 0.5846852994181004,
+        "kind": "gaussian",
+        "sigma": 0.013962634015954637
+      },
+      "range": [
+        0.5462880558742251,
+        0.6283185307179586
+      ],
+      "scale": 1.0,
+      "value": 0.5846852994181004
+    },
+    "theta13": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 0.14835298641951802,
+        "kind": "gaussian",
+        "sigma": 0.003490658503988659
+      },
+      "range": [
+        0.13700834628155487,
+        0.158824961931484
+      ],
+      "scale": 1.0,
+      "value": 0.14835298641951802
+    },
+    "theta23_ih": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.5,
+        1.0
+      ],
+      "scale": 1.0,
+      "value": 0.8639379797371932
+    },
+    "theta23_nh": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.5,
+        1.0
+      ],
+      "scale": 1.0,
+      "value": 0.7382742735936014
+    }
+  }
+}

@@ -40,6 +40,15 @@ class BackgroundServiceICC:
         reco_coszen_all = reco_coszen_all[dLLH>=-3]
         dLLH = dLLH[dLLH>=-3]
 
+        # split in half for testing:
+        #the commented out section was just a test for using subsets of the MC files
+        #reco_energy_all = reco_energy_all[len(reco_energy_all)/2:] 
+        #reco_coszen_all = reco_coszen_all[len(reco_coszen_all)/2:]
+        #dLLH = dLLH[len(dLLH)/2:]
+        #reco_energy_all = reco_energy_all[1::2]
+        #reco_coszen_all = reco_coszen_all[1::2]
+        #dLLH = dLLH[::2]
+
         # write to dictionary
         for flavor in ['cscd','trck']:
             if flavor == 'cscd':
