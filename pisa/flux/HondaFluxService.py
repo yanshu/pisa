@@ -31,7 +31,7 @@ class HondaFluxService():
        input files.
     """
 
-    def __init__(self, flux_file=None, smooth=0.05, IP=False, **params):
+    def __init__(self, flux_file=None, smooth=0.05, IP=True, **params):
         logging.info("Loading atmospheric flux table %s" %flux_file)
 
         # Store whether integral-preserving or not
@@ -110,6 +110,8 @@ class HondaFluxService():
 
         if not self.IP:
 
+            logging.debug('Evaluating the bsplines directly')
+
             #Evaluate the flux at the bin centers
             evals = get_bin_centers(ebins)
             czvals = get_bin_centers(czbins)
@@ -137,6 +139,8 @@ class HondaFluxService():
         # is evaluated at the required cosZen value
         
         else:
+
+            logging.debug('Evaluating the derivatives of the splines for integral-preserving method.')
             
             #Evaluate the flux at the bin centers
             evals = get_bin_centers(ebins)
