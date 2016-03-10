@@ -19,7 +19,6 @@ from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
 from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh
-from pisa.analysis.stats.Maps import flatten_map
 from pisa.analysis.stats.Maps_nutau import get_true_template
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
@@ -144,10 +143,6 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
     print ''
     before_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
-    if not save_steps:
-        for key in opt_steps_dict.keys():
-            before_check_opt_steps_dict[key] = [opt_steps_dict[key][-1]]
-    print "before check_octant, opt_steps_dict = ", before_check_opt_steps_dict 
 
     # If needed, run optimizer again, checking for second octant solution:
     if check_octant and ('theta23' in free_params.keys()):
@@ -177,18 +172,13 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
             iprint=0, bounds=bounds, **get_values(bfgs_settings))
 
         print ''
-        after_check_opt_steps_dict = copy.deepcopy(opt_steps_dict)
-        if not save_steps:
-            for key in opt_steps_dict.keys():
-                after_check_opt_steps_dict[key] = [opt_steps_dict[key][-1]]
-        print "after check_octant, opt_steps_dict = ", after_check_opt_steps_dict 
 
         # Alternative octant solution is optimal:
         if alt_llh < llh:
             best_fit_vals = alt_fit_vals
             llh = alt_llh
             dict_flags = alt_dict_flags
-            #opt_steps_dict = after_check_opt_steps_dict
+            del before_check_opt_steps_dict
         else:
             opt_steps_dict = before_check_opt_steps_dict
 
@@ -210,6 +200,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
         # Do not store the extra history of opt steps:
         for key in opt_steps_dict.keys():
             opt_steps_dict[key] = [opt_steps_dict[key][-1]]
+            del opt_steps_dict[key][:-1]
 
     #print "final result = ", opt_steps_dict
     return opt_steps_dict
@@ -275,6 +266,8 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     neg_llh = -get_binwise_llh(fmap,true_fmap)
     neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
+
+    del true_fmap
 
     # Save all optimizer-tested values to opt_steps_dict, to see
     # optimizer history later

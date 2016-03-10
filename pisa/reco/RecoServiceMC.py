@@ -14,7 +14,7 @@
 #
 
 import sys
-import h5py
+import pisa.utils.events as events
 import numpy as np
 from itertools import product
 from pisa.reco.RecoServiceBase import RecoServiceBase
@@ -51,7 +51,7 @@ class RecoServiceMC(RecoServiceBase):
         e_reco_precision_down = 1+up_down_cz_reco_prcs*(e_reco_precision_up-1)
         logging.info('Opening file: %s'%(simfile))
         try:
-            fh = h5py.File(find_resource(simfile),'r')
+            evts = events.Events(find_resource(simfile))
         except IOError,e:
             logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
@@ -66,10 +66,10 @@ class RecoServiceMC(RecoServiceBase):
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
             for int_type in ['cc','nc']:
-                true_energy = np.array(fh[flavor+'/'+int_type+'/true_energy'])
-                true_coszen = np.array(fh[flavor+'/'+int_type+'/true_coszen'])
-                reco_energy = np.array(fh[flavor+'/'+int_type+'/reco_energy'])
-                reco_coszen = np.array(fh[flavor+'/'+int_type+'/reco_coszen'])
+                true_energy = evts.get(flavor +'_'+int_type, 'true_energy')
+                true_coszen = evts.get(flavor +'_'+int_type, 'true_coszen')
+                reco_energy = evts.get(flavor +'_'+int_type, 'reco_energy')
+                reco_coszen = evts.get(flavor +'_'+int_type, 'reco_coszen')
 
                 if e_reco_precision_up != 1:
                     reco_energy[true_coszen<=0] *= e_reco_precision_up

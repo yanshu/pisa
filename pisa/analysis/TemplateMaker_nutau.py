@@ -232,7 +232,8 @@ class TemplateMaker:
                     reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
 
                 bins = (self.anlys_ebins,self.czbins)
-                hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
+                #hist_2d,_,_ = np.histogram2d(reco_energy,reco_coszen,bins=bins)
+                hist_2d,_,_ = np.histogram2d(evts.get(flavor +'_'+int_type, 'reco_energy')+evts.get(flavor+'_bar_'+int_type, 'reco_energy'),evts.get(flavor +'_'+int_type,'reco_coszen')+evts.get(flavor +'_bar_'+int_type,'reco_coszen'),bins=bins)
                 flavor_dict[int_type] = hist_2d
             all_flavors_dict[flavor] = flavor_dict
         numu_cc_map = all_flavors_dict['numu']['cc']
