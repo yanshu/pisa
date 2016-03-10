@@ -1,6 +1,6 @@
 {
   "deepcore":{
-     "6":{
+     "4digit":{
        "field_map":{
          "run": "I3EventHeader/Run",
          "nu_code": "PrimaryNu/type",
@@ -21,6 +21,48 @@
          "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
          "num_events_per_file": "I3MCWeightDict/NEvents",
          "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+         "pid": "IC86_Dunkman_L6/delta_LLH",
+         "dunkman_L6": "IC86_Dunkman_L6/result"
+         },
+         "nu_code_pdg_map":{
+           "66": 12,
+           "67": -12,
+           "68": 14,
+           "69": -14,
+           "133": 16,
+           "134": -16
+         },
+         "cuts": {
+             "analysis": {
+                 "fields": [
+                 "dunkman_L6"
+                 ],
+             "pass_if": "dunkman_L6 == 1"
+             }
+         }
+      },
+     "5digit":{
+       "field_map":{
+         "run": "I3EventHeader/Run",
+         "nu_code": "trueNeutrino/type",
+         "true_energy": "trueNeutrino/energy",
+         "true_zenith": "trueNeutrino/zenith",
+         "reco_energy": "IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC/energy",
+         "reco_zenith": "IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC/zenith",
+         "one_weight": "I3MCWeightDict/OneWeight",
+         "generator_volume": "I3MCWeightDict/GeneratorVolume",
+         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+         "detection_length": "I3MCWeightDict/TotalDetectionLength",
+         "interaction_type": "I3MCWeightDict/InteractionType",
+         "azimuth_min": "I3MCWeightDict/MinAzimuth",
+         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+         "zenith_min": "I3MCWeightDict/MinZenith",
+         "zenith_max": "I3MCWeightDict/MaxZenith",
+         "energy_log_min": "I3MCWeightDict/MaxEnergyLog",
+         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+         "num_events_per_file": "I3MCWeightDict/NEvents",
+         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+         "pid": "IC86_Dunkman_L6/delta_LLH",
          "dunkman_L6": "IC86_Dunkman_L6/result"
          },
          "nu_code_pdg_map":{
