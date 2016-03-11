@@ -13,7 +13,6 @@
 
 import sys
 import numpy as np
-import math
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import Julian_year
 
@@ -27,9 +26,9 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-#from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
-#from pisa.flux.HondaFluxService import HondaFluxService as HondaFluxService
-from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService
+from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
+#from pisa.flux.HondaFluxService import HondaFluxService
+#from pisa.flux.HondaFluxService_ste_plot import HondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -124,11 +123,6 @@ class TemplateMaker:
         elif osc_code == 'nucraft':
             from pisa.oscillations.NucraftOscillationService import NucraftOscillationService
             self.osc_service = NucraftOscillationService(
-                self.oversample_ebins, self.oversample_czbins, **template_settings
-            )
-        elif osc_code == 'ocelot':
-            from pisa.oscillations.OcelotOscillationService import OcelotOscillationService
-            self.osc_service = OcelotOscillationService(
                 self.oversample_ebins, self.oversample_czbins, **template_settings
             )
         else:
@@ -236,6 +230,7 @@ class TemplateMaker:
         nutau_cc_map = all_flavors_dict['nutau']['cc']
         nuall_nc_map = all_flavors_dict['numu']['nc']
 
+        #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
         mc_event_maps = {'params':self.params}
         mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
         mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
