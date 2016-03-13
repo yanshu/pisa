@@ -135,11 +135,11 @@
     },
     "aeff_coszen_smooth": {
       "fixed": true,
-      "value": "aeff/pingu_v38/aeff_coszen_smooth__pingu_v38__runs_600-602__proc_v5.1.json"
+      "value": "aeff/pingu_v39/aeff_coszen_smooth__pingu_v39__runs_620-622__proc_v5.1.json"
     },
     "aeff_energy_smooth": {
       "fixed": true,
-      "value": "aeff/pingu_v38/aeff_energy_smooth__pingu_v38__runs_600-602__proc_v5.1.json"
+      "value": "aeff/pingu_v39/aeff_energy_smooth__pingu_v39__runs_620-622__proc_v5.1.json"
     },
     "aeff_mode": {
       "fixed": true,
@@ -159,11 +159,11 @@
     },
 	"aeff_slice_smooth": {
       "fixed": true,
-      "value": "aeff/pingu_v38/aeff_slice_smooth__pingu_v38__runs_600-602__proc_5.1.hdf5"
+      "value": "aeff/pingu_v39/aeff_slice_smooth__pingu_v39__runs_620-622__proc_5.1.hdf5"
 	},
     "aeff_weight_file": {
       "fixed": true,
-      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nuall_nc_G_nuallbar_nc.hdf5"
+      "value": "events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nuall_nc_G_nuallbar_nc.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -329,7 +329,7 @@
     },
     "pid_energy_smooth": {
       "fixed": true,
-      "value": "pid/pingu_v38/pid_energy_smooth__pingu_v38__runs_600-602__proc_5.1__pid_1.json"
+      "value": "pid/pingu_v39/pid_energy_smooth__pingu_v39__runs_620-622__proc_5.1__pid_1.json"
     },
     "pid_kernelfile": {
       "fixed": true,
@@ -337,7 +337,7 @@
     },
     "pid_events": {
       "fixed": true,
-      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "pid_remove_true_downgoing": {
       "fixed": true,
@@ -353,11 +353,11 @@
     },
     "reco_kernel_file": {
       "fixed": true,
-      "value": "reco/pingu_v38/reco_kernels__pingu_v38__runs_600-602__proc_v5.1__vbwkde.hdf5"
+      "value": "reco/pingu_v39/reco_kernels__pingu_v39__runs_620-622__proc_v5.1__vbwkde.hdf5"
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -365,7 +365,7 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "events/pingu_v38/events__pingu__v38__runs_600-602__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "theta12": {
       "fixed": true,
