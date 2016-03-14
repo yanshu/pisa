@@ -9,7 +9,8 @@
 #
 # date:   02-July-2015
 #
-
+import matplotlib as mpl
+mpl.use('Agg')
 import copy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -34,22 +35,15 @@ parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 args = parser.parse_args()
 
-def func_plane(param,a,b,c,d):
-    x = param[0]
-    y = param[1]
-    return -(a/c)*x - (b/c)*y + d/c 
-
-#Read in the settings
-
 png_name = "slopes_plots"
 
+#Read in the settings
 template_settings = from_json(args.template_settings)
 czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
 channel = template_settings['params']['channel']['value']
-x_steps = 0.02
+x_steps = 0.0001
 
-template_settings = copy.deepcopy(template_settings)
 template_maker = TemplateMaker(get_values(template_settings['params']), **template_settings['binning'])
 
 templates = {}
@@ -104,6 +98,7 @@ for flav in ['trck','cscd']:
     k_DE = np.empty(np.shape(templates['60']['trck'])) 
     fixed_ratio = np.empty(np.shape(templates['60']['trck'])) 
     k_HI = np.empty(np.shape(templates['60']['trck'])) 
+    p_HI = np.empty(np.shape(templates['60']['trck'])) 
     for run_num in [50,60,61,64,65,70,71,72]:
         # (DOM efficiency, HoleIce Scattering): (0.91,50), (1.0,50), (0.95,50), (1.1,50), (1.05,50),(0.91,no),(0.91,30),(0.91,100)
         templ_list.append(templates[str(run_num)][flav])
@@ -151,11 +146,11 @@ for flav in ['trck','cscd']:
             if args.plot:
                 fig_num = i * n_czbins+ j
                 if (fig_num == 0 or fig_num == n_czbins * n_ebins):
-                    plt.figure(num=1, figsize=( 5*n_czbins, 4*n_ebins))
+                    fig = plt.figure(num=1, figsize=( 4*n_czbins, 4*n_ebins))
                 subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
                 #print 'subplot_idx = ', subplot_idx
                 plt.subplot(n_ebins, n_czbins, subplot_idx)
-                plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                #plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                 plt.scatter(dom_eff[0:5], bin_ratio_values[0:5], color='blue')
                 plt.errorbar(dom_eff[0:5], bin_ratio_values[0:5], yerr=bin_ratio_err[0:5],fmt='none')
                 plt.xlim(0.7,1.2)
@@ -165,8 +160,18 @@ for flav in ['trck','cscd']:
                 dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
                 best_fit = dom_eff_linear_through_point(dom_func_plot_x, k1)
                 dom_func_plot, = plt.plot(dom_func_plot_x, best_fit, 'r-')
+                if j > 0:
+                    plt.setp(plt.gca().get_yticklabels(), visible=False)
+                if i > 0:
+                    plt.setp(plt.gca().get_xticklabels(), visible=False)
                 if(fig_num == n_czbins * n_ebins-1):
+                    plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
+                    plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
+                    plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
+                    fig.subplots_adjust(hspace=0)
+                    fig.subplots_adjust(wspace=0)
                     plt.savefig(png_name + '_domeff_%s.png'%flav )
+                    plt.savefig(png_name + '_domeff_%s.pdf'%flav )
                     plt.clf()
 
     
@@ -190,7 +195,7 @@ for flav in ['trck','cscd']:
             fixed_r_val = bin_ratio_values[0]
 
             # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-            exec('def hole_ice_linear_through_point(x, k): return k*x + %s - k*0.02'%fixed_r_val)
+            exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-0.02) + p*(x-0.02)**2 + %s'%fixed_r_val)
             
             # get x values and y values
             ice_x = np.array([hole_ice[0],hole_ice[5],hole_ice[6],hole_ice[7]])
@@ -200,30 +205,43 @@ for flav in ['trck','cscd']:
             if args.plot:
                 fig_num = i * n_czbins+ j
                 if (fig_num == 0 or fig_num == n_czbins * n_ebins):
-                    plt.figure(num=2, figsize=( 5*n_czbins, 4*n_ebins))
+                    fig = plt.figure(num=2, figsize=( 4*n_czbins, 4*n_ebins))
                 subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
                 plt.subplot(n_ebins, n_czbins, subplot_idx)
-                plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                #plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                 plt.scatter(ice_x, ice_y, color='blue')
                 plt.errorbar(ice_x, ice_y, yerr=ice_y_err,fmt='none')
                 plt.xlim(-0.02,0.06)
                 plt.ylim(0.5,1.5)
 
-                popt_2, pcov_2 = curve_fit(hole_ice_linear_through_point,ice_x,ice_y)
+                popt_2, pcov_2 = curve_fit(hole_ice_quadratic_through_point,ice_x,ice_y)
                 k2 = popt_2[0]
+                p2 = popt_2[1]
                 k_HI[i][j]= k2
+                p_HI[i][j]= p2
 
                 ice_func_plot_x = np.arange(-0.02, 0.06 + x_steps, x_steps)
-                best_fit = hole_ice_linear_through_point(ice_func_plot_x, k2)
+                best_fit = hole_ice_quadratic_through_point(ice_func_plot_x, k2,p2)
                 ice_func_plot, = plt.plot(ice_func_plot_x, best_fit, 'r-')
+                if j > 0:
+                    plt.setp(plt.gca().get_yticklabels(), visible=False)
+                if i > 0:
+                    plt.setp(plt.gca().get_xticklabels(), visible=False)
 
                 if(fig_num==n_czbins * n_ebins-1):
+                    fig.subplots_adjust(hspace=0)
+                    fig.subplots_adjust(wspace=0)
+                    plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
+                    plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
+                    plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
                     plt.savefig(png_name + '_holeice_%s.png'%flav )
+                    plt.savefig(png_name + '_holeice_%s.pdf'%flav )
                     plt.clf()
 
 
     fits_DOMEff[flav]['slopes'] = k_DE 
-    fits_HoleIce[flav]['slopes'] = k_HI
+    fits_HoleIce[flav]['linear'] = k_HI
+    fits_HoleIce[flav]['quadratic'] = p_HI
     fits_DOMEff[flav]['fixed_ratios'] = fixed_ratio 
     fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
@@ -233,5 +251,5 @@ output_template = {'templates' : templates,
 #And write to file
 to_json(output_template,'DomEff_templates_up_down_10_by_16.json')
 to_json(fits_DOMEff,'DomEff_linear_fits_10_by_16.json')
-to_json(fits_HoleIce,'HoleIce_linear_fits_10_by_16.json')
+to_json(fits_HoleIce,'HoleIce_quadratic_fits_10_by_16.json')
 
