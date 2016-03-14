@@ -21,6 +21,8 @@ from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import open_resource
 
+import matplotlib.pyplot as plt
+
 #Global definition of primaries for which there is a neutrino flux
 primaries = ['numu', 'numu_bar', 'nue', 'nue_bar']
 
@@ -90,7 +92,8 @@ class HondaFluxService():
             for nutype in primaries:
                 # spline_dict now wants to be a set of splines for
                 # every table cosZenith value.
-                splines = []
+                splines = {}
+                CZiter = 1
                 for energyfluxlist in flux_dict[nutype]:
                     int_flux = []
                     tot_flux = 0.0
@@ -101,7 +104,10 @@ class HondaFluxService():
                         int_flux.append(tot_flux)
 
                     spline = splrep(int_flux_dict['logenergy'],int_flux,s=0)
-                    splines.append(spline)
+                    CZvalue = '%.2f'%(1.05-CZiter*0.1)
+                    splines[CZvalue] = spline
+                    CZiter += 1
+                    
                 self.spline_dict[nutype] = splines
 
     def get_flux(self, ebins, czbins, prim):
@@ -151,20 +157,22 @@ class HondaFluxService():
             for energyval in evals:
                 logenergyval = np.log10(energyval)
                 spline_vals = []
-                for spline in self.spline_dict[prim]:
+                for czkey in np.linspace(-0.95,0.95,20):
                     # Have to multiply by bin widths to get correct derivatives
                     # Here the bin width is in log energy, is 0.05
-                    spline_vals.append(splev(logenergyval,spline,der=1)*0.05/energyval)
+                    spline_vals.append(splev(logenergyval,self.spline_dict[prim]['%.2f'%czkey],der=1)*0.05)
                 int_spline_vals = []
                 tot_val = 0.0
                 int_spline_vals.append(tot_val)
                 for val in spline_vals:
                     tot_val += val
                     int_spline_vals.append(tot_val)
+
                 spline = splrep(np.linspace(-1,1,21),int_spline_vals,s=0)
+                
                 # Have to multiply by bin widths to get correct derivatives
                 # Here the bin width is in cosZenith, is 0.1
-                czfluxes = splev(czvals,spline,der=1)*0.1
+                czfluxes = splev(czvals,spline,der=1)*0.1/energyval
                 return_table.append(czfluxes)
 
             return_table = np.array(return_table).T
