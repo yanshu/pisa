@@ -176,7 +176,7 @@ class TemplateMaker:
                 flux_maps = get_flux_maps(self.flux_service, self.ebins,
                                           self.czbins, **params)
             else:
-                flux_maps = from_json(self.flux_file)
+                flux_maps = from_json(find_resource(self.flux_file))
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         logging.info("STAGE 2: Getting osc prob maps...")
@@ -224,7 +224,7 @@ class TemplateMaker:
                 flux_maps = get_flux_maps(self.flux_service, self.ebins,
                                           self.czbins, **params)
             else:
-                flux_maps = from_json(self.flux_file)
+                flux_maps = from_json(find_resource(self.flux_file))
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         # Skipping oscillation stage...
