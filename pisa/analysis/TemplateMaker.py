@@ -81,7 +81,18 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        self.flux_service = HondaFluxService(**template_settings)
+        flux_calc = template_settings['flux_calc']
+        if flux_calc.lower() == 'bisplrep':
+            self.flux_service = HondaFluxService(**template_settings, IP=False)
+        elif flux_calc.lower() == 'integral-preserving':
+            self.flux_service = HondaFluxService(**template_settings, IP=True)
+        elif flux_calc.lower() == 'table':
+            self.flux_service = None
+            self.flux_file = template_settings['flux_file']
+        else:
+            error_msg = "flux_calc: %s is not implemented! "%flux_calc
+            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving', 'table']"
+            raise NotImplementedError(error_msg)
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
@@ -161,8 +172,11 @@ class TemplateMaker:
 
         logging.info("STAGE 1: Getting Atm Flux maps...")
         with Timer() as t:
-            flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                      self.czbins, **params)
+            if self.flux_service is not None:
+                flux_maps = get_flux_maps(self.flux_service, self.ebins,
+                                          self.czbins, **params)
+            else:
+                flux_maps = from_json(self.flux_file)
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         logging.info("STAGE 2: Getting osc prob maps...")
@@ -206,8 +220,11 @@ class TemplateMaker:
 
         logging.info("STAGE 1: Getting Atm Flux maps...")
         with Timer() as t:
-            flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                      self.czbins, **params)
+            if self.flux_service is not None:
+                flux_maps = get_flux_maps(self.flux_service, self.ebins,
+                                          self.czbins, **params)
+            else:
+                flux_maps = from_json(self.flux_file)
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         # Skipping oscillation stage...
