@@ -182,6 +182,9 @@ if __name__ == '__main__':
     parser.add_argument('--flux_file', metavar='FILE', type=str,
                         help= '''Input flux file in Honda format. ''',
                         default = 'flux/spl-solmax-aa.d')
+    parser.add_argument('--flux_calc', metavar='STRING', type=str,
+                        help='''Type of flux interpolation to perform''',
+                        default='bisplrep')
     parser.add_argument('--nue_numu_ratio',metavar='FLOAT',type=float,
                         help='''Factor to scale nue_flux by''',default=1.0)
     parser.add_argument('--nu_nubar_ratio',metavar='FLOAT',type=float,
@@ -206,12 +209,20 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate a flux model
-    flux_model = HondaFluxService(args.flux_file)
+    if args.flux_calcs.lower() == 'bisplrep':
+        flux_model = HondaFluxService(args.flux_file, IP=False)
+    if args.flux_calcs.lower() == 'integral-preserving':
+        flux_model = HondaFluxService(args.flux_file, IP=True)
+    if args.flux_calcs.lower() == 'table':
+        flux_model = None
 
     #get the flux
-    flux_maps = get_flux_maps(
-        flux_model, args.ebins, args.czbins, args.nue_numu_ratio, args.nu_nubar_ratio,
-        args.energy_scale, args.delta_index)
+    if flux_model is not None:
+        flux_maps = get_flux_maps(
+            flux_model, args.ebins, args.czbins, args.nue_numu_ratio, args.nu_nubar_ratio,
+            args.energy_scale, args.delta_index)
+    else:
+        flux_maps = from_json(args.flux_file)
 
     #write out to a file
     logging.info("Saving output to: %s"%args.outfile)
