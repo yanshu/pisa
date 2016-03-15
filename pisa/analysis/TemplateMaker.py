@@ -83,9 +83,9 @@ class TemplateMaker:
         # Instantiate a flux model service
         flux_calc = template_settings['flux_calc']
         if flux_calc.lower() == 'bisplrep':
-            self.flux_service = HondaFluxService(**template_settings, IP=False)
+            self.flux_service = HondaFluxService(IP=False, **template_settings)
         elif flux_calc.lower() == 'integral-preserving':
-            self.flux_service = HondaFluxService(**template_settings, IP=True)
+            self.flux_service = HondaFluxService(IP=True, **template_settings)
         elif flux_calc.lower() == 'table':
             self.flux_service = None
             self.flux_file = template_settings['flux_file']
