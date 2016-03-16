@@ -215,11 +215,8 @@ class TemplateMaker:
 
         logging.info("STAGE 1: Getting Atm Flux maps...")
         with Timer() as t:
-            if self.flux_service is not None:
-                flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                          self.czbins, **params)
-            else:
-                flux_maps = from_json(find_resource(self.flux_file))
+            flux_maps = get_flux_maps(self.flux_service, self.ebins,
+                                      self.czbins, **params)
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         # Skipping oscillation stage...
