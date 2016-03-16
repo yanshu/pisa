@@ -10,11 +10,7 @@
 #
 
 import sys
-<<<<<<< HEAD
-import copy
-=======
 from copy import deepcopy
->>>>>>> 88ad6f6ec69110bf7d7ae4d2e89a8fd09f4eecb4
 import numpy as np
 import scipy.optimize as opt
 

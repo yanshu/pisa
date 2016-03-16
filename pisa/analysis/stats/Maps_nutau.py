@@ -17,6 +17,7 @@ from pisa.utils.utils import Timer
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
+from scipy.stats import poisson, norm
 
 def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_level, channel):
 
@@ -141,6 +142,20 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         fmap = get_random_map(true_fmap, seed=seed)
     else:
         fmap = get_random_map(true_fmap, seed=Maps.get_seed())
+    return fmap
+
+def get_stat_fluct_map(template_maker, fiducial_params, channel, seed=None):
+    """
+    Get a map that is fluctuated by the statistical uncertainty of the model
+    """
+    true_template = template_maker.get_template(fiducial_params)
+    true_fmap = Maps.flatten_map(true_template, channel=channel)
+    sumw2 = Maps.flatten_map(true_template, channel=channel,mapname='sumw2')
+    sigma = np.sqrt(sumw2)
+    if not seed is None:
+        np.random.seed(seed=seed)
+    fmap = np.array([norm.rvs(m,s) for m,s in zip(true_fmap,sigma)])
+    fmap.clip(0,out=fmap)
     return fmap
 
 def get_true_template(template_params, template_maker, no_sys_applied=False):

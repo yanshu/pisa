@@ -71,7 +71,7 @@ def get_asimov_fmap(template_maker, fiducial_params, channel=None):
     #print "  params in asimov: ",fiducial_params.items()
     return flatten_map(true_template, channel=channel)
 
-def flatten_map(template, channel='all'):
+def flatten_map(template, channel='all',mapname='map'):
     """
     Takes a final level true (expected) template of trck/cscd, and returns a
     single flattened map of trck appended to cscd, with all zero bins
@@ -81,20 +81,20 @@ def flatten_map(template, channel='all'):
     logging.trace("Getting flattened map of channel: %s"%channel)
 
     if channel == 'all':
-        cscd = template['cscd']['map'].flatten()
-        trck = template['trck']['map'].flatten()
+        cscd = template['cscd'][mapname].flatten()
+        trck = template['trck'][mapname].flatten()
         fmap = np.append(cscd, trck)
     elif channel == 'trck':
-        trck = template[channel]['map'].flatten()
+        trck = template[channel][mapname].flatten()
         fmap = np.array(trck)
         #fmap = np.array(fmap)[np.nonzero(fmap)]
     elif channel == 'cscd':
-        cscd = template[channel]['map'].flatten()
+        cscd = template[channel][mapname].flatten()
         fmap = np.array(cscd)
         #fmap = np.array(fmap)[np.nonzero(fmap)]
     elif channel == 'no_pid':
-        cscd = template['cscd']['map'].flatten()
-        trck = template['trck']['map'].flatten()
+        cscd = template['cscd'][mapname].flatten()
+        trck = template['trck'][mapname].flatten()
         fmap = cscd + trck
         #fmap = np.array(fmap)[np.nonzero(fmap)]
     else:
