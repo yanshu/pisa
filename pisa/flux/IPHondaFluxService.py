@@ -54,8 +54,6 @@ class IPHondaFluxService():
         #Now get a spline representation of the flux table.
         logging.debug('Make spline representation of flux')
         logging.debug('Doing this integral-preserving. Will take longer')
-        # do this in log of energy and log of flux (more stable)
-        logE, C = np.meshgrid(np.log10(flux_dict['energy']), flux_dict['coszen'])
 
         self.spline_dict = {}
 
