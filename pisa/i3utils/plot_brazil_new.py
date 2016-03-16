@@ -21,12 +21,12 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
     sigmap = np.array([])
     sigmam2 = np.array([])
     sigmap2 = np.array([])
-    for hypo in hypos:
-        median = np.append(median,np.percentile(data['%.1f'%hypo],50))
-        sigmam = np.append(sigmam,np.percentile(data['%.1f'%hypo],16))
-        sigmam2 = np.append(sigmam2,np.percentile(data['%.1f'%hypo],5))
-        sigmap = np.append(sigmap,np.percentile(data['%.1f'%hypo],84))
-        sigmap2 = np.append(sigmap2,np.percentile(data['%.1f'%hypo],95))
+    for datum in data:
+        median = np.append(median,np.percentile(datum,50))
+        sigmam = np.append(sigmam,np.percentile(datum,16))
+        sigmam2 = np.append(sigmam2,np.percentile(datum,5))
+        sigmap = np.append(sigmap,np.percentile(datum,84))
+        sigmap2 = np.append(sigmap2,np.percentile(datum,95))
     
     plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y','c','m','k']*2) +
                            cycler('linestyle', ['-']*7+['--']*7)))
@@ -38,7 +38,7 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
         ax = plt.subplot2grid((6,1), (0,0), rowspan=5)
     else:
         ax = fig.add_subplot(111)
-    if hypos:
+    if len(hypos):
         ax.fill_between(hypos,sigmam2,sigmap2,facecolor='b', linewidth=0, alpha=0.15, label='90% range')
         ax.fill_between(hypos,sigmam,sigmap,facecolor='b', linewidth=0, alpha=0.3, label='68% range')
         ax.plot(hypos,median, color='k', label='median')
@@ -142,6 +142,7 @@ if __name__ == '__main__':
     results = []
     hypos = []
     sys = None
+    data = {}
 
     # get llh denominators for q for each seed
     for filename in os.listdir(args.dir):
@@ -158,16 +159,23 @@ if __name__ == '__main__':
                     if name == 'nufit_prior' or name =='no_prior' or name == 'nominal':
                         sys = asimov_results[name].keys()
                 elif ts == 'profile':
-                    hypos = trial['nutau_norm']
-                    results = trial['fit_results'][0]
-                    results['llh'] = trial['q']
+                    data['hypos'] = trial['nutau_norm']
+                    for key in trial['fit_results'][0]:
+                        if key == 'llh':
+                            val = trial['q']
+                        else:
+                            val = trial['fit_results'][0][key]
+                        if data.has_key(key):
+                            [x.append(y) for x,y in zip(data[key],val)]
+                        else:
+                            data[key] = [[x] for x in val]
                     total += 1
-
 
     if args.dist:
         for s in syslist:
             dist(results, asimov_results,hypos, asimov_hypos, params, total)
     else:
-        for s in sys:
-            plot(s,results, asimov_results,hypos, asimov_hypos, params, total)
+        for s in data.keys():
+            if s != 'hypos':
+                plot(s,data[s], asimov_results,data['hypos'], asimov_hypos, params, total)
 

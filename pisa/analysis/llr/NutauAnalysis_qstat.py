@@ -31,7 +31,7 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample, get_true_template
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample, get_true_template, get_stat_fluct_map
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, change_nutau_norm_settings, fix_param, change_settings
 
@@ -68,6 +68,7 @@ parser.add_argument('--mu-hypo', default=0.0, dest='mu_hypo', help='''nu tau nor
 parser.add_argument('--scan', default='', dest='scan', help='''parameter to be scanned, e.g. hole_ice=[0.,0.1,0.2,0.3]i, not available for llr''')
 parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='inv_h_data', help='''invert mass hierarchy in psudodata''')
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
+parser.add_argument('--fluct', default='poisson', help='''What random sampling to be used for psudo data, this is usually just poisson, but can also be set to model_stat to gaussian fluctuate the model expectations by theiruncertainty''')
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusance parameter to a value by e.g. -f nuisance_p=1.2 for grid point calculations''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
@@ -183,11 +184,20 @@ for itrial in xrange(1,args.ntrials+1):
         else:
             results['seed'] = get_seed()
         logging.info("  RNG seed: %ld"%results['seed'])
-        fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
-                                    get_values(pseudo_data_settings['params']),
-                                    seed=results['seed'],
-                                    channel=channel
-                                    )
+        if args.fluct == 'poisson':
+            fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
+                                        get_values(pseudo_data_settings['params']),
+                                        seed=results['seed'],
+                                        channel=channel
+                                        )
+        elif args.fluct == 'model_stat':
+            fmap = get_stat_fluct_map(pseudo_data_template_maker,
+                                        get_values(pseudo_data_settings['params']),
+                                        seed=results['seed'],
+                                        channel=channel
+                                        )
+        else:
+            raise Exception('psudo data fluctuation method not implemented!')
 
     # -----------------------------------
 
