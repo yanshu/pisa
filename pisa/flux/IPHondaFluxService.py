@@ -46,9 +46,6 @@ class IPHondaFluxService():
 
             #There are 20 lines per zenith range
             flux_dict[key] = np.array(np.split(flux_dict[key], 20))
-            if not IP:
-                if not key=='energy':
-                    flux_dict[key] = flux_dict[key].T
 
         #Set the zenith and energy range
         flux_dict['energy'] = flux_dict['energy'][0]
