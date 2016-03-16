@@ -16,7 +16,7 @@
 
 import os
 import numpy as np
-from scipy.interpolate import bisplrep, bisplev, splrep, splev
+from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import open_resource
@@ -31,11 +31,8 @@ class HondaFluxService():
        input files.
     """
 
-    def __init__(self, flux_file=None, smooth=0.05, IP=True, **params):
+    def __init__(self, flux_file=None, smooth=0.05, **params):
         logging.info("Loading atmospheric flux table %s" %flux_file)
-
-        # Store whether integral-preserving or not
-        self.IP = IP
 
         #Load the data table
         table = np.loadtxt(open_resource(flux_file)).T
@@ -58,130 +55,42 @@ class HondaFluxService():
 
         #Now get a spline representation of the flux table.
         logging.debug('Make spline representation of flux')
-        if IP:
-            logging.debug('Doing this integral-preserving. Will take longer')
-        else:
-            logging.debug('Doing quick linear interpolation')
+        logging.debug('Doing quick bivariate spline interpolation')
         # do this in log of energy and log of flux (more stable)
         logE, C = np.meshgrid(np.log10(flux_dict['energy']), flux_dict['coszen'])
 
         self.spline_dict = {}
-
-        # Do simple linear interpolation if not integral-preserving
-        if not IP:
         
-            for nutype in primaries:
-                #Get the logarithmic flux
-                log_flux = np.log10(flux_dict[nutype]).T
-                #Get a spline representation
-                spline =  bisplrep(logE, C, log_flux, s=smooth)
-                #and store
-                self.spline_dict[nutype] = spline
-
-        # Do integral-preserving method as in IceCube's NuFlux
-        # This one will be based purely on SciPy rather than ROOT
-        # Stored splines will be 1D in integrated flux over energy
-        else:
-            int_flux_dict = {}
-            # Energy and CosZenith bins needed for integral-preserving
-            # method must be the edges of those of the normal tables
-            int_flux_dict['logenergy'] = np.linspace(-1.025,4.025,102)
-            int_flux_dict['coszen'] = np.linspace(-1,1,21)
-            for nutype in primaries:
-                # spline_dict now wants to be a set of splines for
-                # every table cosZenith value.
-                splines = {}
-                CZiter = 1
-                for energyfluxlist in flux_dict[nutype]:
-                    int_flux = []
-                    tot_flux = 0.0
-                    int_flux.append(tot_flux)
-                    for energyfluxval, energyval in zip(energyfluxlist, flux_dict['energy']):
-                        # Spline works best if you integrate flux * energy
-                        tot_flux += energyfluxval*energyval
-                        int_flux.append(tot_flux)
-
-                    spline = splrep(int_flux_dict['logenergy'],int_flux,s=0)
-                    CZvalue = '%.2f'%(1.05-CZiter*0.1)
-                    splines[CZvalue] = spline
-                    CZiter += 1
-                    
-                self.spline_dict[nutype] = splines
+        for nutype in primaries:
+            #Get the logarithmic flux
+            log_flux = np.log10(flux_dict[nutype]).T
+            #Get a spline representation
+            spline =  bisplrep(logE, C, log_flux, s=smooth)
+            #and store
+            self.spline_dict[nutype] = spline
 
     def get_flux(self, ebins, czbins, prim):
         """Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary."""
 
-        if not self.IP:
-
-            logging.debug('Evaluating the bsplines directly')
-
-            #Evaluate the flux at the bin centers
-            evals = get_bin_centers(ebins)
-            czvals = get_bin_centers(czbins)
-
-            # Get the spline interpolation, which is in
-            # log(flux) as function of log(E), cos(zenith)
-            return_table = bisplev(np.log10(evals), czvals, self.spline_dict[prim])
-            return_table = np.power(10., return_table).T
-
-            #Flux is given per sr and GeV, so we need to multiply
-            #by bin width in both dimensions
-            #Get the bin size in both dimensions
-            ebin_sizes = get_bin_sizes(ebins)
-            czbin_sizes = 2.*np.pi*get_bin_sizes(czbins)
-            bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
-
-            return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
-
-            return return_table.T
-
-        # Integral-preserving mode is more involved.
-        # Requires evaluating differential of splines at the
-        # chosen energy value for each table cosZen value.
-        # These values are the integrated, splined and the differential
-        # is evaluated at the required cosZen value
+        logging.debug('Evaluating the bsplines directly')
         
-        else:
+        #Evaluate the flux at the bin centers
+        evals = get_bin_centers(ebins)
+        czvals = get_bin_centers(czbins)
 
-            logging.debug('Evaluating the derivatives of the splines for integral-preserving method.')
-            
-            #Evaluate the flux at the bin centers
-            evals = get_bin_centers(ebins)
-            czvals = get_bin_centers(czbins)
+        # Get the spline interpolation, which is in
+        # log(flux) as function of log(E), cos(zenith)
+        return_table = bisplev(np.log10(evals), czvals, self.spline_dict[prim])
+        return_table = np.power(10., return_table).T
 
-            return_table = []
+        #Flux is given per sr and GeV, so we need to multiply
+        #by bin width in both dimensions
+        #Get the bin size in both dimensions
+        ebin_sizes = get_bin_sizes(ebins)
+        czbin_sizes = 2.*np.pi*get_bin_sizes(czbins)
+        bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
 
-            for energyval in evals:
-                logenergyval = np.log10(energyval)
-                spline_vals = []
-                for czkey in np.linspace(-0.95,0.95,20):
-                    # Have to multiply by bin widths to get correct derivatives
-                    # Here the bin width is in log energy, is 0.05
-                    spline_vals.append(splev(logenergyval,self.spline_dict[prim]['%.2f'%czkey],der=1)*0.05)
-                int_spline_vals = []
-                tot_val = 0.0
-                int_spline_vals.append(tot_val)
-                for val in spline_vals:
-                    tot_val += val
-                    int_spline_vals.append(tot_val)
-
-                spline = splrep(np.linspace(-1,1,21),int_spline_vals,s=0)
-                
-                # Have to multiply by bin widths to get correct derivatives
-                # Here the bin width is in cosZenith, is 0.1
-                czfluxes = splev(czvals,spline,der=1)*0.1/energyval
-                return_table.append(czfluxes)
-
-            return_table = np.array(return_table).T
-
-            #Flux is given per sr and GeV, so we need to multiply
-            #by bin width in both dimensions
-            #Get the bin size in both dimensions
-            ebin_sizes = get_bin_sizes(ebins)
-            czbin_sizes = 2.*np.pi*get_bin_sizes(czbins)
-            bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
-
-            return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
-
-            return return_table.T
+        return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
+        
+        return return_table.T

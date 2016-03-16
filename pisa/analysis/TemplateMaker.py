@@ -23,6 +23,7 @@ from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.utils import Timer
 
 from pisa.flux.HondaFluxService import HondaFluxService
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
@@ -81,17 +82,14 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        flux_calc = template_settings['flux_calc']
-        if flux_calc.lower() == 'bisplrep':
-            self.flux_service = HondaFluxService(IP=False, **template_settings)
-        elif flux_calc.lower() == 'integral-preserving':
-            self.flux_service = HondaFluxService(IP=True, **template_settings)
-        elif flux_calc.lower() == 'table':
-            self.flux_service = None
-            self.flux_file = template_settings['flux_file']
+        flux_mode = template_settings['flux_mode']
+        if flux_mode.lower() == 'bisplrep':
+            self.flux_service = HondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'integral-preserving':
+            self.flux_service = IPHondaFluxService(**template_settings)
         else:
-            error_msg = "flux_calc: %s is not implemented! "%flux_calc
-            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving', 'table']"
+            error_msg = "flux_mode: %s is not implemented! "%flux_mode
+            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
             raise NotImplementedError(error_msg)
 
         # Oscillated Flux Service:
@@ -172,11 +170,8 @@ class TemplateMaker:
 
         logging.info("STAGE 1: Getting Atm Flux maps...")
         with Timer() as t:
-            if self.flux_service is not None:
-                flux_maps = get_flux_maps(self.flux_service, self.ebins,
-                                          self.czbins, **params)
-            else:
-                flux_maps = from_json(find_resource(self.flux_file))
+            flux_maps = get_flux_maps(self.flux_service, self.ebins,
+                                      self.czbins, **params)
         tprofile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
 
         logging.info("STAGE 2: Getting osc prob maps...")

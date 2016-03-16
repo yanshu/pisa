@@ -23,11 +23,11 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.stats.Maps import apply_ratio_scale
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import get_bin_centers
-
 
 def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     """
@@ -182,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--flux_file', metavar='FILE', type=str,
                         help= '''Input flux file in Honda format. ''',
                         default = 'flux/spl-solmax-aa.d')
-    parser.add_argument('--flux_calc', metavar='STRING', type=str,
+    parser.add_argument('--flux_mode', metavar='STRING', type=str,
                         help='''Type of flux interpolation to perform''',
                         default='bisplrep')
     parser.add_argument('--nue_numu_ratio',metavar='FLOAT',type=float,
@@ -209,20 +209,19 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate a flux model
-    if args.flux_calcs.lower() == 'bisplrep':
-        flux_model = HondaFluxService(args.flux_file, IP=False)
-    if args.flux_calcs.lower() == 'integral-preserving':
-        flux_model = HondaFluxService(args.flux_file, IP=True)
-    if args.flux_calcs.lower() == 'table':
-        flux_model = None
+    logging.info("Defining flux service...")
+    
+    if args.flux_mode.lower() == 'integral-preserving':
+        logging.info("  Using Honda tables with integral-preserving interpolation...")
+        flux_model = IPHondaFluxService(args.flux_file)
+    else:
+        logging.info("  Using Honda tables with simple bisplrep interpolation...")
+        flux_model = HondaFluxService(args.flux_file)
 
     #get the flux
-    if flux_model is not None:
-        flux_maps = get_flux_maps(
-            flux_model, args.ebins, args.czbins, args.nue_numu_ratio, args.nu_nubar_ratio,
-            args.energy_scale, args.delta_index)
-    else:
-        flux_maps = from_json(args.flux_file)
+    flux_maps = get_flux_maps(
+        flux_model, args.ebins, args.czbins, args.nue_numu_ratio, args.nu_nubar_ratio,
+        args.energy_scale, args.delta_index)
 
     #write out to a file
     logging.info("Saving output to: %s"%args.outfile)
