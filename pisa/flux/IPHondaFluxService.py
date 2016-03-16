@@ -20,7 +20,7 @@
 import os
 import numpy as np
 from scipy.interpolate import splrep, splev
-from pisa.flux.HondaFluxSerive import primaries
+from pisa.flux.HondaFluxService import primaries
 from pisa.utils.log import logging
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.resources.resources import open_resource
