@@ -18,7 +18,7 @@ from pisa.utils.jsons import to_json
 from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
-from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh
+from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh, get_binwise_smeared_llh
 from pisa.analysis.stats.Maps_nutau import get_true_template
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
@@ -256,14 +256,15 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
 
     # Now get true template, and compute LLH
     with Timer() as t:
-        true_fmap = get_true_template(template_params,template_maker)
+        true_fmap,sumw2_map = get_true_template(template_params,template_maker,error=True) 
 
     profile.debug("==> elapsed time for template maker: %s sec"%t.secs)
 
     # NOTE: The minus sign is present on both of these next two lines
     # to reflect the fact that the optimizer finds a minimum rather
     # than maximum.
-    neg_llh = -get_binwise_llh(fmap,true_fmap)
+    #neg_llh = -get_binwise_llh(fmap,true_fmap)
+    neg_llh = -get_binwise_smeared_llh(fmap, true_fmap, sumw2_map)
     neg_llh -= sum([prior.llh(opt_val)
                     for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
 
