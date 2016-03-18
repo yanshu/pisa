@@ -66,10 +66,10 @@ class RecoServiceMC(RecoServiceBase):
             flavor_dict = {}
             logging.debug("Working on %s kernels"%flavor)
             for int_type in ['cc','nc']:
-                true_energy = evts.get(flavor +'_'+int_type, 'true_energy')
-                true_coszen = evts.get(flavor +'_'+int_type, 'true_coszen')
-                reco_energy = evts.get(flavor +'_'+int_type, 'reco_energy')
-                reco_coszen = evts.get(flavor +'_'+int_type, 'reco_coszen')
+                true_energy = evts[flavor][int_type]['true_energy']
+                true_coszen = evts[flavor][int_type]['true_coszen']
+                reco_energy = evts[flavor][int_type]['reco_energy']
+                reco_coszen = evts[flavor][int_type]['reco_coszen']
 
                 if e_reco_precision_up != 1:
                     reco_energy[true_coszen<=0] *= e_reco_precision_up
