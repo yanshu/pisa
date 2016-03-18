@@ -226,7 +226,6 @@ class TemplateMaker:
         mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
         mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
 
-        #final_MC_event_rate = get_pid_maps(mc_event_maps, self.pid_service)
         final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
         self.rel_error = {}
         self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
@@ -330,7 +329,6 @@ class TemplateMaker:
         if any(step_changed[:5]):
             physics.debug("STAGE 5: Getting pid maps...")
             with Timer(verbose=False) as t:
-                #self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
                 self.event_rate_pid_maps = self.pid_service.get_pid_maps(self.event_rate_reco_maps)
             profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
         else:
