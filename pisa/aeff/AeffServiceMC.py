@@ -34,10 +34,12 @@ class AeffServiceMC:
         for flavint in flavInt.ALL_NUFLAVINTS:
             logging.debug("Working on %s effective areas" % flavint)
             bins = (self.ebins, self.czbins)
+            true_e = evts[flavint]['true_energy']
+            true_cz =evts[flavint]['true_coszen']
+            weights = evts[flavint]['weighted_aeff']
             aeff_hist, _, _ = np.histogram2d(
-                evts.get(flavint, 'true_energy'),
-                evts.get(flavint, 'true_coszen'),
-                weights=evts.get(flavint, 'weighted_aeff'),
+                true_e, true_cz,
+                weights= weights,
                 bins=bins
             )
 

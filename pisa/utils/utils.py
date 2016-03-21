@@ -433,7 +433,7 @@ def mkdir(d, mode=0750):
         os.makedirs(d, mode=mode)
     except OSError as err:
         if err[0] == 17:
-            logging.info('Directory "' + str(d) + '" already exists')
+            logging.warn('Directory "' + str(d) + '" already exists')
         else:
             raise err
     else:
@@ -757,6 +757,17 @@ def inspect_cur_frame():
     frame, filename, line_num, fn_name, lines, index = \
         inspect.getouterframes(inspect.currentframe())[1]
     return "%s:%s at %s" % (filename, line_num, fn_name)
+
+
+def prefilled_map(ebins, czbins, val, dtype=float):
+    n_ebins = len(ebins) - 1
+    n_czbins = len(czbins) - 1
+    newmap = {
+        'ebins': ebins,
+        'czbins': czbins,
+        'map': np.full(shape=(n_ebins, n_czbins), fill_value=val, dtype=dtype)
+    }
+    return newmap
 
 
 def hash_obj(obj):

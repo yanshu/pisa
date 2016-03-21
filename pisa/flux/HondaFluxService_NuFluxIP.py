@@ -31,7 +31,7 @@ class HondaFluxService():
        or actual_over_sample_cz applied.  Flux unit: [GeV^-1 m^-2 s^-1 sr^-1]
     """
 
-    def __init__(self, NuFluxIP_file=None, smooth=0.05, **params):
+    def __init__(self, NuFluxIP_file=None, **params):
         logging.info("Loading atmospheric flux table %s" %NuFluxIP_file)
 
         # Read from json file

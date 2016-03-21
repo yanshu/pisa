@@ -36,7 +36,8 @@ class PIDServiceParam(PIDServiceBase):
         * pid_paramfile_up: JSON containing the parametrizations for up-going map
         * pid_paramfile_down: JSON containing the parametrizations for down-going map
         """
-        PIDServiceBase.__init__(self, ebins, czbins, **kwargs)
+        PIDServiceBase.__init__(self, ebins, czbins)
+        self.get_pid_kernels(**kwargs)
 
 
     def get_pid_kernels(self, pid_paramfile_up=None,pid_paramfile_down = None,
