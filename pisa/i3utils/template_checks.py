@@ -65,7 +65,6 @@ if __name__ == '__main__':
     set_verbosity(args.verbose)
 
     template_settings = from_json(args.template_settings)
-    template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
     template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
     template_settings['params']['livetime']['value'] = args.y
@@ -84,7 +83,6 @@ if __name__ == '__main__':
         #nominal_nutau = nominal_nutau_all[5]
         nominal_nutau = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=args.all)
         aeff_maps = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=False, return_aeff_maps=True)
-        #print "aeff_maps = ", aeff_maps
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
     #### Plot Background #####
@@ -158,10 +156,20 @@ if __name__ == '__main__':
    
     if args.plot_f_1_0_diff:
         nominal_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm( template_settings['params'],True,0.0))
+        no_nominal_template_maker = TemplateMaker(get_values(nominal_no_nutau_params), **template_settings['binning'])
+        print "get_value(nominal_no_nutau_params= ", get_values(nominal_no_nutau_params)
+        nominal_no_nutau = no_nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
         nominal_no_nutau = nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
+        print "nominal_no_nutau= ", nominal_no_nutau['cscd']['map']
+        print "nominal_nutau= ", nominal_nutau['cscd']['map']
         nominal_nutau_minus_no_nutau = {}
         nominal_nutau_minus_no_nutau['cscd'] = delta_map(nominal_nutau['cscd'], nominal_no_nutau['cscd'])
         nominal_nutau_minus_no_nutau['trck'] = delta_map(nominal_nutau['trck'], nominal_no_nutau['trck'])
+        print 'no. of nominal_no_nutau_cscd = ', np.sum(nominal_no_nutau['cscd']['map'])
+        print 'no. of nominal_no_nutau_trck = ', np.sum(nominal_no_nutau['trck']['map'])
+        print ' total of the above two : ', np.sum(nominal_no_nutau['cscd']['map'])+np.sum(nominal_no_nutau['trck']['map'])
+        print ' \n'
+
         for flav in ['cscd', 'trck']:
             plt.figure()
             show_map(nominal_nutau_minus_no_nutau[flav],vmax=20 if flav=='cscd' else 5, logE=not(args.no_logE), xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
