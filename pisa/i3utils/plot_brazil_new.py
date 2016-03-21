@@ -9,6 +9,7 @@ from scipy.stats import chi2
 from scipy import optimize
 from matplotlib.offsetbox import AnchoredText
 import matplotlib.cm as cm
+from scipy.ndimage import zoom
 from cycler import cycler
 from pisa.utils.jsons import from_json
 import collections
@@ -27,6 +28,13 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
         sigmam2 = np.append(sigmam2,np.percentile(datum,5))
         sigmap = np.append(sigmap,np.percentile(datum,84))
         sigmap2 = np.append(sigmap2,np.percentile(datum,95))
+    if name == 'llh':
+        sigmap = zoom(sigmap,10)
+        sigmam2 = zoom(sigmam2,10)
+        sigmam = zoom(sigmam,10)
+        median = zoom(median,10)
+        sigmap2 = zoom(sigmap2,10)
+        hypos = zoom(hypos,10)
     
     plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y','c','m','k']*2) +
                            cycler('linestyle', ['-']*7+['--']*7)))
@@ -54,35 +62,45 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
             #    label = '_'.join(text[:-2]) + ' fixed'
             label = key
             ax.plot(asimov_hypos[key],asimov[key][name], label=label)
-    ax.legend(loc='upper center',ncol=2, frameon=False,numpoints=1,fontsize=10)
+    ax.legend(loc='upper right',ncol=1, frameon=False,numpoints=1,fontsize=10)
     ax.set_xlabel(r'$\nu_{\tau}$ normalization')
+    ax.set_xlim(min(hypos),max(hypos))
+    a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s trials\nPreliminary'%(params['livetime']['value'],trials), loc=2, frameon=False)
+    ax.add_artist(a_text)
     #ax.patch.set_facecolor('white')
     #ax.set_axis_bgcolor('white') 
     #ax.set_frame_on(False)
     if name == 'llh':
-        ax.set_title('profile likelihood, 4 years, %s trials'%trials)
+        best_idx = np.argmin(median)
+        best = hypos[best_idx]
+        best_ms = np.interp(1,median[best_idx::-1],hypos[best_idx::-1])
+        best_m2s = np.interp(4,median[best_idx::-1],hypos[best_idx::-1])
+        best_ps = np.interp(1,median[best_idx:],hypos[best_idx:])
+        best_p2s = np.interp(4,median[best_idx:],hypos[best_idx:])
+        print best_m2s,best_ms,best,best_ps,best_p2s
         ax2 = plt.subplot2grid((6,1), (5,0),sharex=ax)
-        ax2.errorbar(np.array([1.42]),np.array([1.]),xerr=np.array([[0.47],[0.49]]),fmt='--o')
-        ax2.text(0.1,0.75,r'Super-K 2013 (68%)',size=10)
-        ax2.errorbar(np.array([1.8]),np.array([2.]),xerr=np.array([[1.1],[1.8]]),fmt='--o')
-        ax2.text(0.1,1.75,r'Opera 2015 (90%)',size=10)
-        ax2.set_ylim(0,3)
+        ax2.errorbar(np.array([1.42]),np.array([1.]),xerr=np.array([[0.47],[0.49]]),fmt='.',color='forestgreen')
+        ax2.text(0.05,0.75,r'Super-K 2013 (68%)',size=8)
+        ax2.errorbar(np.array([1.8]),np.array([2.]),xerr=np.array([[1.1],[1.8]]),fmt='.',color='sienna')
+        ax2.text(0.05,1.75,r'Opera 2015 (90%)',size=8)
+        ax2.errorbar(np.array([best]),np.array([3.]),xerr=np.array([[best-best_ms],[best_ps-best]]),fmt='.',color='mediumblue')
+        ax2.errorbar(np.array([best]),np.array([3.]),xerr=np.array([[best-best_m2s],[best_p2s-best]]),fmt='.',color='mediumblue')
+        ax2.text(0.05,2.75,r'Expected (68%, 95%)',size=8)
+        ax2.set_ylim(0,4)
         ax2.set_xlim(0,2)
+        ax2.get_yaxis().set_visible(False)
         fig.subplots_adjust(hspace=0)
         plt.setp(ax.get_xticklabels(), visible=False)
         plt.setp(ax2.get_yticklabels(), visible=False)
         ax2.set_xlabel(r'$\nu_{\tau}$ normalization')
         for i in [0.5,1,1.5]:
-            ax2.axvline(i,color='k', linestyle=':',alpha=0.5)
-
-    else:
-        ax.set_title('nuisance pulls, 4 years, %s trials'%trials)
+            ax2.axvline(i,color='k', linestyle='-',alpha=0.2)
     if name == 'llh':
         ax.set_ylabel(r'$-2\Delta LLH$')
         ax.set_ylim([0,40])
         for i in [1,4,9,16,25,36]:
-            ax.axhline(i,color='k', linestyle='-',alpha=0.25)
-            ax.text(1.85,i,r'$%s \sigma$'%np.sqrt(i), alpha=0.5)
+            ax.axhline(i,color='k', linestyle='-',alpha=0.2)
+            ax.text(2.02,i-0.2,r'$%i\ \sigma$'%np.sqrt(i))
     else:
         ax.set_ylabel(name)
         if params.has_key(name):
@@ -103,7 +121,7 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
                 delta = ax.get_ylim()[1]-ax.get_ylim()[0]
                 ax.set_ylim(ax.get_ylim()[0]-0.4*delta, ax.get_ylim()[1]+0.4*delta)
     for i in [0.5,1,1.5]:
-        ax.axvline(i,color='k', linestyle=':',alpha=0.5)
+        ax.axvline(i,color='k', linestyle='-',alpha=0.2)
     plt.show()
     plt.savefig('q1_%s.png'%name, facecolor=fig.get_facecolor(), edgecolor='none')
     plt.savefig('q1_%s.pdf'%name, facecolor=fig.get_facecolor(), edgecolor='none')
@@ -123,7 +141,7 @@ def dist(data,name,hypos, asimov_hypos, params,trials):
                 ax.axvline(params_value, color='g',linewidth=2)
         ax.set_xlabel(name)
         ax.set_ylim(ax.get_ylim()[0], ax.get_ylim()[1]*1.2)
-        ax.set_title('profile likelihood, 4 years, %s trials'%trials)
+        ax.set_title('profile likelihood, %s years, %s trials'%(params['livetime']['value'],trials))
         plt.show()
         plt.savefig('q%.1f_%s.png'%(hypo,name),transparent=True)
 

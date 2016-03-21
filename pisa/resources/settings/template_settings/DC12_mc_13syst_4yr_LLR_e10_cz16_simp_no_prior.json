@@ -154,7 +154,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__unjoined.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -388,12 +388,16 @@
         "kind": "uniform"
       },
       "range": [
-        0.0,
-        2.5
+        -1.5,
+        3.5
       ],
       "scale": 0.1,
       "value": 1.0
     },
+     "NuFluxIP_file": {
+          "fixed": true,
+           "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160.json"
+      },
     "osc_code": {
       "fixed": true,
       "value": "prob3"
@@ -428,7 +432,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
