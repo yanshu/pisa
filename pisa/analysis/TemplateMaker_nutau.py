@@ -26,9 +26,8 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
-#from pisa.flux.HondaFluxService import HondaFluxService
-#from pisa.flux.HondaFluxService_ste_plot import HondaFluxService
+from pisa.flux.HondaFluxService import HondaFluxService
+#from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -40,12 +39,10 @@ from pisa.aeff.Aeff import get_event_rates
 from pisa.reco.RecoServiceMC import RecoServiceMC
 from pisa.reco.RecoServiceParam import RecoServiceParam
 from pisa.reco.RecoServiceKernelFile import RecoServiceKernelFile
-#from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
+from pisa.reco.RecoServiceVBWKDE import RecoServiceVBWKDE
 from pisa.reco.Reco import get_reco_maps
 
-from pisa.pid.PIDServiceParam import PIDServiceParam
-from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
-from pisa.pid.PID import get_pid_maps
+from pisa.pid import PID
 
 from pisa.background.BackgroundServiceICC import BackgroundServiceICC 
 from pisa.background.ICCBackground import add_icc_background
@@ -164,18 +161,10 @@ class TemplateMaker:
             error_msg+=" Please choose among: ['MC', 'param', 'stored','vbwkde']"
             raise NotImplementedError(error_msg)
 
-        # PID Service:
-        pid_mode = template_settings['pid_mode']
-        if pid_mode == 'param':
-            self.pid_service = PIDServiceParam( self.anlys_ebins, self.czbins,
-                                                 **template_settings)
-        elif pid_mode == 'stored':
-            self.pid_service = PIDServiceKernelFile(self.anlys_ebins, self.czbins,
-                                                    **template_settings)
-        else:
-            error_msg = "pid_mode: %s is not implemented! "%pid_mode
-            error_msg+=" Please choose among: ['stored', 'param']"
-            raise NotImplementedError(error_msg)
+        # Instantiate a PID service
+        self.pid_service = PID.pid_service_factory(
+            ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
+        )
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -222,7 +211,7 @@ class TemplateMaker:
             logging.debug("Working on %s "%flavor)
             for int_type in ['cc','nc']:
                 bins = (self.anlys_ebins,self.czbins)
-                hist_2d,_,_ = np.histogram2d(evts.get(flavor +'_'+int_type, 'reco_energy')+evts.get(flavor+'_bar_'+int_type, 'reco_energy'),evts.get(flavor +'_'+int_type,'reco_coszen')+evts.get(flavor +'_bar_'+int_type,'reco_coszen'),bins=bins)
+                hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy']+evts[flavor+'_bar'][int_type]['reco_energy'],evts[flavor][int_type]['reco_coszen']+evts[flavor +'_bar_'][int_type]['reco_coszen'],bins=bins)
                 flavor_dict[int_type] = hist_2d
             all_flavors_dict[flavor] = flavor_dict
         numu_cc_map = all_flavors_dict['numu']['cc']
@@ -237,13 +226,13 @@ class TemplateMaker:
         mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
         mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
 
-        final_MC_event_rate = get_pid_maps(mc_event_maps, self.pid_service)
+        final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
         self.rel_error = {}
         self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -314,13 +303,20 @@ class TemplateMaker:
                                             'ebins': np.zeros_like(test_map['ebins']),
                                             'czbins': np.zeros_like(test_map['czbins'])}
 
-        if any(step_changed[:3]):
-            physics.debug("STAGE 3: Getting event rate true maps...")
-            with Timer() as t:
-                self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
-            profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+        if not return_aeff_maps:
+            if any(step_changed[:3]):
+                physics.debug("STAGE 3: Getting event rate true maps...")
+                with Timer() as t:
+                    self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
+                profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
+            else:
+                profile.debug("STAGE 3: Reused from step before...")
         else:
-            profile.debug("STAGE 3: Reused from step before...")
+            osc_flux_maps_ones = self.osc_flux_maps
+            flavours = ['numu', 'numu_bar','nue','nue_bar', 'nutau', 'nutau_bar']
+            for flav in flavours:
+                osc_flux_maps_ones[flav]['map']= np.ones_like(osc_flux_maps_ones[flav]['map'])
+            return get_event_rates(osc_flux_maps_ones,self.aeff_service, **params)
 
         if any(step_changed[:4]):
             physics.debug("STAGE 4: Getting event rate reco maps...")
@@ -333,7 +329,7 @@ class TemplateMaker:
         if any(step_changed[:5]):
             physics.debug("STAGE 5: Getting pid maps...")
             with Timer(verbose=False) as t:
-                self.event_rate_pid_maps = get_pid_maps(self.event_rate_reco_maps,self.pid_service)
+                self.event_rate_pid_maps = self.pid_service.get_pid_maps(self.event_rate_reco_maps)
             profile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 5: Reused from step before...")

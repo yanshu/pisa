@@ -337,8 +337,8 @@
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
     },
     "NuFluxIP_file": {
-        "fixed": true,
-        "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160.json"
+      "fixed": true,
+      "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160_avg_100epoints_100czpoints.json"
     },
     "ocelot_file": {
         "fixed": true,
@@ -347,9 +347,9 @@
     "hole_ice": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.2,
+        "fiducial": 0.02,
         "kind": "gaussian",
-        "sigma": 0.1
+        "sigma": 0.01
       },
       "range": [
         0.0,
@@ -414,6 +414,18 @@
       "fixed": true,
       "value": null
     },
+    "pid_events": {
+      "fixed": true,
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
+    "pid_ver": {
+      "fixed": true,
+      "value": "1"
+    },
+    "pid_remove_true_downgoing": {
+      "fixed": true,
+      "value": null
+    },
     "pid_mode": {
       "fixed": true,
       "value": "param"
@@ -466,21 +478,51 @@
       "fixed": true,
       "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
     },
-    "up_down_e_reco_prcs":{
-        "fixed": true,
-        "value": 1
+    "up_down_e_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
     },
-    "up_down_cz_reco_prcs":{
-        "fixed": true,
-        "value": 1
-    },
-    "up_down_reco_prcs":{
-        "fixed": true,
-        "value": 1
+    "up_down_cz_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
     },
     "residual_up_down": {
       "fixed": true,
       "value": false
+    },
+    "up_down_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
     },
     "simp_up_down": {
       "fixed": true,

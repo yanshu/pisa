@@ -41,6 +41,8 @@ if __name__ == '__main__':
                         help='atmos background scale value')
     parser.add_argument('-y','--y',type=float,
                         help='No. of livetime[ unit: Julian year]')
+    parser.add_argument('--plot_aeff_maps',action='store_true', default= False,
+                        help='Plot aeff maps') 
     parser.add_argument('--plot_f_1_0_diff',action='store_true', default= False,
                         help='Plot template different between f=1 and f=0')
     parser.add_argument('--plot_other_nutau_norm',action='store_true', default= False,
@@ -63,7 +65,6 @@ if __name__ == '__main__':
     set_verbosity(args.verbose)
 
     template_settings = from_json(args.template_settings)
-    template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
     template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
     template_settings['params']['livetime']['value'] = args.y
@@ -78,7 +79,10 @@ if __name__ == '__main__':
 
     with Timer(verbose=False) as t:
         print 'getting nominal_nutau '
+        #nominal_nutau_all = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=True)
+        #nominal_nutau = nominal_nutau_all[5]
         nominal_nutau = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=args.all)
+        aeff_maps = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=False, return_aeff_maps=True)
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
     #### Plot Background #####
@@ -113,7 +117,7 @@ if __name__ == '__main__':
         show_map(nominal_nutau[flav],vmax=np.max(nominal_nutau[flav]['map'])+10,logE=not(args.no_logE))
         if args.save:
             filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_' % (args.y, args.bg_scale) + '%s.png'%flav)
-            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, flav, np.sum(nominal_nutau[flav]['map']), args.bg_scale), fontsize='large')
+            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, flav.replace('_',''), np.sum(nominal_nutau[flav]['map']), args.bg_scale), fontsize='large')
             plt.savefig(filename,dpi=150)
             plt.clf()
 
@@ -121,7 +125,18 @@ if __name__ == '__main__':
     print 'no. of nominal_nutau_trck = ', np.sum(nominal_nutau['trck']['map'])
     print ' total of the above two : ', np.sum(nominal_nutau['cscd']['map'])+np.sum(nominal_nutau['trck']['map'])
     print ' \n'
-    
+
+    if args.plot_aeff_maps:
+        for flav in ['numu', 'numu_bar', 'nue', 'nue_bar', 'nutau', 'nutau_bar']:
+            for int_type in ['cc', 'nc']:
+                plt.figure()
+                show_map(aeff_maps[flav][int_type],vmax=np.max(aeff_maps[flav][int_type]['map'])+10,logE=not(args.no_logE))
+                if args.save:
+                    filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_1_EffectiveAreaMap_' % (args.y, args.bg_scale) + '%s_%s.png'%(flav, int_type))
+                    plt.title(r'${\rm %s \, yr \, %s \, %s \, Effective \, Area \, map }$'%(args.y, flav.replace('_',''), int_type), fontsize='large')
+                    plt.savefig(filename,dpi=150)
+                    plt.clf()
+
     if args.plot_other_nutau_norm:
         other_nutau_norm_val_params = copy.deepcopy(select_hierarchy_and_nutau_norm( template_settings['params'],True,args.val))
         other_nutau_norm_val = nominal_template_maker.get_template(get_values(other_nutau_norm_val_params),return_stages=args.all)
@@ -130,7 +145,7 @@ if __name__ == '__main__':
             show_map(other_nutau_norm_val[flav],vmax=np.max(other_nutau_norm_val[flav]['map'])+10,logE=not(args.no_logE))
             if args.save:
                 filename = os.path.join(args.outdir,args.title+ '_%s_yr_bg_scale_%s_NutauCCNorm_%s_' % (args.y, args.bg_scale, args.val) + '%s.png'% flav)
-                plt.title(r'${\rm %s \, yr \, %s \, (\nu_{\tau} \, CC \, norm: \, %s , \, Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, flav, args.val, np.sum(other_nutau_norm_val[flav]['map']), args.bg_scale), fontsize='large')
+                plt.title(r'${\rm %s \, yr \, %s \, (\nu_{\tau} \, CC \, norm: \, %s , \, Nevts: \, %.1f, \, bg \, scale \, %s) }$'%(args.y, flav.replace('_',''), args.val, np.sum(other_nutau_norm_val[flav]['map']), args.bg_scale), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
 
@@ -141,17 +156,27 @@ if __name__ == '__main__':
    
     if args.plot_f_1_0_diff:
         nominal_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm( template_settings['params'],True,0.0))
+        no_nominal_template_maker = TemplateMaker(get_values(nominal_no_nutau_params), **template_settings['binning'])
+        print "get_value(nominal_no_nutau_params= ", get_values(nominal_no_nutau_params)
+        nominal_no_nutau = no_nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
         nominal_no_nutau = nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
+        print "nominal_no_nutau= ", nominal_no_nutau['cscd']['map']
+        print "nominal_nutau= ", nominal_nutau['cscd']['map']
         nominal_nutau_minus_no_nutau = {}
         nominal_nutau_minus_no_nutau['cscd'] = delta_map(nominal_nutau['cscd'], nominal_no_nutau['cscd'])
         nominal_nutau_minus_no_nutau['trck'] = delta_map(nominal_nutau['trck'], nominal_no_nutau['trck'])
+        print 'no. of nominal_no_nutau_cscd = ', np.sum(nominal_no_nutau['cscd']['map'])
+        print 'no. of nominal_no_nutau_trck = ', np.sum(nominal_no_nutau['trck']['map'])
+        print ' total of the above two : ', np.sum(nominal_no_nutau['cscd']['map'])+np.sum(nominal_no_nutau['trck']['map'])
+        print ' \n'
+
         for flav in ['cscd', 'trck']:
             plt.figure()
             show_map(nominal_nutau_minus_no_nutau[flav],vmax=20 if flav=='cscd' else 5, logE=not(args.no_logE), xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
             if args.save:
                 scale_E = 'linE' if args.no_logE else 'logE'
                 filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_%s.png'%flav)
-                plt.title(r'${\rm 1 \, yr \, %s \, (Nevts: \, %.1f) }$'%(flav, np.sum(nominal_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
+                plt.title(r'${\rm 1 \, yr \, %s \, (Nevts: \, %.1f) }$'%(flav.replace('_',''), np.sum(nominal_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
 
