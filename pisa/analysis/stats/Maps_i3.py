@@ -242,13 +242,10 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     if output_form == 'reco_info':
         return (reco_xyzt_from_i3, reco_energy_from_i3, reco_coszen_from_i3, trck_len_from_i3, osc_weights)
 
-    if output_form == 'osc_flux_map':
-        return osc_flux_maps_from_i3
+    #if output_form == 'osc_flux_map':
+    #    return osc_flux_maps_from_i3
 
-    if output_form == 'aeff_map':
-        return aeff_maps_from_i3
-
-    if output_form == 'final_map':
+    if output_form == 'aeff_and_final_map':
         final_maps_from_i3 = {}
         cut_pid = {}
         for flavor in ['nue', 'numu', 'nutau']:
@@ -274,6 +271,6 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
             final_maps_from_i3[channel] = {'map':pid_hist,
                                            'ebins':anlys_ebins,
                                            'czbins':czbins}
-        return final_maps_from_i3
+        return aeff_maps_from_i3, final_maps_from_i3
 
 
