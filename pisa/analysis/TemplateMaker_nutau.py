@@ -26,8 +26,9 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.HondaFluxService import HondaFluxService
-#from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService
+from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
+from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService as nufluxIPHondaFluxService
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -103,7 +104,19 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
+        #self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
+
+        flux_mode = template_settings['flux_mode']
+        if flux_mode.lower() == 'bisplrep':
+            self.flux_service = HondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'nuflux_ip':
+            self.flux_service = nufluxIPHondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'integral-preserving':
+            self.flux_service = IPHondaFluxService(**template_settings)
+        else:
+            error_msg = "flux_mode: %s is not implemented! "%flux_mode
+            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
+            raise NotImplementedError(error_msg)
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
@@ -348,7 +361,7 @@ class TemplateMaker:
                     self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
                     cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)
                     self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
-            profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
+                profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 6: Reused from step before...")
 
