@@ -13,8 +13,8 @@ import numpy as np
 import sys, logging
 from pisa.utils.utils import get_bin_sizes
 
-def get_arb_cuts(data, cut_list, mcnu='MCNeutrino', nuIDList=None,
-                 cut_sim_down=False):
+def get_arb_cuts(data, cut_list, e_min=None, e_max=None, mcnu='MCNeutrino', nuIDList=None,
+                 cut_sim_down=False, cut_e_range=False):
     '''
     Make arbitrary set of cuts, defined from cut_list and data.
 
@@ -47,6 +47,14 @@ def get_arb_cuts(data, cut_list, mcnu='MCNeutrino', nuIDList=None,
             conditions.append(np.cos(data.root.__getattr__(mcnu).col('zenith'))<0.)
         except:
             conditions.append(np.cos(data.root.__getattribute__(mcnu).col('zenith'))<0.)
+    if cut_e_range:
+        logging.debug("  >>Getting only events in energy range!")
+        try:
+            conditions.append(data.root.__getattr__(mcnu).col('energy')< e_max)
+            conditions.append(data.root.__getattr__(mcnu).col('energy')>= e_min)
+        except:
+            conditions.append(data.root.__getattribute__(mcnu).col('energy')< e_max)
+            conditions.append(data.root.__getattribute__(mcnu).col('energy')>= e_min)
 
     return np.alltrue(np.array(conditions),axis=0)
 
@@ -133,10 +141,17 @@ def get_aeff1D_zen(data,cuts_list,czbins,files_per_run,mcnu='MCNeutrino',
     logging.info("runs: %s"%str(set(data.root.I3EventHeader.col('Run'))))
     logging.info("num runs: %d"%len(set(data.root.I3EventHeader.col('Run'))))
     total_events = data.root.I3MCWeightDict.col('NEvents')[cuts_list]*nfiles/2.0
+    try:
+        egy_array = data.root.__getattr__(mcnu).col('energy')[cuts_list]
+    except:
+        egy_array = data.root.__getattribute__(mcnu).col('energy')[cuts_list]
+    energy_range = np.max(egy_array) - np.min(egy_array)
+    print "energy_range = ", energy_range
+    azimuth_range = 2*np.pi
 
     # NOTE: solid_angle should be coordinated with get_arb_cuts(cut_sim_down=bool)
     sim_wt_array = (data.root.I3MCWeightDict.col('OneWeight')[cuts_list]/
-                    total_events/solid_angle)
+                    total_events/azimuth_range/energy_range)
     # Not sure why nu_<> cc needs __getattr__ and only NC combined
     # file needs __getattribute__??
     try:

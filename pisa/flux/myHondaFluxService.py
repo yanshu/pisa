@@ -18,7 +18,7 @@ import os
 import numpy as np
 from scipy.interpolate import bisplrep, bisplev
 from pisa.utils.log import logging, profile
-from pisa.utils.utils import get_bin_centers, get_bin_sizes
+from pisa.utils.utils import get_bin_centers, get_bin_sizes, oversample_binning
 from pisa.resources.resources import open_resource
 
 #Global definition of primaries for which there is a neutrino flux
@@ -90,28 +90,9 @@ class myHondaFluxService():
 
         # do it once, but with much finer steps for 'integrating' the spline interpolation
         # this is now handlet externaly....controlled by the actual_oversampling parameter in the template settings file
-        small_ebins = []
-        small_czbins = []
 
-        for i in  xrange(len(ebins)-1):
-            binsize = abs(ebins[i+1]-ebins[i])
-            small_binsize=binsize/float(self.oversample_e)
-            val = ebins[i]
-            for j in xrange(self.oversample_e):
-                small_ebins.append(val)
-                val += small_binsize
-        small_ebins.append(ebins[-1])
-        s_ebins = np.array(small_ebins)
-
-        for i in  xrange(len(czbins)-1):
-            binsize = abs(czbins[i+1]-czbins[i])
-            small_binsize=binsize/float(self.oversample_cz)
-            val = czbins[i]
-            for j in xrange(self.oversample_cz):
-                small_czbins.append(val)
-                val += small_binsize
-        small_czbins.append(czbins[-1])
-        s_czbins = np.array(small_czbins)
+        s_ebins = oversample_binning(self.ebins, self.oversample_e)
+        s_czbins = oversample_binning(self.czbins, self.oversample_cz) 
 
         #Evaluate the flux at the bin centers
         evals = get_bin_centers(s_ebins)
