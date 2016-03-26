@@ -543,9 +543,9 @@ def main():
         detector=det
     )
     data_proc_params = DPP.DataProcParams(
-        resources.find_resource(args.data_proc_params),
         detector=det,
-        proc_ver=proc
+        proc_ver=proc,
+        data_proc_params=resources.find_resource(args.data_proc_params),
     )
 
     logging.info('Using detector %s, processing version %s.' % (det, proc))
