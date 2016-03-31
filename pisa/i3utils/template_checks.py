@@ -13,10 +13,13 @@
 import copy
 import numpy as np
 import os
+import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+#from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.analysis.TemplateMaker_MC import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
 from pisa.utils.log import set_verbosity,logging,profile
 from pisa.resources.resources import find_resource
@@ -45,6 +48,8 @@ if __name__ == '__main__':
                         help='Plot aeff maps') 
     parser.add_argument('--plot_f_1_0_diff',action='store_true', default= False,
                         help='Plot template different between f=1 and f=0')
+    parser.add_argument('--plot_NuFluxIP_PISAIP',action='store_true', default= False,
+                        help='Plot template different between using NuFlux_IP flux and PISA_IP flux')
     parser.add_argument('--plot_other_nutau_norm',action='store_true', default= False,
                         help='Plot also templates with nutau CC norm value != 1.')
     parser.add_argument('--val',type=float,
@@ -68,10 +73,10 @@ if __name__ == '__main__':
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
     template_settings['params']['atmos_mu_scale']['value'] = args.bg_scale
     template_settings['params']['livetime']['value'] = args.y
+    template_settings['params']['flux_mode']['value'] = 'nuflux_ip' 
     
     with Timer() as t:
         nominal_template_maker = TemplateMaker(get_values(template_settings['params']), **template_settings['binning'])
-
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
     # Make nutau template:
@@ -82,8 +87,10 @@ if __name__ == '__main__':
         #nominal_nutau_all = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=True)
         #nominal_nutau = nominal_nutau_all[5]
         nominal_nutau = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=args.all)
-        aeff_maps = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=False, return_aeff_maps=True)
     profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
+
+    if args.plot_aeff_maps:
+        aeff_maps = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=False, return_aeff_maps=True)
 
     #### Plot Background #####
     if args.plot_background:
@@ -157,14 +164,11 @@ if __name__ == '__main__':
     if args.plot_f_1_0_diff:
         nominal_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm( template_settings['params'],True,0.0))
         no_nominal_template_maker = TemplateMaker(get_values(nominal_no_nutau_params), **template_settings['binning'])
-        print "get_value(nominal_no_nutau_params= ", get_values(nominal_no_nutau_params)
         nominal_no_nutau = no_nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
-        nominal_no_nutau = nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all)
-        print "nominal_no_nutau= ", nominal_no_nutau['cscd']['map']
-        print "nominal_nutau= ", nominal_nutau['cscd']['map']
         nominal_nutau_minus_no_nutau = {}
         nominal_nutau_minus_no_nutau['cscd'] = delta_map(nominal_nutau['cscd'], nominal_no_nutau['cscd'])
         nominal_nutau_minus_no_nutau['trck'] = delta_map(nominal_nutau['trck'], nominal_no_nutau['trck'])
+
         print 'no. of nominal_no_nutau_cscd = ', np.sum(nominal_no_nutau['cscd']['map'])
         print 'no. of nominal_no_nutau_trck = ', np.sum(nominal_no_nutau['trck']['map'])
         print ' total of the above two : ', np.sum(nominal_no_nutau['cscd']['map'])+np.sum(nominal_no_nutau['trck']['map'])
@@ -177,6 +181,34 @@ if __name__ == '__main__':
                 scale_E = 'linE' if args.no_logE else 'logE'
                 filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_minus_0_' % (args.y) + scale_E+ '_%s.png'%flav)
                 plt.title(r'${\rm 1 \, yr \, %s \, (Nevts: \, %.1f) }$'%(flav.replace('_',''), np.sum(nominal_nutau_minus_no_nutau[flav]['map'])), fontsize='large')
+                plt.savefig(filename,dpi=150)
+                plt.clf()
+
+    if args.plot_NuFluxIP_PISAIP:
+        nominal_pisa_ip_settings = copy.deepcopy(template_settings)
+        nominal_pisa_ip_settings['params']['flux_mode']['value'] = 'integral-preserving' 
+        nominal_pisa_ip_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_pisa_ip_settings['params'],True,1.0))
+        nominal_pisa_ip_template_maker = TemplateMaker(get_values(nominal_pisa_ip_params), **template_settings['binning'])
+        with Timer() as t:
+            nominal_pisa_ip = nominal_pisa_ip_template_maker.get_template(get_values(nominal_pisa_ip_params),return_stages=args.all)
+        profile.info('==> elapsed time to get NUTAU template (using PISA_IP): %s sec'%t.secs)
+
+        nominal_nuflux_ip_minus_pisa_ip = {}
+        nominal_nuflux_ip_minus_pisa_ip['cscd'] = delta_map(nominal_nutau['cscd'], nominal_pisa_ip['cscd'])
+        nominal_nuflux_ip_minus_pisa_ip['trck'] = delta_map(nominal_nutau['trck'], nominal_pisa_ip['trck'])
+
+        print 'no. of nominal_pisa_ip_cscd = ', np.sum(nominal_pisa_ip['cscd']['map'])
+        print 'no. of nominal_pisa_ip_trck = ', np.sum(nominal_pisa_ip['trck']['map'])
+        print ' total of the above two : ', np.sum(nominal_pisa_ip['cscd']['map'])+np.sum(nominal_pisa_ip['trck']['map'])
+        print ' \n'
+
+        for flav in ['cscd', 'trck']:
+            plt.figure()
+            show_map(nominal_nuflux_ip_minus_pisa_ip[flav],vmax=1 if flav=='cscd' else 1, logE=not(args.no_logE), xlabel = r'${\rm cos(zenith)}$', ylabel = r'${\rm Energy[GeV]}$')
+            if args.save:
+                scale_E = 'linE' if args.no_logE else 'logE'
+                filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_NuFluxIP_minus_PISAIP_' % (args.y) + scale_E+ '_%s.png'%flav)
+                plt.title(r'${\rm 1 \, yr \, %s \, (Nevts: \, %.1f) }$'%(flav.replace('_',''), np.sum(nominal_nuflux_ip_minus_pisa_ip[flav]['map'])), fontsize='large')
                 plt.savefig(filename,dpi=150)
                 plt.clf()
 

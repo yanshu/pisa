@@ -17,26 +17,15 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
+def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nutau_files, output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     anlys_bins = (anlys_ebins, czbins)
-    num_nue_files = 2700
-    num_numu_files = 4000
-    num_nutau_files = 1400
     livetime_in_s = Julian_year
     #livetime_in_s = 27920000  # (DC12: 1 livetime year = 27920000 s)
 
     # read MC hdf5 files directly
-
-    if honda_model == 'IPhonda2014':
-        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
-        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
-        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
-
-    if honda_model == 'honda2014':
-        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
-        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
-        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
-
+    MC_file_nue = h5py.File(find_resource(nue_file,'r'))
+    MC_file_numu = h5py.File(find_resource(numu_file,'r'))
+    MC_file_nutau = h5py.File(find_resource(nutau_file,'r'))
 
     L6_result = {}
     L6_result['nue'] = MC_file_nue['IC86_Dunkman_L6']['result']
@@ -44,14 +33,14 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     L6_result['nutau'] = MC_file_nutau['IC86_Dunkman_L6']['result']
 
     Oscillated_ExpectedNumber = {}
-    Oscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nue_files)
-    Oscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_numu_files)
-    Oscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nutau_files)
+    Oscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_nue_files)
+    Oscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_numu_files)
+    Oscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_nutau_files)
 
     #UnOscillated_ExpectedNumber = {}
-    #UnOscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nue_files)
-    #UnOscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_numu_files)
-    #UnOscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nutau_files)
+    #UnOscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_nue_files)
+    #UnOscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_numu_files)
+    #UnOscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_nutau_files)
 
     MC_true_x = {}
     MC_true_x['nue'] = MC_file_nue['trueNeutrino']['x']
