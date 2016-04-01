@@ -99,14 +99,25 @@ else:
 
 templates = {}
 MCmaps = {}
-fits_DOMEff = {}
-fits_HoleIce = {}
-fits_DOMEff = {'trck':{'slopes':{}},
-                'cscd':{'slopes':{}},
-                'nominal_value': 1}
-fits_HoleIce = {'trck':{'slopes':{}},
-                'cscd':{'slopes':{}},
-                'nominal_value': 0.02}
+if args.sim == '5digit':
+    fits_DOMEff = {'trck':{'slopes':{}},
+                    'cscd':{'slopes':{}},
+                    'nominal_value': 1}
+    fits_HoleIce = {'trck':{'slopes':{}},
+                    'cscd':{'slopes':{}},
+                    'nominal_value': 0.02}
+elif args.sim == '4digit':
+    fits_DOMEff = {'trck':{'slopes':{}, 'fixed_ratios':{}},
+                     'cscd':{'slopes':{}, 'fixed_ratios':{}},
+                     'nominal_value': 1
+                     }
+    fits_HoleIce = {'trck':{'slopes':{}, 'fixed_ratios':{}},
+                     'cscd':{'slopes':{}, 'fixed_ratios':{}},
+                     'nominal_value': 0.02
+                     }
+else:
+    #TODO
+    print "dima sets, to do"
 # Get templates and MC events 
 if not args.templ_already_saved:
     for run_num in run_list:
