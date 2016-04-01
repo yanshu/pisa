@@ -332,6 +332,10 @@
       "scale": 1.0,
       "value": 1.0
     },
+    "flux_mode": {
+      "fixed": true,
+      "value": "integral-preserving"
+    },
     "flux_file": {
       "fixed": true,
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
@@ -428,7 +432,7 @@
     },
     "pid_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "mc"
     },
     "pid_paramfile_up": {
       "fixed": true,
