@@ -126,6 +126,7 @@ if not args.templ_already_saved:
         templates[str(run_num)] = {'trck':{}, 'cscd':{}}
         print "run_num = ", run_num
         if args.sim == '5digit':
+            assert(DH_template_settings['pid_mode']['value']=='mc') # right now, only use MC mode for PID for the 5-digit sets 
             aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s-16%s:20000__proc_v5digit__unjoined.hdf5' % (run_num,run_num)
             reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s-16%s:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num)
         elif args.sim == '4digit':
@@ -253,7 +254,6 @@ for flav in ['trck','cscd']:
                 plt.scatter(dom_eff_values, bin_ratio_values, color='blue')
                 plt.errorbar(dom_eff_values, bin_ratio_values, yerr=bin_ratio_err_values,fmt='none')
                 plt.xlim(0.7,1.2)
-                #plt.ylim(0.6,1.5)
                 plt.ylim(y_val_min-0.1,y_val_max+0.1)
 
                 dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
@@ -329,8 +329,6 @@ for flav in ['trck','cscd']:
                 #plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                 plt.scatter(hole_ice_values, bin_ratio_values, color='blue')
                 plt.errorbar(hole_ice_values, bin_ratio_values, yerr=bin_ratio_err_values,fmt='none')
-                #y_val_max = np.max(bin_ratio_values)
-                #y_val_min = np.min(bin_ratio_values)
                 plt.ylim(y_val_min-0.1,y_val_max+0.1)
 
                 if args.sim == '4digit':
