@@ -23,6 +23,7 @@ from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.utils import Timer
 
 from pisa.flux.HondaFluxService import HondaFluxService
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
@@ -81,7 +82,15 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        self.flux_service = HondaFluxService(**template_settings)
+        flux_mode = template_settings['flux_mode']
+        if flux_mode.lower() == 'bisplrep':
+            self.flux_service = HondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'integral-preserving':
+            self.flux_service = IPHondaFluxService(**template_settings)
+        else:
+            error_msg = "flux_mode: %s is not implemented! "%flux_mode
+            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
+            raise NotImplementedError(error_msg)
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
