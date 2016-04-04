@@ -205,7 +205,7 @@
       "value": 1.0
     },
     "cz_reco_precision_down": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -305,7 +305,7 @@
       "value": 1.0
     },
     "e_reco_precision_down": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -450,10 +450,6 @@
       "fixed": true,
       "value": 20.0
     },
-    "ratio_up_down": {
-      "fixed": true,
-      "value": false
-    },
     "reco_kernel_file": {
       "fixed": true,
       "value": null
@@ -513,28 +509,6 @@
       ],
       "scale": 1,
       "value": 1.0
-    },
-    "residual_up_down": {
-      "fixed": true,
-      "value": false
-    },
-    "up_down_reco_prcs": {
-      "fixed": false,
-      "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
-      },
-      "range": [
-        0.8,
-        1.2
-      ],
-      "scale": 1,
-      "value": 1.0
-    },
-    "simp_up_down": {
-      "fixed": true,
-      "value": true
     },
     "theta12": {
       "fixed": true,
