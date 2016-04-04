@@ -56,7 +56,6 @@ class RecoServiceMC(RecoServiceBase):
             sys.exit(1)
 
         # Create the 4D distribution kernels...
-        print "cz_reco_precision_down = ", cz_reco_precision_down
         kernels = {}
         logging.info("Creating kernel dict...")
         kernels['ebins'] = self.ebins

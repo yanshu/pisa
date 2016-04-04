@@ -38,7 +38,7 @@ parser.add_argument('--templ_already_saved',action='store_true',default=False,
                     help="Read templates from already saved file; saves time when only need plotting.")
 parser.add_argument('--reco_prcs_vals',type=str,
                     metavar='reco_prcs_vals',
-                    default = 'np.linspace(0.7,2.0,14)', help = '''The reco. precision values to use.''')
+                    default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
@@ -53,7 +53,7 @@ args = parser.parse_args()
 set_verbosity(args.verbose)
 
 #Read in the settings
-x_steps = 0.04
+x_steps = 0.05
 outdir = args.outdir
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots')
@@ -73,9 +73,8 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg += " pseudo_data_settings channel: '%s', template channel: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
 
-#template_maker = TemplateMaker(get_values(template_settings['params']), **template_settings['binning'])
-
 #reco_mc_file = from_json(find_resource(template_settings['params']['reco_mc_wt_file']['value']))
+
 if args.sim == '4digit':
     reco_mc_file = "~/pisa/pisa/resources/aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == '5digit':
@@ -83,6 +82,9 @@ elif args.sim == '5digit':
 elif args.sim == 'dima':
     #TODO    
     print "to do, dima sets"
+else:
+    raise ValueError( "sim allowed: ['5digit', '4digit', 'dima']")
+
 
 def func_cubic_through_nominal(x, a, b, c):
     return a*x*x*x + b*x*x + c*x + 1.0 - a - b - c
@@ -195,9 +197,9 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                     plt.scatter(reco_prcs_vals, bin_ratio_values, color='blue')
                     plt.errorbar(reco_prcs_vals, bin_ratio_values, yerr=bin_ratio_err_values,fmt='none')
-                    plt.xlim(0.7,2.0)
+                    plt.xlim(min(reco_prcs_vals)-0.01, max(reco_prcs_vals)+0.01)
                     plt.ylim(y_val_min-0.01,y_val_max+0.01)
-                    cubic_func_plot_x = np.arange(0.7 - x_steps, 2.0 + x_steps, x_steps)
+                    cubic_func_plot_x = np.arange(min(reco_prcs_vals)- x_steps, max(reco_prcs_vals) + x_steps, x_steps)
                     cubic_func_plot_y = func_cubic_through_nominal(cubic_func_plot_x, a, b, c)
                     cubic_func_plot, = plt.plot(cubic_func_plot_x, cubic_func_plot_y, 'r-')
                     #if j > 0:
@@ -218,6 +220,5 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
 
 
 #And write to file
-#to_json(coeffs,outdir+'%s_RecoPrcs_fits_10_by_16.json'%args.sim)
-to_json(coeffs,outdir+'%s_RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json'%args.sim)
+to_json(coeffs,outdir+'%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_10_by_16.json'%(args.sim, min(reco_prcs_vals), max(reco_prcs_vals)))
 

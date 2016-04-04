@@ -38,12 +38,22 @@ def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,liv
     for flav in ['trck','cscd']:
         ebins, czbins = get_binning(event_rate_pid_maps[flav])
         event_rate_pid_map = event_rate_pid_maps[flav]['map']
-        event_rate = event_rate_pid_map + background_dict[flav] * atmos_mu_scale * livetime
+        bg_rate_pid_map = background_dict[flav] * atmos_mu_scale * livetime
         sumw2 = background_dict[flav] * atmos_mu_scale**2 * livetime**2
-        event_rate_maps[flav] = {'map':event_rate,
+        #replace zero entry errors (which are 0 here), with 0.5 * the smallest absolute error....if everything is zero, replace everything by one
+        #if np.count_nonzero(bg_rate_pid_map) > 0:
+        #    bg_rate_pid_map[bg_rate_pid_map==0] = np.min(bg_rate_pid_map[bg_rate_pid_map>0])/2.
+        #else:
+        #    bg_rate_pid_map = np.ones_like(bg_rate_pid_map)
+        if np.count_nonzero(sumw2) > 0:
+            sumw2[sumw2==0] = np.min(sumw2[sumw2>0])/2.
+        else:
+            # if they are all zero, return 1 as error for every bin
+            sumw2 = np.ones_like(sumw2)
+        event_rate_maps[flav] = {'map':event_rate_pid_map + bg_rate_pid_map,
                                  'sumw2':sumw2,
                                  'map_nu':event_rate_pid_map,
-                                 'map_mu':background_dict[flav] * atmos_mu_scale * livetime,
+                                 'map_mu':bg_rate_pid_map,
                                  'sumw2_nu':np.zeros(np.shape(sumw2)),
                                  'sumw2_mu':sumw2,
                                  'ebins':ebins,

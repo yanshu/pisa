@@ -1,6 +1,12 @@
 #! /usr/bin/env python
 import matplotlib as mpl
 mpl.use('Agg')
+mpl.rcParams['mathtext.fontset'] = 'custom'
+mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
+mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
+mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
+#mpl.rcParams['mathtext.fontset'] = 'stix'
+#mpl.rcParams['font.family'] = 'STIXGeneral'
 import numpy as np
 from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -28,13 +34,18 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
         sigmam2 = np.append(sigmam2,np.percentile(datum,5))
         sigmap = np.append(sigmap,np.percentile(datum,84))
         sigmap2 = np.append(sigmap2,np.percentile(datum,95))
-    if name == 'llh':
+    if False:#name == 'llh':
         sigmap = zoom(sigmap,10)
         sigmam2 = zoom(sigmam2,10)
         sigmam = zoom(sigmam,10)
         median = zoom(median,10)
         sigmap2 = zoom(sigmap2,10)
         hypos = zoom(hypos,10)
+    if name == 'llh':
+        h0 = '%.2f'%(np.sqrt(median[0]))
+        h0_up = '%.2f'%(np.sqrt(sigmap[0])-np.sqrt(median[0]))
+        h0_down = '%.2f'%(np.sqrt(median[0])-np.sqrt(sigmam[0]))
+        print 'Significance for excluding H0: %s + %s - %s'%(h0, h0_up, h0_down) 
     
     plt.rc('axes', prop_cycle=(cycler('color', ['r', 'g', 'b', 'y','c','m','k']*2) +
                            cycler('linestyle', ['-']*7+['--']*7)))
@@ -65,7 +76,12 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
     ax.legend(loc='upper right',ncol=1, frameon=False,numpoints=1,fontsize=10)
     ax.set_xlabel(r'$\nu_{\tau}$ normalization')
     ax.set_xlim(min(hypos),max(hypos))
-    a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s trials\nPreliminary'%(params['livetime']['value'],trials), loc=2, frameon=False)
+    if name == 'llh':
+        tex= r'$H_0$ at %s $\sigma ^{+%s}_{-%s}$'%(h0, h0_up, h0_down)
+        print tex
+        a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s trials\n'%(params['livetime']['value'],trials)+'Rejection of '+ tex, loc=2, frameon=False)
+    else:
+        a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s trials\n'%(params['livetime']['value'],trials)+'nuisnace pulls', loc=2, frameon=False)
     ax.add_artist(a_text)
     #ax.patch.set_facecolor('white')
     #ax.set_axis_bgcolor('white') 
