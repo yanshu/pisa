@@ -55,7 +55,7 @@ class OscillationServiceBase:
         logging.info('Retrieving finely binned maps')
         with Timer(verbose=False) as t:
             fine_maps = self.get_osc_probLT_dict(**kwargs)
-        print "       ==> elapsed time to get all fine maps: %s sec"%t.secs
+        #print "       ==> elapsed time to get all fine maps: %s sec"%t.secs
 
         logging.info("Smoothing fine maps...")
         smoothed_maps = {}
