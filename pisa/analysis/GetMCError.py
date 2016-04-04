@@ -20,9 +20,7 @@ from pisa.resources.resources import find_resource
 from pisa.utils.params import get_values, select_hierarchy
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.utils import Timer
-from pisa.pid.PIDServiceParam import PIDServiceParam
-from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
-from pisa.pid.PID import get_pid_maps
+from pisa.pid import PID
 
 class GetMCError:
     '''
@@ -47,17 +45,7 @@ class GetMCError:
 
         # PID Service:
         pid_mode = template_settings['pid_mode']
-        if pid_mode == 'param':
-            self.pid_service = PIDServiceParam(self.ebins, self.czbins,
-                                               **template_settings)
-        elif pid_mode == 'stored':
-            self.pid_service = PIDServiceKernelFile(self.ebins, self.czbins,
-                                                    **template_settings)
-        else:
-            error_msg = "pid_mode: %s is not implemented! "%pid_mode
-            error_msg+=" Please choose among: ['stored', 'param']"
-            raise NotImplementedError(error_msg)
-
+        self.pid_service = PID.pid_service_factory(ebins= ebins, czbins=czbins, **template_settings)
         return
 
 
@@ -124,7 +112,7 @@ class GetMCError:
         mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
         mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
 
-        final_MC_event_rate = get_pid_maps(mc_event_maps, self.pid_service)
+        final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
         #print "No. of MC events (trck) : ", sum(sum(final_MC_event_rate['trck']['map']))
         #print "No. of MC events (cscd) : ", sum(sum(final_MC_event_rate['cscd']['map']))
         #print "Total no. of MC events : ", sum(sum(final_MC_event_rate['trck']['map']))+ sum(sum(final_MC_event_rate['cscd']['map']))

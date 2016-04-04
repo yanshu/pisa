@@ -26,8 +26,9 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.HondaFluxService import HondaFluxService
-#from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService
+from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
+from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService as nufluxIPHondaFluxService
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -60,7 +61,7 @@ class TemplateMaker:
     them later when needed.
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
-                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, **kwargs):
+                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, sim_ver=None,**kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
@@ -103,7 +104,19 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
+        #self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
+
+        flux_mode = template_settings['flux_mode']
+        if flux_mode.lower() == 'bisplrep':
+            self.flux_service = HondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'nuflux_ip':
+            self.flux_service = nufluxIPHondaFluxService(**template_settings)
+        elif flux_mode.lower() == 'integral-preserving':
+            self.flux_service = IPHondaFluxService(**template_settings)
+        else:
+            error_msg = "flux_mode: %s is not implemented! "%flux_mode
+            error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
+            raise NotImplementedError(error_msg)
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
@@ -171,8 +184,8 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
+        self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
         self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
         self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
@@ -232,7 +245,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, apply_reco_prcs=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -244,12 +257,16 @@ class TemplateMaker:
         # now see what really changed, if we have a cached map to decide from which step on we have to recalculate
         if self.cache_params:
             step_changed = [False]*7
+            if apply_reco_prcs:
+                step_3_changed = (p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down'])
+            else:
+                step_3_changed = (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs'])
             for p,v in params.items():
                 if self.cache_params[p] != v:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True
+                    elif step_3_changed: step_changed[3] = True
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']: step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
@@ -321,7 +338,8 @@ class TemplateMaker:
         if any(step_changed[:4]):
             physics.debug("STAGE 4: Getting event rate reco maps...")
             with Timer() as t:
-                self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins, no_sys_applied, self.reco_service,**params)
+                self.event_rate_reco_maps = get_reco_maps(self.event_rate_maps, self.anlys_ebins, apply_reco_prcs, self.reco_service,**params)
+                # apply_reco_prcs should always be false except when generating fits for reco prcs
             profile.debug("==> elapsed time for reco stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 4: Reused from step before...")
@@ -348,7 +366,7 @@ class TemplateMaker:
                     self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
                     cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)
                     self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
-            profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
+                profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 6: Reused from step before...")
 
@@ -385,6 +403,10 @@ if __name__ == '__main__':
     hselect = parser.add_mutually_exclusive_group(required=False)
     hselect.add_argument('--normal', dest='normal', default=True,
                         action='store_true', help="select the normal hierarchy")
+    hselect.add_argument('--apply_reco_prcs', dest='apply_reco_prcs', default=False,
+                        action='store_true', help='''Apply reco precision in RecoMCService.py,
+                        set it True only when generating fits for reco precision parameters (at
+                        the same time, keep get_reco_prcs=True), otherwise always keep it false.''')
     hselect.add_argument('--inverted', dest='normal', default = False,
                         action='store_false',
                          help="select the inverted hierarchy")

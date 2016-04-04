@@ -58,7 +58,7 @@ def get_osc_flux(flux_maps,osc_service=None,deltam21=None,deltam31=None,
     ebins, czbins = get_binning(flux_maps)
 
     for to_flav in ['nue','numu','nutau']:
-	for mID in ['','_bar']: # 'matter' ID
+        for mID in ['','_bar']: # 'matter' ID
             nue_flux = flux_maps['nue'+mID]['map']
             numu_flux = flux_maps['numu'+mID]['map']
             oscflux = {'ebins':ebins,

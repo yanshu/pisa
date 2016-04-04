@@ -17,26 +17,21 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
+def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nutau_files, output_form, cut_level, year, anlys_ebins, czbins, sim_version):
     anlys_bins = (anlys_ebins, czbins)
-    num_nue_files = 2700
-    num_numu_files = 4000
-    num_nutau_files = 1400
     livetime_in_s = Julian_year
     #livetime_in_s = 27920000  # (DC12: 1 livetime year = 27920000 s)
+    if sim_version == 4:
+        Reco_Neutrino_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
+        Reco_Track_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Track'
+    elif sim_version == 5:
+        Reco_Neutrino_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NuMuCC'
+        Reco_Track_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_Track'
 
     # read MC hdf5 files directly
-
-    if honda_model == 'IPhonda2014':
-        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
-        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
-        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_IPhonda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
-
-    if honda_model == 'honda2014':
-        MC_file_nue = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nue.hdf5','r'))
-        MC_file_nutau = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_nutau.hdf5','r'))
-        MC_file_numu = h5py.File(find_resource('/Users/feifeihuang/Desktop/Matt_data/Matt_L5b_mc_with_weights_honda2014/Matt_L5b_mc_with_weights_numu.hdf5','r'))
-
+    MC_file_nue = h5py.File(find_resource(nue_file,'r'))
+    MC_file_numu = h5py.File(find_resource(numu_file,'r'))
+    MC_file_nutau = h5py.File(find_resource(nutau_file,'r'))
 
     L6_result = {}
     L6_result['nue'] = MC_file_nue['IC86_Dunkman_L6']['result']
@@ -44,14 +39,14 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     L6_result['nutau'] = MC_file_nutau['IC86_Dunkman_L6']['result']
 
     Oscillated_ExpectedNumber = {}
-    Oscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nue_files)
-    Oscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_numu_files)
-    Oscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(num_nutau_files)
+    Oscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_nue_files)
+    Oscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_numu_files)
+    Oscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['OscillatedRate']*livetime_in_s/(n_nutau_files)
 
     #UnOscillated_ExpectedNumber = {}
-    #UnOscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nue_files)
-    #UnOscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_numu_files)
-    #UnOscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(num_nutau_files)
+    #UnOscillated_ExpectedNumber['nue'] = year * MC_file_nue['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_nue_files)
+    #UnOscillated_ExpectedNumber['numu'] = year * MC_file_numu['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_numu_files)
+    #UnOscillated_ExpectedNumber['nutau'] = year * MC_file_nutau['NeutrinoWeights_nufit']['UnoscillatedRate']*livetime_in_s/(n_nutau_files)
 
     MC_true_x = {}
     MC_true_x['nue'] = MC_file_nue['trueNeutrino']['x']
@@ -84,39 +79,39 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
     MC_true_coszen['nutau'] = np.cos(MC_file_nutau['trueNeutrino']['zenith'])
 
     MN_reco_x = {}
-    MN_reco_x['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['x']
-    MN_reco_x['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['x']
-    MN_reco_x['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['x']
+    MN_reco_x['nue'] = MC_file_nue[Reco_Neutrino_Name]['x']
+    MN_reco_x['numu'] = MC_file_numu[Reco_Neutrino_Name]['x']
+    MN_reco_x['nutau'] = MC_file_nutau[Reco_Neutrino_Name]['x']
 
     MN_reco_y = {}
-    MN_reco_y['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['y']
-    MN_reco_y['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['y']
-    MN_reco_y['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['y']
+    MN_reco_y['nue'] = MC_file_nue[Reco_Neutrino_Name]['y']
+    MN_reco_y['numu'] = MC_file_numu[Reco_Neutrino_Name]['y']
+    MN_reco_y['nutau'] = MC_file_nutau[Reco_Neutrino_Name]['y']
 
     MN_reco_z = {}
-    MN_reco_z['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['z']
-    MN_reco_z['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['z']
-    MN_reco_z['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['z']
+    MN_reco_z['nue'] = MC_file_nue[Reco_Neutrino_Name]['z']
+    MN_reco_z['numu'] = MC_file_numu[Reco_Neutrino_Name]['z']
+    MN_reco_z['nutau'] = MC_file_nutau[Reco_Neutrino_Name]['z']
 
     MN_reco_t = {}
-    MN_reco_t['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['time']
-    MN_reco_t['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['time']
-    MN_reco_t['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['time']
+    MN_reco_t['nue'] = MC_file_nue[Reco_Neutrino_Name]['time']
+    MN_reco_t['numu'] = MC_file_numu[Reco_Neutrino_Name]['time']
+    MN_reco_t['nutau'] = MC_file_nutau[Reco_Neutrino_Name]['time']
 
     MN_reco_energy = {}
-    MN_reco_energy['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy']
-    MN_reco_energy['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy']
-    MN_reco_energy['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy']
+    MN_reco_energy['nue'] = MC_file_nue[Reco_Neutrino_Name]['energy']
+    MN_reco_energy['numu'] = MC_file_numu[Reco_Neutrino_Name]['energy']
+    MN_reco_energy['nutau'] = MC_file_nutau[Reco_Neutrino_Name]['energy']
 
     MN_reco_coszen = {}
-    MN_reco_coszen['nue'] = np.cos(MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith'])
-    MN_reco_coszen['numu'] = np.cos(MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith'])
-    MN_reco_coszen['nutau'] = np.cos(MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith'])
+    MN_reco_coszen['nue'] = np.cos(MC_file_nue[Reco_Neutrino_Name]['zenith'])
+    MN_reco_coszen['numu'] = np.cos(MC_file_numu[Reco_Neutrino_Name]['zenith'])
+    MN_reco_coszen['nutau'] = np.cos(MC_file_nutau[Reco_Neutrino_Name]['zenith'])
 
     MN_reco_trck_len = {}
-    MN_reco_trck_len['nue'] = MC_file_nue['IC86_Dunkman_L6_MultiNest8D_PDG_Track']['length']
-    MN_reco_trck_len['numu'] = MC_file_numu['IC86_Dunkman_L6_MultiNest8D_PDG_Track']['length']
-    MN_reco_trck_len['nutau'] = MC_file_nutau['IC86_Dunkman_L6_MultiNest8D_PDG_Track']['length']
+    MN_reco_trck_len['nue'] = MC_file_nue[Reco_Track_Name]['length']
+    MN_reco_trck_len['numu'] = MC_file_numu[Reco_Track_Name]['length']
+    MN_reco_trck_len['nutau'] = MC_file_nutau[Reco_Track_Name]['length']
 
     InteractionType = {}
     InteractionType['nue'] = MC_file_nue['I3MCWeightDict']['InteractionType']
@@ -236,29 +231,28 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
                 true_xyzt_from_i3[flavor][int_type]['z'] = true_z  
                 true_xyzt_from_i3[flavor][int_type]['time'] = true_t 
 
+    MC_file_nue.close()
+    MC_file_numu.close()
+    MC_file_nutau.close()
+
     if output_form == 'true_info':
         return (true_xyzt_from_i3, true_energy_from_i3, true_coszen_from_i3, osc_weights)
 
     if output_form == 'reco_info':
         return (reco_xyzt_from_i3, reco_energy_from_i3, reco_coszen_from_i3, trck_len_from_i3, osc_weights)
 
-    if output_form == 'osc_flux_map':
-        return osc_flux_maps_from_i3
+    #if output_form == 'osc_flux_map':
+    #    return osc_flux_maps_from_i3
 
-    if output_form == 'aeff_map':
-        return aeff_maps_from_i3
-
-    if output_form == 'final_map':
+    if output_form == 'aeff_and_final_map':
         final_maps_from_i3 = {}
         cut_pid = {}
         for flavor in ['nue', 'numu', 'nutau']:
             cut_pid[flavor]={}
             cut_pid[flavor]['trck'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]>= 3.0)
-            # This is only temporaty, the correct way is to throw away events with deltaLLH < -3.0
-            cut_pid[flavor]['cscd'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< 3.0)
 
             # This is the correct way, but right now in PID stage, PISA couldn't throw away events with deltaLLH < -3.
-            #cut_pid[flavor]['cscd'] = np.logical_and(np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< 3.0), deltaLLH[flavor]>= -3.0)
+            cut_pid[flavor]['cscd'] = np.logical_and(np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< 3.0), deltaLLH[flavor]>= -3.0)
 
         for channel in ['cscd','trck']:
             reco_energy_pid = np.array([])
@@ -276,6 +270,6 @@ def get_i3_maps(output_form, cut_level, year, anlys_ebins, czbins, honda_model):
             final_maps_from_i3[channel] = {'map':pid_hist,
                                            'ebins':anlys_ebins,
                                            'czbins':czbins}
-        return final_maps_from_i3
+        return aeff_maps_from_i3, final_maps_from_i3
 
 
