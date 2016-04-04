@@ -4,6 +4,7 @@
 # numpy arrays. No input/output operations or reading from customized
 import numpy as np
 from scipy.special import gammaln
+from pisa.analysis.stats.barlow_llh import likelihoods
 
 def log_poisson(k,l):
     return k*np.log(l) -l - gammaln(k+1)
@@ -43,3 +44,20 @@ def get_binwise_smeared_llh(pseudo_data, template, sumw2):
     for i in xrange(len(triplets)):
         sum += np.log(max(10e-10,conv_poisson(*triplets[i])))
     return sum
+
+def get_barlow_llh(data, map_nu, sumw2_nu, map_mu, sumw2_mu):
+    l = likelihoods()
+    uw_nu = np.square(map_nu)/sumw2_nu
+    uw_nu = np.nan_to_num(uw_nu)
+    uw_mu = np.square(map_mu)/sumw2_mu
+    uw_mu = np.nan_to_num(uw_mu)
+    w_nu = sumw2_nu/map_nu
+    w_nu = np.nan_to_num(w_nu)
+    w_mu = sumw2_mu/map_mu
+    w_mu = np.nan_to_num(w_mu)
+    l.SetData(data)
+    l.SetMC(np.array([w_nu,w_mu]))
+    l.SetUnweighted(np.array([uw_nu,uw_mu]))
+    llh =  l.GetLLH('barlow') 
+    del l
+    return llh
