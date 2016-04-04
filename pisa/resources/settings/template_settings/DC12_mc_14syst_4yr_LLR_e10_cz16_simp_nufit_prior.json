@@ -154,7 +154,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__unjoined.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -420,7 +420,7 @@
     },
     "pid_events": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "pid_ver": {
       "fixed": true,
@@ -428,7 +428,7 @@
     },
     "pid_remove_true_downgoing": {
       "fixed": true,
-      "value": null
+      "value": false 
     },
     "pid_mode": {
       "fixed": true,
@@ -456,7 +456,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -468,19 +468,19 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/DomEff_linear_fits_10_by_16.json"
+      "value": "domeff_holeice/5digit_DomEff_linear_fits_10_by_16.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/HoleIce_quadratic_fits_10_by_16.json"
+      "value": "domeff_holeice/5digit_HoleIce_quadratic_fits_10_by_16.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+      "value": "reco_prcs/5digit_RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": false,
