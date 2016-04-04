@@ -55,6 +55,10 @@
     "actual_oversample_e": 10
   },
   "params": {
+    "sim_ver":{
+      "fixed": true,
+      "value": "5digit"
+    },
     "PID_offset": {
       "fixed": true,
       "prior": {

@@ -61,7 +61,7 @@ class TemplateMaker:
     them later when needed.
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
-                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, **kwargs):
+                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, sim_ver=None,**kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
@@ -184,8 +184,8 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['holeice_slope_file'])
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'])
+        self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
+        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
         self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
         self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
         self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
@@ -259,10 +259,8 @@ class TemplateMaker:
             step_changed = [False]*7
             if apply_reco_prcs:
                 step_3_changed = (p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down'])
-                print "step_3_changed = ", step_3_changed
             else:
                 step_3_changed = (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs'])
-                print "step_3_changed = ", step_3_changed
             for p,v in params.items():
                 if self.cache_params[p] != v:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
