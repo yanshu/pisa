@@ -6,7 +6,7 @@ from pisa.sys.SysBase import SysBase
 
 class HoleIce(SysBase):
 
-    def __init__(self, slopes_file):
+    def __init__(self, slopes_file, sim_ver):
         # read in slopes from file
         slopes = from_json(find_resource(slopes_file))
         # nominal hol_ice value
@@ -14,11 +14,13 @@ class HoleIce(SysBase):
         self.linear = {} 
         self.quadratic = {} 
         self.fixed_ratios = {} 
+        self.sim = sim_ver
         for channel in ['cscd', 'trck']:
             # add up and down together
             self.linear[channel] = slopes[channel]['linear']
             self.quadratic[channel] = slopes[channel]['quadratic']
-            self.fixed_ratios[channel] = slopes[channel]['fixed_ratios']
+            if self.sim == '4digit':
+                self.fixed_ratios[channel] = slopes[channel]['fixed_ratios']
 
     def get_scales(self, channel, sys_val):
         # get the sacles to be applied to a map
