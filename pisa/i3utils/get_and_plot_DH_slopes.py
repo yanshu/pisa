@@ -50,11 +50,11 @@ template_settings = from_json(args.template_settings)
 czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
 channel = template_settings['params']['channel']['value']
-x_steps = 0.0001
+x_steps = 0.01
 
 # Write run info into a dict
 if args.sim == '4digit':
-    run_list = [ '50', '60', '61', '62', '63', '64', '65', '70', '71', '72']
+    run_list = [ '50', '60', '61', '64', '65', '70', '71', '72']
     nominal_run = '60'
     dict_run = {'50': {'dom_eff': 0.91, 'hole_ice': 0.02},
                 '60': {'dom_eff': 1.00, 'hole_ice': 0.02},
@@ -126,12 +126,12 @@ if not args.templ_already_saved:
         templates[str(run_num)] = {'trck':{}, 'cscd':{}}
         print "run_num = ", run_num
         if args.sim == '5digit':
-            assert(DH_template_settings['pid_mode']['value']=='mc') # right now, only use MC mode for PID for the 5-digit sets 
+            assert(DH_template_settings['params']['pid_mode']['value']=='mc') # right now, only use MC mode for PID for the 5-digit sets 
             aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s-16%s:20000__proc_v5digit__unjoined.hdf5' % (run_num,run_num)
             reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s-16%s:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num)
         elif args.sim == '4digit':
-            aeff_mc_file = 'aeff/1X%s_aeff_mc.hdf5' % run_num
-            reco_mc_file = 'events/1X%s_weighted_aeff_joined_nu_nubar.hdf5' % run_num
+            aeff_mc_file = 'aeff/events__deepcore__ic86__runs_12%s-16%s:200__proc_v4digit__unjoined.hdf5' % (run_num,run_num)
+            reco_mc_file = 'aeff/events__deepcore__ic86__runs_12%s-16%s:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num)
             # if use param mode for PID, need to use pid_param_file_up and _down:
             pid_param_file_up = 'pid/1X%s_pid.json' % run_num
             pid_param_file_down = 'pid/1X%s_pid_down.json' % run_num
@@ -214,15 +214,15 @@ for flav in ['trck','cscd']:
             bin_err = templ_err[cut,i,j]
             nominal_bin_counts = bin_counts[dom_eff_values==1.0]
             nominal_bin_err = bin_err[dom_eff_values==1.0]
-            #print "dom_eff_values = ", dom_eff_values
             bin_ratio_values = bin_counts/nominal_bin_counts  #divide by the nominal value
             bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(nominal_bin_err/nominal_bin_counts)+np.square(bin_err/bin_counts))
 
-            # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
             if args.sim == '4digit':
+                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
                 fixed_r_val = bin_ratio_values[dom_eff_values==0.91]
                 fixed_ratio[i][j]= fixed_r_val
                 exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
+                exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- 0.91) + p*(x- 0.91)**2 + %s'%fixed_r_val)
             elif args.sim == '5digit':
                 exec('def dom_eff_linear_through_point(x, k): return k* (x - 1.0) + 1.0')
                 exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- 1.0) + p*(x-1.0)**2 + 1.0')
@@ -298,6 +298,7 @@ for flav in ['trck','cscd']:
             bin_ratio_values = bin_counts/nominal_bin_counts  #divide by the nominal value
             bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(nominal_bin_err/nominal_bin_counts)+np.square(bin_err/bin_counts))
 
+            exec('def hole_ice_linear_through_point(x, k): return k* (x - 0.02) + 1.0')
             if args.sim == '4digit':
                 fixed_r_val = bin_ratio_values[hole_ice_values==0.02]
                 # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
@@ -305,7 +306,6 @@ for flav in ['trck','cscd']:
 
             elif args.sim == '5digit':
                 exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-0.02) + p*(x-0.02)**2 + 1.0')
-                exec('def hole_ice_linear_through_point(x, k): return k* (x - 0.02) + 1.0')
             else:
                 #TODO
                 print "to do"
