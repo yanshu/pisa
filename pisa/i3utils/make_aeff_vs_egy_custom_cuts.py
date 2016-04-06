@@ -62,14 +62,14 @@ def SaveAeff(aeff,aeff_err,egy_bin_edges,flavor,out_dir):
     splinefit = splrep(ecen,aeff,w=1./np.array(aeff_err), k=3, s=100)
     fit_aeff = splev(ecen,splinefit)
 
-    outfile = os.path.join(out_dir,"a_eff_"+flavor+".dat")
+    outfile = os.path.join(out_dir,"a_eff_vs_e_"+flavor+".dat")
     print "Saving spline fit to file: "+outfile
     fh = open(outfile,'w')
     for i,energy in enumerate(ecen):
         fh.write(str(energy)+' '+str(fit_aeff[i])+'\n')
     fh.close()
 
-    outfile_data = os.path.join(out_dir,"a_eff_"+flavor+"_data.dat")
+    outfile_data = os.path.join(out_dir,"a_eff_vs_e_"+flavor+"_data.dat")
     print "Saving data to file: "+outfile_data
     fh = open(outfile_data,'w')
     for i,energy in enumerate(ecen):
@@ -142,8 +142,10 @@ print "  >> nue: ",args.ne
 print "  >> numu: ",args.nmu
 print "  >> nutau: ",args.ntau
 
+czbins = eval(args.czbins)
 ebins = eval(args.ebins)
 
+print "czbins = ", czbins
 print "ebins = ", ebins
 
 # Cut definitions:
@@ -163,11 +165,9 @@ elif args.nocuts:
 elif args.custom:
     logging.warn("Using CUSTOM cuts: %s..."%args.custom_str)
     cut_list = eval(args.custom_str)
-    print "cut_list = ", cut_list
 else:
     logging.warn("Using cuts V5!")
     cut_list= [("Cuts_V5_Step1",'value',True),("Cuts_V5_Step2",'value',True)]
-
 
 nuDict = {}
 if args.old_pid:
@@ -177,7 +177,11 @@ else:
 
 
 aeff_list = []
+aeff_nu_nc_array = np.zeros(len(ebins)-1)
+aeff_nubar_nc_array = np.zeros(len(ebins)-1)
 aeff_err_list = []
+aeff_nu_nc_err_sq_array = np.zeros(len(ebins)-1) 
+aeff_nubar_nc_err_sq_array = np.zeros(len(ebins)-1) 
 flavor_list = []
 
 cut_sim_down = True
@@ -196,63 +200,45 @@ for flav,val in nuDict.items():
     cc_cuts = list(cut_list)
     cc_cuts.append(("I3MCWeightDict","InteractionType",1))
     cc_cuts.append((args.mcnu,"type",val))
+    nc_cuts = list(cut_list)
+    nc_cuts.append(("I3MCWeightDict","InteractionType",2))
+    nc_cuts.append((args.mcnu,"type",val))
 
-    arb_cut_list = get_arb_cuts(data,cc_cuts,mcnu=args.mcnu,cut_sim_down=cut_sim_down)
+    arb_cc_cut_list = get_arb_cuts(data, cc_cuts,mcnu=args.mcnu, cut_sim_down=cut_sim_down)
+    arb_nc_cut_list = get_arb_cuts(data, nc_cuts,mcnu=args.mcnu, cut_sim_down=cut_sim_down)
 
-    logging.info("  NEvents: %d"%np.sum(arb_cut_list))
+    logging.info("  NEvents CC: %d"%np.sum(arb_cc_cut_list))
+    logging.info("  NEvents NC: %d"%np.sum(arb_nc_cut_list))
 
     if 'nue' in flav: nfiles = args.ne
     elif 'numu' in flav: nfiles = args.nmu
     elif 'nutau' in flav: nfiles = args.ntau
     else: raise ValueError("Unrecognized flav: %s"%flav)
 
-    aeff_cc,aeff_cc_err,xedges = get_aeff1D(data,arb_cut_list,ebins,nfiles,
+    aeff_cc,aeff_cc_err,xedges = get_aeff1D(data,arb_cc_cut_list, ebins,nfiles,
+                                            mcnu=args.mcnu,solid_angle=solid_angle)
+    aeff_nc,aeff_nc_err,xedges = get_aeff1D(data,arb_nc_cut_list, ebins,nfiles,
                                             mcnu=args.mcnu,solid_angle=solid_angle)
 
     aeff_list.append(aeff_cc)
     aeff_err_list.append(aeff_cc_err)
-    flavor_list.append(flav)
+    flavor_list.append(flav+'_cc')
+    if 'bar' in flav:
+        aeff_nubar_nc_array += aeff_nc
+        aeff_nubar_nc_err_sq_array += np.square(aeff_nc_err)
+    else:
+        aeff_nu_nc_array += aeff_nc
+        aeff_nu_nc_err_sq_array += np.square(aeff_nc_err)
 
-
-
-logging.info("Processing NC all...")
-
-data_nc = LoadData(args.data_dir,args.geom_str,'NC')
-#print "data_nc = ", data_nc
-
-nc_cut_list = list(cut_list)
-nc_cut_list.append(("I3MCWeightDict","InteractionType",2))
-
-nc_list = [66,68,133] if args.old_pid else [12,14,16]
-print args.mcnu
-cuts_nc = get_arb_cuts(data_nc,nc_cut_list,mcnu=args.mcnu,nuIDList=nc_list,
-                       cut_sim_down=cut_sim_down)
-
-nc_bar_list = [67,69,134] if args.old_pid else [-12,-14,-16]
-cuts_nc_bar = get_arb_cuts(data_nc,nc_cut_list,mcnu=args.mcnu,nuIDList=nc_bar_list,
-                           cut_sim_down=cut_sim_down)
-
-logging.info("  NC NEvents: %d"%np.sum(cuts_nc))
-logging.info("  NCBar NEvents: %d"%np.sum(cuts_nc_bar))
-
-nfiles_per_run = (args.ne + args.nmu + args.ntau)/3.0
-aeff_nc_nu,aeff_nc_nu_err,xedges = get_aeff1D(
-    data_nc,cuts_nc,ebins,nfiles_per_run,mcnu=args.mcnu,nc=True,
-    solid_angle=solid_angle)
-aeff_nc_nubar,aeff_nc_nubar_err,xedges = get_aeff1D(
-    data_nc,cuts_nc_bar,ebins,nfiles_per_run,mcnu=args.mcnu,nc=True,
-    solid_angle=solid_angle)
-
-aeff_list.append(aeff_nc_nu)
-aeff_err_list.append(aeff_nc_nu_err)
+aeff_list.append(aeff_nu_nc_array)
+aeff_err_list.append(np.sqrt(aeff_nu_nc_err_sq_array))
 flavor_list.append('nuall_nc')
-
-aeff_list.append(aeff_nc_nubar)
-aeff_err_list.append(aeff_nc_nubar_err)
+aeff_list.append(aeff_nubar_nc_array)
+aeff_err_list.append(np.sqrt(aeff_nubar_nc_err_sq_array))
 flavor_list.append('nuallbar_nc')
 
 for i,flavor in enumerate(flavor_list):
     logging.info("Saving: %s to %s"%(flavor,args.outdir))
-    SaveAeff(aeff_list[i],aeff_err_list[i],ebins,flavor,args.outdir)
+    SaveAeff(aeff_list[i],aeff_err_list[i], ebins,flavor,args.outdir)
 
 print "\nFINISHED...\n"

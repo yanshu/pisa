@@ -23,34 +23,11 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.stats.Maps import apply_ratio_scale
 from pisa.flux.HondaFluxService import HondaFluxService, primaries
+from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import get_bin_centers
-
-def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
-    '''
-    Applies the nu_nubar_ratio systematic to the event rate
-    maps and returns the scaled maps. The actual calculation is
-    done by apply_ratio_scale.
-    '''
-    flavours = flux_maps.keys()
-    if 'params' in flavours: flavours.remove('params')
-
-    for flavour in flavours:
-        # process nu and nubar in one go
-        if not 'bar' in flavour:
-             scaled_nu_rates, scaled_nubar_rates = apply_ratio_scale(
-                 orig_maps = flux_maps,
-                 key1 = flavour, key2 = flavour+'_bar',
-                 ratio_scale = nu_nubar_ratio,
-                 is_flux_scale = True,
-             )
-
-             flux_maps[flavour]['map'] = scaled_nu_rates
-             flux_maps[flavour+'_bar']['map'] = scaled_nubar_rates
-
-    return flux_maps
 
 def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     """
@@ -80,29 +57,28 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
 
     return flux_maps
 
-def apply_nu_nubar_ratio(event_rate_maps, nu_nubar_ratio):
+def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
     """
     Applies the nu_nubar_ratio systematic to the event rate
     maps and returns the scaled maps. The actual calculation is
     done by apply_ratio_scale.
     """
-    flavours = event_rate_maps.keys()
+    flavours = flux_maps.keys()
     if 'params' in flavours: flavours.remove('params')
 
     for flavour in flavours:
         # process nu and nubar in one go
         if not 'bar' in flavour:
-            # do this for each interaction channel (cc and nc)
             scaled_nu_rates, scaled_nubar_rates = apply_ratio_scale(
-                orig_maps = event_rate_maps,
+                orig_maps = flux_maps,
                 key1 = flavour, key2 = flavour+'_bar',
                 ratio_scale = nu_nubar_ratio,
                 is_flux_scale = True,
             )
-            event_rate_maps[flavour]['map'] = scaled_nu_rates
-            event_rate_maps[flavour+'_bar']['map'] = scaled_nubar_rates
+            flux_maps[flavour]['map'] = scaled_nu_rates
+            flux_maps[flavour+'_bar']['map'] = scaled_nubar_rates
 
-    return event_rate_maps
+    return flux_maps
 
 
 def apply_delta_index(flux_maps, delta_index, egy_med):
@@ -137,8 +113,8 @@ def get_median_energy(flux_map):
 
     return energy
 
-def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio, energy_scale,
-                  atm_delta_index,**kwargs):
+def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio,
+                  energy_scale, atm_delta_index,**kwargs):
     """
     Get a set of flux maps for the different primaries.
 
@@ -150,10 +126,8 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio, e
         keeping both the total flux from neutrinos and antineutrinos
         constant. The adjusted ratios are given by
         "nue_numu_ratio * original ratio".
-      * nu_nubar_ratio - systematic to be a proxy for the realistic
-        counts_nue(cc/nc) / counts_nuebar(cc/nc), ... ratios,
-        keeping the total flavour counts constant.
-        The adjusted ratios are given by "nu_nubar_ratio * original ratio".
+      * nu_nubar_ratio - systematic to be a proxy for the
+        neutrino/anti-neutrino production/cross section ratio.
       * energy_scale - factor to scale energy bin centers by
       * atm_delta_index  - change in spectral index from fiducial
     """
@@ -164,7 +138,6 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio, e
 
     # Initialize return dict
     maps = {'params': params}
-
 
     for prim in primaries:
 
@@ -177,17 +150,14 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio, e
         logging.trace("Total flux of %s is %u [s^-1 m^-2]"%
                       (prim,maps[prim]['map'].sum()))
 
-
     # now scale the nue(bar) / numu(bar) flux ratios, keeping the total
     # Flux (nue + numu, nue_bar + numu_bar) constant, or return unscaled maps:
     scaled_maps = apply_nue_numu_ratio(maps, nue_numu_ratio) if nue_numu_ratio != 1.0 else maps
 
-    # now scale the nu(e/mu/tau) / nu(e/mu/tau)bar event count ratios, keeping the total
+    # now scale the nu(e/mu) / nu(e/mu)bar event count ratios, keeping the total
     # (nue + nuebar etc.) constant
-    if nu_nubar_ratio != 1.0:
+    if nu_nubar_ratio != 1.:
         scaled_maps = apply_nu_nubar_ratio(scaled_maps, nu_nubar_ratio)
-
-    median_energy = get_median_energy(maps['numu'])
 
     median_energy = get_median_energy(maps['numu'])
     if atm_delta_index != 0.0:
@@ -211,10 +181,13 @@ if __name__ == '__main__':
     parser.add_argument('--flux_file', metavar='FILE', type=str,
                         help= '''Input flux file in Honda format. ''',
                         default = 'flux/spl-solmax-aa.d')
+    parser.add_argument('--flux_mode', metavar='STRING', type=str,
+                        help='''Type of flux interpolation to perform''',
+                        default='bisplrep')
     parser.add_argument('--nue_numu_ratio',metavar='FLOAT',type=float,
                         help='''Factor to scale nue_flux by''',default=1.0)
     parser.add_argument('--nu_nubar_ratio',metavar='FLOAT',type=float,
-                        help='''Factor to scale nubar_flux by''',default=1.0)
+                        help='''Factor to scale nu_nubar_flux by''',default=1.0)
     parser.add_argument('--delta_index',metavar='FLOAT',type=float,
                         default=0.0,help='''Shift in spectral index of numu''')
     parser.add_argument('--energy_scale',metavar='FLOAT',type=float,
@@ -235,7 +208,14 @@ if __name__ == '__main__':
                                 (len(args.czbins)-1,args.czbins[0],args.czbins[-1]))
 
     #Instantiate a flux model
-    flux_model = HondaFluxService(args.flux_file)
+    logging.info("Defining flux service...")
+    
+    if args.flux_mode.lower() == 'integral-preserving':
+        logging.info("  Using Honda tables with integral-preserving interpolation...")
+        flux_model = IPHondaFluxService(args.flux_file)
+    else:
+        logging.info("  Using Honda tables with simple bisplrep interpolation...")
+        flux_model = HondaFluxService(args.flux_file)
 
     #get the flux
     flux_maps = get_flux_maps(

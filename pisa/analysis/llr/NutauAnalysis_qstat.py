@@ -261,16 +261,16 @@ for itrial in xrange(1,args.ntrials+1):
                 physics.info("Finding best fit for hypothesis mu_tau = 1.0")
                 profile.info("start optimizer")
                 largs[2] = change_nutau_norm_settings(template_settings['params'], scan_param, 1.0, True)
-            # profile LLH
-            elif args.t_stat == 'profile':
+            # profile LLH, and temporarily also asimov. since the convolution method alters the expecation value of he p.d.f
+            elif args.t_stat == 'profile' or args.t_stat == 'asimov':
                 physics.info("Finding best fit while profiling %s"%scan_param)
                 profile.info("start optimizer")
-                largs[2] = change_settings(template_settings['params'],scan_param,value, False)
-            # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
-            elif args.t_stat == 'asimov':
-                profile.info("clculate llh without fitting")
                 largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
-                kwargs['no_optimize']=True
+            # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
+            #elif args.t_stat == 'asimov':
+            #    profile.info("clculate llh without fitting")
+            #    largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
+            #    kwargs['no_optimize']=True
 
             # execute optimizer
             fit_results.append(find_max_llh_bfgs(*largs, **kwargs))

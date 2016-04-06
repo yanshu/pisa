@@ -166,7 +166,7 @@ class MCSimRunSettings(dict):
 
         if not flav_or_flavint is None:
             is_particle = flavInt.NuFlavInt(flav_or_flavint).isParticle()
-        if is_particle:
+        if barnobar==1:
             return self['nu_to_total_fract']
         return 1 - self['nu_to_total_fract']
 
@@ -180,7 +180,7 @@ class MCSimRunSettings(dict):
             fract = self.barnobarfract(barnobar=barnobar,
                                        is_particle=is_particle,
                                        flav_or_flavint=flav_or_flavint)
-
+        print "fract = ", fract
         return fract * self['tot_gen']
 
 

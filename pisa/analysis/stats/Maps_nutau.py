@@ -158,17 +158,28 @@ def get_stat_fluct_map(template_maker, fiducial_params, channel, seed=None):
     fmap.clip(0,out=fmap)
     return fmap
 
-def get_true_template(template_params, template_maker, no_sys_applied=False, error=False):
+def get_true_template(template_params, template_maker, no_sys_applied=False, error=False, both=False):
     if template_params['theta23'] == 0.0:
         logging.info("Zero theta23, so generating no oscillations template...")
         true_template = template_maker.get_template(template_params, no_osc_maps=True, no_sys_applied = no_sys_applied)
     else:
         true_template = template_maker.get_template(template_params, no_osc_maps=False, no_sys_applied= no_sys_applied)  
-    true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
-    if error:
-        error_map = Maps.flatten_map(true_template, channel=template_params['channel'],mapname='sumw2')
-        return true_fmap, error_map
-    return true_fmap
+
+    if not both:
+        true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
+        if error:
+            error_map = Maps.flatten_map(true_template, channel=template_params['channel'],mapname='sumw2')
+            return true_fmap, error_map
+        return true_fmap
+    else:
+        map_nu = Maps.flatten_map(true_template, channel=template_params['channel'],mapname = 'map_nu')
+        map_mu = Maps.flatten_map(true_template, channel=template_params['channel'],mapname = 'map_mu')
+        if error:
+            sumw2_nu = Maps.flatten_map(true_template, channel=template_params['channel'],mapname='sumw2_nu')
+            sumw2_mu = Maps.flatten_map(true_template, channel=template_params['channel'],mapname='sumw2_mu')
+            return map_nu, map_mu, sumw2_nu, sumw2_mu
+        return map_nu, map_mu
+
 
 def get_pseudo_tau_fmap(template_maker, fiducial_params, channel=None, seed=None):
     '''
