@@ -232,7 +232,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, only_upto_stage_2=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -302,7 +302,9 @@ class TemplateMaker:
                 self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
                                             'ebins': np.zeros_like(test_map['ebins']),
                                             'czbins': np.zeros_like(test_map['czbins'])}
-
+        
+        if only_upto_stage_2: return (self.flux_maps, self.osc_flux_maps)
+        
         if not return_aeff_maps:
             if any(step_changed[:3]):
                 physics.debug("STAGE 3: Getting event rate true maps...")
@@ -417,7 +419,7 @@ if __name__ == '__main__':
     #Now get the actual template
     with Timer(verbose=False) as t:
         template_maps = template_maker.get_template(get_values(params),
-                                                    return_stages=args.save_all)
+                                                    return_stages=args.save_all, only_upto_stage_2=False)
     profile.debug("==> elapsed time to get template: %s sec"%t.secs)
 
     physics.debug("Saving file to %s"%args.outfile)
