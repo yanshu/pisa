@@ -217,6 +217,10 @@
       "scale": 1.0,
       "value": 1.0
     },
+    "flux_mode": {
+      "value": "bisplrep",
+      "fixed": true
+    },
     "flux_file": {
       "fixed": true,
       "value": "flux/frj-solmin-mountain-aa.d"
