@@ -105,7 +105,7 @@ for data_tag, data_normal in [('data_NMH', True), ('data_IMH', False)]:
     # 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
     #    to templates.
     for hypo_tag, hypo_normal in [('hypo_NMH', True), ('hypo_IMH', False)]:
-        physics.info("Finding best fit for %s under %s assumption"%(data_tag, hypo_tag))
+	physics.info("Finding best fit for %s under %s assumption"%(data_tag, hypo_tag))
 	tprofile.info("start optimizer")
 	tprofile.info("Using %s"%metric_name)
 

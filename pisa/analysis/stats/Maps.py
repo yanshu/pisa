@@ -50,7 +50,7 @@ def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_typ
 def get_channel_template(template, channel='all'):
     """
     Takes a final level true (expected) template, and returns template for
-    the selected channel, with zero bins removed.
+    the selected channel (zero bins are kept).
     """
     channels = get_channels(channel)
     logging.trace("Creating map of channel: %s"%channel)
