@@ -113,7 +113,7 @@ def plot(name,data, asimov, hypos, asimov_hypos, params,trials):
             ax2.axvline(i,color='k', linestyle='-',alpha=0.2)
     if name == 'llh':
         ax.set_ylabel(r'$-2\Delta LLH$')
-        ax.set_ylim([0,40])
+        ax.set_ylim([0,30])
         for i in [1,4,9,16,25,36]:
             ax.axhline(i,color='k', linestyle='-',alpha=0.2)
             ax.text(2.02,i-0.2,r'$%i\ \sigma$'%np.sqrt(i))
