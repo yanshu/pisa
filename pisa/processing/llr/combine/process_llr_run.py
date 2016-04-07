@@ -194,12 +194,14 @@ base_key = 'true_NH' if args.fix_keys else 'true_NMH'
 logging.info("num trials for NH: ")
 # In general, this level will have keys: 'true_h_fiducial' and 'false_h_best_fit'
 # But when run with flag '--no_alt_fit', the 'false_h_best_fit' is missing
+truth_data = output_data[base_key]
 for key1 in ['true_h_fiducial','false_h_best_fit']:
-    if key1 not in output_data[base_key].keys(): continue
-    for key2 in output_data[base_key][key1].keys():
+    if key1 not in truth_data.keys(): continue
+    for key2 in truth_data[key1].keys():
         if 'hypo' not in key2: continue
         logging.info(
             "key1: {0:s}, key2: {1:s}, ntrials: {2:d}".format(
-                key1, key2,len(output_data[base_key][key1][key2]['opt_data']['llh'])))
+                key1, key2,
+                len(truth_data[key1][key2]['opt_data']['llh']['total'])))
 
 saveOutput(output_data, args.outfile)
