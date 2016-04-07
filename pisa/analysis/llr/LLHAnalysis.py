@@ -110,10 +110,13 @@ def find_opt_scipy(pd_map, template_maker, params, minim_settings,
 	hypo_template = template_maker.get_template(get_values(fixed_params))
 	channel = params['channel']['value']
 	if metric_name=='chisquare':
-            return {'chisquare':
-			[get_binwise_chisquare(pd_map, hypo_template, channel)]}
-	elif metric_name=='llh':
-            return {'llh': [-get_binwise_llh(pd_map, hypo_template, channel)]}
+            metric_val = get_binwise_chisquare(pd_map, hypo_template, channel)
+        elif metric_name=='llh':
+            binwise_llh = get_binwise_llh(pd_map, hypo_template, channel)
+            metric_val = { k: -llh for (k, llh) in binwise_llh.items() }
+        # insert a 'total' entry: sum of channels + prior
+        metric_val['total'] = sum([ metric_val[chan] for chan in metric_val.keys() ])
+        return { metric_name: [metric_val] }, {}
 
     init_vals = get_param_values(free_params)
     scales = get_param_scales(free_params)
@@ -143,6 +146,7 @@ def find_opt_scipy(pd_map, template_maker, params, minim_settings,
     best_fit_vals = minim_result.x
     metric_val = minim_result.fun
     dict_flags = {}
+    dict_flags['success'] = minim_result.success
     dict_flags['warnflag'] = minim_result.status
     dict_flags['task'] = minim_result.message
     if minim_result.has_key('jac'):
@@ -184,6 +188,7 @@ def find_opt_scipy(pd_map, template_maker, params, minim_settings,
         alt_fit_vals = alt_minim_result.x
         alt_metric_val = alt_minim_result.fun
         alt_dict_flags = {}
+        alt_dict_flags['success'] = alt_minim_result.success
         alt_dict_flags['warnflag'] = alt_minim_result.status
         alt_dict_flags['task'] = alt_minim_result.message
         if minim_result.has_key('jac'):

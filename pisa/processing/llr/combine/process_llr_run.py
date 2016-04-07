@@ -200,6 +200,6 @@ for key1 in ['true_h_fiducial','false_h_best_fit']:
         if 'hypo' not in key2: continue
         logging.info(
             "key1: {0:s}, key2: {1:s}, ntrials: {2:d}".format(
-                key1, key2,len(output_data[base_key][key1][key2]['llh'])))
+                key1, key2,len(output_data[base_key][key1][key2]['opt_data']['llh'])))
 
 saveOutput(output_data, args.outfile)
