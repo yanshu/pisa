@@ -376,17 +376,17 @@ def plot_column(tkey,hkey, subplot, column, template_settings, color,
                 plot_injected_val(scale*inj_value,ymax)
             if prior is not None:
                 plot_prior(scale*prior,scale*init_value, ymax,ax)
-
+            scale_lab = r' $\times\,%s$'%scale if scale!=1. else ''
             # Finally, plot bound:
             plot_bound(scale*prange,ymax,ax)
-
+        else:
+            scale_lab = ""
         if bool(re.match('^theta23',col_name)):
             ax.set_xlim([prange[0],prange[1]])
         else:
             ax.set_xlim([mean-5.0*std,mean+5.0*std])
         ax.set_ylim([ylim[0],ymax*1.2])
-        scale_label = r' $\times\,%s$'%scale if scale!=1. else ''
-        ax.set_xlabel(get_param_label_string(col_name)+scale_label)
+        ax.set_xlabel(get_param_label_string(col_name)+scale_lab)
 
         plt.legend(loc='best',framealpha=0.5)#,fontsize='large')
 
