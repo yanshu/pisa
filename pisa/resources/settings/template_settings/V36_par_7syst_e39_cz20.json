@@ -19,6 +19,10 @@
     "oversample_e": 10
   },
   "params": {
+    "flux_mode": {
+      "value": "bisplrep",
+      "fixed": true
+    },
     "flux_file": {
       "value": "flux/frj-solmin-mountain-aa.d",
       "fixed": true
