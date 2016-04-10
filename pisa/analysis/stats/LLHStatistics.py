@@ -55,15 +55,15 @@ def get_binwise_llh(pseudo_data, template, channel='all'):
 	hypo_tmpl = get_channel_template(template, channel)
 	totalLLH = {}
 	pd_chans = \
-	    sorted(list(set(pd_channel_tmpl.keys()) & set(get_all_channel_names())))
+	    sorted(set(pd_channel_tmpl.keys()) & set(get_all_channel_names()))
 	tmpl_chans = \
-	    sorted(list(set(hypo_tmpl.keys()) & set(get_all_channel_names())))
-	if not pd_chans==tmpl_chans:
+	    sorted(set(hypo_tmpl.keys()) & set(get_all_channel_names()))
+	if not pd_chans == tmpl_chans:
             raise ValueError("Templates must have the same channels.")
 	for chan in pd_chans:
 	    if not np.alltrue(hypo_tmpl[chan] >= 0.0):
-	        raise ValueError("""Template must have all bins >= 0.0! """
-				 """Template generation bug?""")
+	        raise ValueError("Template must have all bins >= 0.0!"
+				 " Template generation bug?")
 	    totalLLH[chan] = \
 	        np.sum(generalized_ln_poisson(
                     pd_channel_tmpl[chan],hypo_tmpl[chan]))
@@ -83,15 +83,15 @@ def get_binwise_chisquare(pseudo_data, template, channel='all'):
 	hypo_tmpl = get_channel_template(template, channel)
 	total_chisquare = {}
 	pd_chans = \
-	    sorted(list(set(pd_channel_tmpl.keys()) & set(get_all_channel_names())))
+	    sorted(set(pd_channel_tmpl.keys()) & set(get_all_channel_names()))
 	tmpl_chans = \
-	    sorted(list(set(hypo_tmpl.keys()) & set(get_all_channel_names())))
-	if not pd_chans==tmpl_chans:
+	    sorted(set(hypo_tmpl.keys()) & set(get_all_channel_names()))
+	if not pd_chans == tmpl_chans:
             raise ValueError("Templates must have the same channels.")
 	for chan in pd_chans:
 	    if not np.alltrue(hypo_tmpl[chan] >= 0.0):
-	        raise ValueError("""Template must have all bins >= 0.0! """
-				 """Template generation bug?""")
+	        raise ValueError("Template must have all bins >= 0.0!"
+				 " Template generation bug?")
 	    total_chisquare[chan] = \
 	        np.sum(np.divide(np.power(
 		      (pd_channel_tmpl[chan] - hypo_tmpl[chan]), 2),

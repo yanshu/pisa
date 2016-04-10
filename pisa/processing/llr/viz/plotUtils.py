@@ -234,8 +234,8 @@ def plot_fill(llr_cur, tkey, asimov_llr, hist_vals, bincen, fit_gauss, **kwargs)
     pval_gauss = 1.0 - norm.cdf(sigma_gauss)
     sigma_gauss_2sided = norm.isf(pval_gauss/2.)#np.sqrt(2.0)*erfinv(1.0 - pval_gauss)
 
-    mctrue_row = [tkey,asimov_llr,llr_cur.mean(),pval_count,sigma_count,
-		  sigma_count_2sided,pval_gauss,sigma_gauss,sigma_gauss_2sided]
+    mctrue_row = [tkey, asimov_llr, llr_cur.mean(), pval_count, sigma_count,
+                  sigma_count_2sided, pval_gauss, sigma_gauss, sigma_gauss_2sided]
 
     return mctrue_row
 
@@ -264,9 +264,13 @@ def plot_prior(prior,value,ymax,ax):
 
     if prior is None: return
     if isinstance(prior, np.ndarray) or isinstance(prior, list):
-        if len(prior)%2!=0:
-            # something unexpected has happened, don't plot
-            return
+        if len(prior)%2 != 0:
+            # something unexpected has happened
+            # this might mean that parameter values beyond a certain
+            # value can only be excluded at less than 1 sigma
+            # TODO: check if we can still plot this
+            raise ValueError("Uneven number of entries for 1 sigma"
+                             " prior region detected!")
         n = len(prior) / 2
         for i in xrange(0, n):
             xfill = np.linspace(prior[i*n], prior[i*n+1], 10)

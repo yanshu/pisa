@@ -115,7 +115,7 @@ def find_opt_scipy(pd_map, template_maker, params, minim_settings,
             binwise_llh = get_binwise_llh(pd_map, hypo_template, channel)
             metric_val = { k: -llh for (k, llh) in binwise_llh.items() }
         # insert a 'total' entry: sum of channels + prior
-        metric_val['total'] = sum([ metric_val[chan] for chan in metric_val.keys() ])
+        metric_val['total'] = sum(metric_val.values())
         return { metric_name: [metric_val] }, {}
 
     init_vals = get_param_values(free_params)
@@ -219,7 +219,7 @@ def find_opt_scipy(pd_map, template_maker, params, minim_settings,
     # insert a 'total' entry: sum of channels + prior
     for (i,val) in enumerate(opt_steps_dict[metric_name]):
         opt_steps_dict[metric_name][i]['total'] = \
-	        sum([ val[chan] for chan in val.keys() ])
+	        sum(val.values())
 
     if not save_steps:
 	# Last step not necessarily exactly minimum, so find minimum first
@@ -319,10 +319,11 @@ def minim_metric(opt_vals, names, scales, pd_map, fixed_params, template_maker,
         opt_steps_dict[key].append(template_params[key])
     opt_steps_dict[metric_name].append(metric_val)
 
+    val_tot = sum(metric_val.values())
     physics.debug("%s is %.2f at: " %
-	(metric_name, sum([ metric_val[key] for key in metric_val.keys() ])))
+	(metric_name, val_tot))
 
     for name, val in zip(names, opt_vals):
         physics.debug(" %20s = %6.4f" %(name,val))
 
-    return sum([ metric_val[key] for key in metric_val.keys() ])
+    return val_tot

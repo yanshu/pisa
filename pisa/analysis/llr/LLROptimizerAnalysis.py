@@ -191,7 +191,7 @@ for data_tag, data_normal in [('true_NMH',True),('true_IMH',False)]:
 
     # Get Asimov data set for assuming true: data_tag
     asimov_data = getAsimovData(template_maker, template_settings['params'],
-				data_normal)
+                                data_normal)
 
     trials = get_llh_hypothesis(
         data_tag, asimov_data, args.ntrials, template_maker,
@@ -207,26 +207,26 @@ for data_tag, data_normal in [('true_NMH',True),('true_IMH',False)]:
     # hierarchy fiducial model.
 
     if not args.no_alt_fit:
-	logging.info("Running false hierarchy best fit...")
-	output[data_tag]["false_h_best_fit"] = {}
+        logging.info("Running false hierarchy best fit...")
+        output[data_tag]["false_h_best_fit"] = {}
 
-	false_h_params = fix_non_atm_params(template_settings['params'])
-	false_h_settings, llh_data, alt_h_opt_flags = getAltHierarchyBestFit(
+        false_h_params = fix_non_atm_params(template_settings['params'])
+        false_h_settings, llh_data, alt_h_opt_flags = getAltHierarchyBestFit(
             asimov_data, template_maker, false_h_params, minimizer_settings,
             (not data_normal), check_octant)
 
-	asimov_data_null = template_maker.get_template(false_h_settings)
+        asimov_data_null = template_maker.get_template(false_h_settings)
         
-	# Store all data tag related inputs:
-	output[data_tag]['false_h_best_fit']['false_h_settings'] = false_h_settings
-	output[data_tag]['false_h_best_fit']['llh_null'] = llh_data
-	output[data_tag]['false_h_best_fit']['opt_flags'] = alt_h_opt_flags
+        # Store all data tag related inputs:
+        output[data_tag]['false_h_best_fit']['false_h_settings'] = false_h_settings
+        output[data_tag]['false_h_best_fit']['llh_null'] = llh_data
+        output[data_tag]['false_h_best_fit']['opt_flags'] = alt_h_opt_flags
 
-	trials = get_llh_hypothesis(
+        trials = get_llh_hypothesis(
             data_tag, asimov_data_null, args.ntrials, template_maker,
             template_settings["params"], minimizer_settings,
             args.save_steps, check_octant)
 
-	output[data_tag]['false_h_best_fit']['trials'] = trials
+        output[data_tag]['false_h_best_fit']['trials'] = trials
 
 to_json(output,args.outfile)
