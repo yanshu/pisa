@@ -104,11 +104,9 @@ class TemplateMaker:
                       (len(self.czbins)-1, self.czbins[0], self.czbins[-1]))
 
         # Instantiate a flux model service
-        #self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
-
         flux_mode = template_settings['flux_mode']
         if flux_mode.lower() == 'bisplrep':
-            self.flux_service = HondaFluxService(**template_settings)
+            self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
         elif flux_mode.lower() == 'nuflux_ip':
             self.flux_service = nufluxIPHondaFluxService(**template_settings)
         elif flux_mode.lower() == 'integral-preserving':
@@ -245,7 +243,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, apply_reco_prcs=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -257,18 +255,14 @@ class TemplateMaker:
         # now see what really changed, if we have a cached map to decide from which step on we have to recalculate
         if self.cache_params:
             step_changed = [False]*7
-            if apply_reco_prcs:
-                step_3_changed = (p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down'])
-            else:
-                step_3_changed = (no_sys_applied and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs'])
             for p,v in params.items():
                 if self.cache_params[p] != v:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif step_3_changed: step_changed[3] = True
+                    elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']: step_changed[5] = True
+                    elif (no_sys_applied==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
@@ -319,7 +313,9 @@ class TemplateMaker:
                 self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
                                             'ebins': np.zeros_like(test_map['ebins']),
                                             'czbins': np.zeros_like(test_map['czbins'])}
-
+        
+        if only_upto_stage_2: return (self.flux_maps, self.osc_flux_maps)
+        
         if not return_aeff_maps:
             if any(step_changed[:3]):
                 physics.debug("STAGE 3: Getting event rate true maps...")
@@ -439,7 +435,7 @@ if __name__ == '__main__':
     #Now get the actual template
     with Timer(verbose=False) as t:
         template_maps = template_maker.get_template(get_values(params),
-                                                    return_stages=args.save_all)
+                                                    return_stages=args.save_all, only_upto_stage_2=False)
     profile.debug("==> elapsed time to get template: %s sec"%t.secs)
 
     physics.debug("Saving file to %s"%args.outfile)

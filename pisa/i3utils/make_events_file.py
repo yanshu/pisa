@@ -29,6 +29,17 @@ CMSQ_TO_MSQ = 1.0e-4
 # Default fields to extract from source HDF5 files during processing
 # Note that *_coszen is generated from *_zenith
 EXTRACT_FIELDS = (
+    'run',
+    'event',
+    'true_x',
+    'true_y',
+    'true_z',
+    'true_azimuth',
+    'reco_x',
+    'reco_y',
+    'reco_z',
+    'reco_azimuth',
+    'reco_trck_len',
     'true_energy',
     'true_coszen',
     'reco_energy',
@@ -39,11 +50,23 @@ EXTRACT_FIELDS = (
 
 # Default fields to output to destination PISA events HDF5 file
 OUTPUT_FIELDS = (
+    'run',
+    'event',
+    'true_x',
+    'true_y',
+    'true_z',
+    'true_azimuth',
+    'reco_x',
+    'reco_y',
+    'reco_z',
+    'reco_azimuth',
+    'reco_trck_len',
     'true_energy',
     'true_coszen',
     'reco_energy',
     'reco_coszen',
     'weighted_aeff',
+    'mc_weight',
     'pid',
 )
 
@@ -181,28 +204,31 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
             # Retrieve data from all nodes specified in the processing
             # settings file
             data = data_proc_params.getData(fname, run_settings=run_settings)
-
-            # Check to make sure only one run is present in the data
             runs_in_data = set(data['run'])
-            print "runs_in_data = ", runs_in_data
-            assert len(runs_in_data) == 1, \
-                    'Must be just one run present in data'
+            flavints_in_runs = None
+            for run in runs_in_data:
+                all_runs.add(run)
+                if not run in filecount:
+                    filecount[run] = 0
+                filecount[run] += 1
+                rs_run = run_settings[run]
 
-            run = int(data['run'][0])
-            all_runs.add(run)
-            if not run in filecount:
-                filecount[run] = 0
-            filecount[run] += 1
-            rs_run = run_settings[run]
+                # Record geom; check that geom is consistent with other runs
+                if detector_geom is None:
+                    detector_geom = rs_run['geom']
+                assert rs_run['geom'] == detector_geom, \
+                        'All runs\' geometries must match!'
 
-            # Record geom; check that geom is consistent with other runs
-            if detector_geom is None:
-                detector_geom = rs_run['geom']
-            assert rs_run['geom'] == detector_geom, \
-                    'All runs\' geometries must match!'
+                # Check that all the runs in runs_in_data give the same flavints,
+                # i.e. they must be sub runs for the same neutrino flavor.
+                # (e.g. run 126001, 126002, 126003 are the 3 sub runs in nue file 12600)
+                if flavints_in_runs is None:
+                    flavints_in_runs = rs_run['flavints']
+                assert rs_run['flavints'] == flavints_in_runs, \
+                        'All sub runs\' flavints must match!'
 
             # Loop through all flavints spec'd for run
-            for run_flavint in rs_run['flavints']:
+            for run_flavint in flavints_in_runs:
                 barnobar = run_flavint.barNoBar()
                 int_type = run_flavint.intType()
 
@@ -219,24 +245,24 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
                 for grp_n, flavint_group in enumerate(flavint_groupings):
                     if not run_flavint in flavint_group:
                         continue
+                    for run in runs_in_data:
+                        # Instantiate a field for particles and anti-particles,
+                        # keyed by the output of the barNoBar() method for each
+                        if not run in ngen[grp_n][int_type]:
+                            ngen[grp_n][int_type][run] = {
+                                flavInt.NuFlav(12).barNoBar(): 0,
+                                flavInt.NuFlav(-12).barNoBar(): 0,
+                            }
 
-                    # Instantiate a field for particles and anti-particles,
-                    # keyed by the output of the barNoBar() method for each
-                    if not run in ngen[grp_n][int_type]:
-                        ngen[grp_n][int_type][run] = {
-                            flavInt.NuFlav(12).barNoBar(): 0,
-                            flavInt.NuFlav(-12).barNoBar(): 0,
-                        }
-
-                    # Record count only if it hasn't already been recorded
-                    if ngen[grp_n][int_type][run][barnobar] == 0:
-                        # Note that one_weight includes cc/nc:total fraction,
-                        # so DO NOT specify the full flavint here, only flav
-                        # (since one_weight does NOT take bar/nobar fraction,
-                        # it must be included here in the ngen computation)
-                        flav_ngen = run_settings.totGen(run=run,
-                                                        barnobar=barnobar)
-                        ngen[grp_n][int_type][run][barnobar] = flav_ngen
+                        # Record count only if it hasn't already been recorded
+                        if ngen[grp_n][int_type][run][barnobar] == 0:
+                            # Note that one_weight includes cc/nc:total fraction,
+                            # so DO NOT specify the full flavint here, only flav
+                            # (since one_weight does NOT take bar/nobar fraction,
+                            # it must be included here in the ngen computation)
+                            flav_ngen = run_settings.totGen(run=run,
+                                                            barnobar=barnobar)
+                            ngen[grp_n][int_type][run][barnobar] = flav_ngen
 
                     # Append the data. Note that extracted_data is:
                     # extracted_data[group n][int_type][extract field name] =
@@ -244,6 +270,7 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
                     [extracted_data[grp_n][int_type][f].extend(
                         intonly_cut_data[f])
                      for f in extract_fields]
+
 
     # Compute "weighted_aeff" field:
     #
@@ -270,7 +297,7 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
     #
     # See Justin Lanfranchi's presentation on the PINGU Analysis call,
     # 2015-10-21, for more details.
-    if 'weighted_aeff' in output_fields:
+    if 'weighted_aeff' in output_fields or 'mc_weight' in output_fields:
         fmtfields = (' '*12+'flavint_group',
                      'int type',
                      '     run',
@@ -284,14 +311,17 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
         logging.info(lines)
         for grp_n, flavint_group in enumerate(flavint_groupings):
             for int_type in flavInt.ALL_NUINT_TYPES:
-                ngen_it_tot = 0
+                ngen_it_tot = {} 
+                ngen_it_tot_tot = 0
                 for run, run_counts in ngen[grp_n][int_type].iteritems():
+                    ngen_it_tot[run] = 0
                     for barnobar, barnobar_counts in run_counts.iteritems():
-                        ngen_it_tot += barnobar_counts
+                        ngen_it_tot_tot += barnobar_counts
+                        ngen_it_tot[run] += barnobar_counts
                         logging.info(
                             fmt %
                             (flavint_group.simpleStr(), int_type, str(run),
-                             barnobar, int(barnobar_counts), int(ngen_it_tot))
+                             barnobar, int(barnobar_counts), int(ngen_it_tot[run]))
                         )
                 # Convert data to numpy array
                 for field in extract_fields:
@@ -299,9 +329,20 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
                             np.array(extracted_data[grp_n][int_type][field])
 
                 # Generate weighted_aeff field for this group / int type's data
-                extracted_data[grp_n][int_type]['weighted_aeff'] = \
-                        extracted_data[grp_n][int_type]['one_weight'] \
-                        / ngen_it_tot * CMSQ_TO_MSQ
+                if 'weighted_aeff' in output_fields:
+                    # Get an array of ngen (different ngen for different sub run) in the data
+                    array_ngen_it_tot = np.array([ngen_it_tot[run] for run in extracted_data[grp_n][int_type]['run']])
+                    extracted_data[grp_n][int_type]['weighted_aeff'] = \
+                            extracted_data[grp_n][int_type]['one_weight'] \
+                            / array_ngen_it_tot * CMSQ_TO_MSQ
+                if 'mc_weight' in output_fields:
+                    array_ngen_it_tot = np.array([ngen_it_tot[run] for run in extracted_data[grp_n][int_type]['run']])
+                    E = extracted_data[grp_n][int_type]['true_energy']
+                    gamma = np.array([run_settings[run]['sim_spectral_index'] for run in extracted_data[grp_n][int_type]['run']])
+                    Emax =  np.array([run_settings[run]['energy_max'] for run in extracted_data[grp_n][int_type]['run']])
+                    Emin =  np.array([run_settings[run]['energy_min'] for run in extracted_data[grp_n][int_type]['run']])
+                    extracted_data[grp_n][int_type]['mc_weight'] = \
+                            np.power(E, gamma)/ array_ngen_it_tot / (Emax - Emin)
 
     # Report file count per run
     for run, count in filecount.items():
@@ -580,6 +621,7 @@ def main():
         # together; used for reco services (MC and vbwkde)
         'nuecc+nuebarcc;numucc+numubarcc;nutaucc+nutaubarcc;nuallnc+nuallbarnc',
     ]
+    #groupings = [None]    
 
     # Create the events files
     for grouping in groupings:

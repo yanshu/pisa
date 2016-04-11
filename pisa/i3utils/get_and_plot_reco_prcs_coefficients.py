@@ -24,6 +24,8 @@ from pisa.analysis.GetMCError import GetMCError
 from pisa.utils.params import get_values, change_nutau_norm_settings
 
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -41,6 +43,8 @@ parser.add_argument('--reco_prcs_vals',type=str,
                     default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
+parser.add_argument('--plotMC',action='store_true',default=False,
+                    help="Plot the MC events number in each bin vs DOM efficiency and hole ice values.")
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
@@ -73,12 +77,10 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg += " pseudo_data_settings channel: '%s', template channel: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
     raise ValueError(error_msg)
 
-#reco_mc_file = from_json(find_resource(template_settings['params']['reco_mc_wt_file']['value']))
-
 if args.sim == '4digit':
-    reco_mc_file = "~/pisa/pisa/resources/aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == '5digit':
-    reco_mc_file = "~/pisa/pisa/resources/aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    reco_mc_file = "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == 'dima':
     #TODO    
     print "to do, dima sets"
@@ -142,11 +144,11 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                              'cscd':{}}
     for flav in ['trck','cscd']:
         templ = []
+        templ_MC = []
         templ_err = []
-        templ_nominal = []
-        templ_nominal_err = []
         for reco_prcs_val in reco_prcs_vals:
             templ.append(tmaps[precision_tag][str(reco_prcs_val)][flav])  
+            templ_MC.append(MCmaps[precision_tag][str(reco_prcs_val)][flav])  
 
             ## Get template error (either standard deviation or standard error):
             # standard deviation: sqrt(n_event_rate):
@@ -156,8 +158,10 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
             templ_err.append(np.sqrt(tmaps[precision_tag][str(reco_prcs_val)][flav])/np.sqrt(MCmaps[precision_tag][str(reco_prcs_val)][flav]))  
 
         templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
+        #print "templ_nominal[", flav , "] = ", templ_nominal[flav]
         templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav])/np.sqrt(MCmaps[precision_tag]['1.0'][flav]))
         templ = np.array(templ)
+        templ_MC = np.array(templ_MC)
         templ_err = np.array(templ_err)
         templ_nominal = np.array(templ_nominal)
         templ_nominal_err = np.array(templ_nominal_err)
@@ -165,6 +169,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         tml_shape = np.shape(templ)
         n_ebins = tml_shape[1] 
         n_czbins = tml_shape[2] 
+        #print "tml_shape = ", tml_shape
         coeff = np.empty(np.shape(tmaps[precision_tag]['1.0'][flav]), dtype = object) 
         y_val_max = np.max(np.divide(templ, templ_nominal))
         y_val_min = np.min(np.divide(templ, templ_nominal))
@@ -187,10 +192,26 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                 c = popt[2]
                 coeff[i,j] = [a, b, c]
 
-                if args.plot:
+                if args.plotMC:
                     fig_num = i * n_czbins+ j
                     if (fig_num == 0 or fig_num == n_czbins * n_ebins):
                         fig = plt.figure(num=1, figsize=( 4*n_czbins, 4*n_ebins))
+                    subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
+                    #print 'subplot_idx = ', subplot_idx
+                    plt.subplot(n_ebins, n_czbins, subplot_idx)
+                    plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                    plt.scatter(reco_prcs_vals, templ_MC[:,i,j], color='blue')
+                    plt.xlim(min(reco_prcs_vals)-0.01, max(reco_prcs_vals)+0.01)
+                    if(fig_num == n_czbins * n_ebins-1):
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
+                        plt.clf()
+
+
+                if args.plot:
+                    fig_num = i * n_czbins+ j
+                    if (fig_num == 0 or fig_num == n_czbins * n_ebins):
+                        fig = plt.figure(num=2, figsize=( 4*n_czbins, 4*n_ebins))
                     subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
                     #print 'subplot_idx = ', subplot_idx
                     plt.subplot(n_ebins, n_czbins, subplot_idx)

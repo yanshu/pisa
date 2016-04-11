@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from matplotlib.offsetbox import AnchoredText
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
+from pisa.utils.plot import show_map
 
 class plotter(object):
 
@@ -14,6 +15,7 @@ class plotter(object):
         self.outdir = outdir
         self.livetime=livetime
         self.fmt = fmt
+        self.channel = None
 
     def get_1D_projection(self,map_2d, axis):
         if axis == 'coszen':
@@ -26,14 +28,27 @@ class plotter(object):
                 output_array += map_2d[:,i]
         return output_array
 
-    def plot_1d(self,maps, errors, colors, names, axis, x_bin_edges, outname,linestyles=None):
+    def get_1D_average(self,map_2d, axis, bins):
+        weights = bins[1:] - bins[:-1]
+        total = bins[-1]-bins[0]
+        if axis == 'coszen':
+            output_array = np.zeros(map_2d.shape[1])
+            for i in range(0, map_2d.shape[0]):
+                output_array += weights[i]*map_2d[i,:]
+        if axis == 'energy':
+            output_array = np.zeros(map_2d.shape[0])
+            for i in range(0, map_2d.shape[1]):
+                output_array += weights[i]*map_2d[:,i]
+        return output_array/total
+
+    def plot_1d(self,maps, errors, colors, names, axis, x_bin_edges, outname,linestyles=None, ratio=True, yaxis_label='# entries'):
         if not linestyles:
             linestyles=['-']*len(maps)
         x_bin_centers = get_bin_centers(x_bin_edges)
         x_bin_width = get_bin_sizes(x_bin_edges)
         fig = plt.figure(figsize=(8,8))
         fig.patch.set_facecolor('none')
-        if len(maps) == 1:
+        if len(maps) == 1 or not ratio:
             ax1 = fig.add_subplot(111)
         else:
             ax1 = plt.subplot2grid((4,1), (0,0), rowspan=3)
@@ -41,21 +56,34 @@ class plotter(object):
             if name == 'data':
                 ax1.errorbar(x_bin_centers,map,yerr=error,fmt='o',color='black', markersize='4',label=name)
             else:
-                hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1,color=color,linestyle=linestyle, label=name)
-                ax1.bar(x_bin_edges[:-1],2*error, bottom=map-error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
+                hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1.5,color=color,linestyle=linestyle, label=name)
+                if error:
+                    ax1.bar(x_bin_edges[:-1],2*error, bottom=map-error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
         ax1.grid()
-        ax1.set_ylabel('# entries')
+        gridlines = ax1.get_xgridlines() + ax1.get_ygridlines()
+        for line in gridlines:
+            line.set_linestyle('-')
+            line.set_alpha(0.2)
+        ax1.set_ylabel(yaxis_label)
         minimum = min([min(map) for map in maps])
         maximum = max([max(map) for map in maps])
         if self.logy:
             if minimum == 0:
                 minimum = 1
             ax1.set_yscale('log')
-            ax1.set_ylim(np.power(10,int(np.log10(minimum))),np.power(10,int(np.log10(maximum)+1)))
+            #ax1.set_ylim(np.power(10,0.8*(np.log10(minimum))),np.power(10,0.8**(np.log10(maximum))))
+            maximum = np.power(10,0.5+np.log10(maximum))
+            ax1.set_ylim(minimum, maximum)
         else:
             ax1.set_ylim(minimum, 1.5*maximum)
-        ax1.legend(loc='upper right',ncol=1, frameon=False,numpoints=1,fontsize=10)
-        a_text = AnchoredText(r'$\nu_\tau$ appearance'+'\n%s years, %s\nPreliminary'%(self.livetime,self.channel), loc=2, frameon=False)
+        ax1.legend(loc='upper right',ncol=2, frameon=False,numpoints=1,fontsize=10)
+        text = r'$\nu_\tau$ appearance'
+        if self.livetime:
+            text += '\n%s years'%(self.livetime)
+        if self.channel:
+            text += ',%s'%(self.channel)
+        text += '\nExpected'
+        a_text = AnchoredText(text, loc=2, frameon=False)
         ax1.add_artist(a_text)
         if axis == 'energy':
             ax1.set_xlabel('Energy (GeV)')
@@ -64,7 +92,7 @@ class plotter(object):
         if axis == 'coszen':
             ax1.set_xlabel('cos(zen)')
 
-        if len(maps) >1:
+        if len(maps) >1 and ratio:
             ax2 = plt.subplot2grid((4,1), (3,0),sharex=ax1)
             minimum = 10
             maximum = 0
@@ -92,6 +120,10 @@ class plotter(object):
             if axis == 'coszen':
                 ax2.set_xlabel('cos(zen)')
             ax2.grid()
+            gridlines = ax2.get_xgridlines() + ax2.get_ygridlines()
+            for line in gridlines:
+                line.set_linestyle('-')
+                line.set_alpha(0.2)
             minimum = 1+ 2.*(minimum-1)
             maximum = 1+ 2.*(maximum-1)
             if maximum == 1:
@@ -120,6 +152,17 @@ class plotter(object):
             pmaps.append(self.get_1D_projection(map,axis))
             perrors.append(np.sqrt(self.get_1D_projection(error,axis)))
         self.plot_1d(pmaps, perrors, colors, names, axis, x_bin_edges, outname,linestyles=linestyles)
+
+    def plot_map(self,map,names,outname=''):
+        fig = plt.figure(figsize=(8,8))
+        fig.patch.set_facecolor('none')
+
+        show_map(map,logE=True,annotate_no_evts=False)   
+
+        plt.savefig(self.outdir+'/'+outname+'.'+self.fmt, dpi=150, edgecolor='none',facecolor=fig.get_facecolor())
+        plt.clf()
+        plt.close(fig)
+        
 
     def plot_1d_slices(self,maps, errors, colors, names, axis, x_bin_edges, channel):
         self.channel = channel

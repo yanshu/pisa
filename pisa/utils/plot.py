@@ -18,10 +18,10 @@ def show_map(pmap, title=None, cbar = True,
              emin=None, emax=None,
              czmin=None, czmax=None,
              invalid=False, logE=None,
-             log=False, fontsize=16,
+             log=False, fontsize=12,
              #xlabel=r'cos $\vartheta_\mathrm{zenith}$',
              xlabel='cos(zenith)',
-             ylabel='Energy [GeV]',
+             ylabel='Energy (GeV)',
              zlabel=None,
              zlabel_size='large',
              annotate_no_evts=True,
@@ -64,6 +64,7 @@ def show_map(pmap, title=None, cbar = True,
 
     are just passed on to this function.
     '''
+    plt.tick_params(axis='both', which='major', labelsize=fontsize)
 
     #Extract the map to plot, take the log if called for
     cmap = np.log10(pmap['map']) if log else pmap['map']
@@ -91,8 +92,13 @@ def show_map(pmap, title=None, cbar = True,
 
     #Use pcolormesh to be able to show nonlinear spaces
     x,y = np.meshgrid(pmap['czbins'],pmap['ebins'])
-    colormesh = plt.pcolormesh(x,y,cmap,vmin=vmin, vmax=vmax, **kwargs)
-    counts = colormesh.get_array()
+    #colormesh = plt.pcolormesh(x,y,cmap,vmin=vmin, vmax=vmax, **kwargs)
+    z=cmap
+    img = plt.imshow(z, vmin=vmin, vmax=vmax,
+                extent=[x.min(), x.max(), y.min(), y.max()],
+                origin='lower',**kwargs)
+    #counts = colormesh.get_array()
+    counts = img.get_array()
 
     cz_bin_centers = get_bin_centers(pmap['czbins'])
     e_bin_centers = get_bin_centers(pmap['ebins'])
@@ -118,7 +124,7 @@ def show_map(pmap, title=None, cbar = True,
 
     #And a title
     if title is not None:
-        plt.suptitle(title,fontsize=fontsize)
+        plt.gca().set_title(title,fontsize=fontsize)
 
     axis = plt.gca()
     #Check wether energy axis is linear or log-scale
@@ -143,7 +149,7 @@ def show_map(pmap, title=None, cbar = True,
         col_bar = plt.colorbar(format=r'$10^{%.1f}$') if log else plt.colorbar()
         if zlabel:
             col_bar.set_label(zlabel,fontsize=fontsize)
-        col_bar.ax.tick_params(labelsize=zlabel_size)
+        col_bar.ax.tick_params(labelsize=fontsize)
     #Return axes for further modifications
     return axis
 
@@ -186,6 +192,12 @@ def ratio_map(amap,bmap):
     return { 'ebins': amap['ebins'],
              'czbins': amap['czbins'],
              'map' : amap['map']/bmap['map']}
+
+def s_over_sqrt_b(smap,bmap):
+    sqrt_map = {'ebins': bmap['ebins'],
+                'czbins': bmap['czbins'],
+                'map':np.sqrt(bmap['map'])}
+    return ratio_map(smap,sqrt_map)
 
 def distinguishability_map(amap,bmap):
     '''

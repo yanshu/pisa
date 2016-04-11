@@ -37,13 +37,9 @@ class HondaFluxService():
         # Read from json file
         self.flux_NuFluxIP = from_json(find_resource(NuFluxIP_file))
 
-    def get_flux(self, ebins, czbins, prim):
+    def get_flux(self, ebins, czbins, prim, not_bin_center=False):
         """Get the flux in units [m^-2 s^-1] for the given
            bin edges in energy and cos(zenith) and the primary."""
-
-        #Evaluate the flux at the bin centers
-        evals = get_bin_centers(ebins)
-        czvals = get_bin_centers(czbins)
 
         # Get the flux from NuFluxIP_file 
         return_table = self.flux_NuFluxIP[prim]
