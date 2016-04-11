@@ -705,6 +705,7 @@ def oversample_binning(coarse_bins, factor):
             fine_bins = np.append(fine_bins,
                                   np.linspace(coarse_bins[i], upper_edge,
                                               factor, endpoint=False))
+        fine_bins = np.append(fine_bins,coarse_bins[-1])
 
     return fine_bins
 
