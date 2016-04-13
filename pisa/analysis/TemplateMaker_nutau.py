@@ -133,6 +133,9 @@ class TemplateMaker:
             self.osc_service = NucraftOscillationService(
                 self.oversample_ebins, self.oversample_czbins, **template_settings
             )
+        elif osc_code == 'ocelot':
+            from pisa.oscillations.OcelotOscillationService import OcelotOscillationService
+            self.osc_service = OcelotOscillationService(self.oversample_ebins, self.oversample_czbins, atmos_model= 'simple', prob_model='Probabilities')
         else:
             error_msg = 'OscillationService NOT implemented for ' + \
                     'osc_code = %s' % osc_code

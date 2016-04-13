@@ -17,14 +17,14 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 
-def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nutau_files, output_form, cut_level, year, anlys_ebins, czbins, sim_version):
+def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nutau_files, output_form, cut_level, year, ebins, anlys_ebins, czbins, sim_version, use_cut_on_trueE=True):
     anlys_bins = (anlys_ebins, czbins)
     livetime_in_s = Julian_year
     #livetime_in_s = 27920000  # (DC12: 1 livetime year = 27920000 s)
-    if sim_version == 4:
+    if sim_version == "4digit":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
         Reco_Track_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Track'
-    elif sim_version == 5:
+    elif sim_version == "5digit":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NuMuCC'
         Reco_Track_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_Track'
 
@@ -153,7 +153,7 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
                 cut_aeff[flavor][int_type] = np.logical_and(TrueNeutrino_pdg[flavor.split('_bar')[0]] == nuDict[flavor], InteractionType[flavor.split('_bar')[0]] == inttypeDict[int_type])
             else:
                 #TODO
-                print "cut level above L5 is not available"
+                raise ValueError("cut level above L5 is not available")
 
     #osc_weights = {}
     #osc_flux_maps_from_i3 = {}
@@ -194,7 +194,13 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
             true_coszen = MC_true_coszen[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
             reco_energy = MN_reco_energy[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
             reco_coszen = MN_reco_coszen[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
-
+            cut_on_true_E = np.logical_and(true_energy >= ebins[0], true_energy <= ebins[-1])
+            if use_cut_on_trueE:
+                true_energy = true_energy[cut_on_true_E]
+                true_coszen = true_coszen[cut_on_true_E]
+                reco_energy = reco_energy[cut_on_true_E]
+                reco_coszen = reco_coszen[cut_on_true_E]
+                oscillated_rate = oscillated_rate[cut_on_true_E]
             osc_weights[flavor][int_type] = oscillated_rate
             true_coszen_from_i3[flavor][int_type] = true_coszen
             true_energy_from_i3[flavor][int_type] = true_energy
@@ -212,6 +218,14 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
                 reco_z = MN_reco_z[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
                 reco_t = MN_reco_t[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
                 reco_trck_len = MN_reco_trck_len[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]]
+
+                if use_cut_on_trueE:
+                    reco_x = reco_y[cut_on_true_E]
+                    reco_y = reco_y[cut_on_true_E]
+                    reco_z = reco_z[cut_on_true_E]
+                    reco_t = reco_t[cut_on_true_E]
+                    reco_trck_len = reco_t[cut_on_true_E]
+
                 reco_xyzt_from_i3[flavor][int_type] = {}
                 reco_xyzt_from_i3[flavor][int_type]['x'] = reco_x 
                 reco_xyzt_from_i3[flavor][int_type]['y'] = reco_y
@@ -225,6 +239,14 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
                 true_y = MC_true_y[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
                 true_z = MC_true_z[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
                 true_t = MC_true_t[flavor.split('_bar')[0]][cut_aeff[flavor][int_type]] 
+
+                if use_cut_on_trueE:
+                    true_x = true_y[cut_on_true_E]
+                    true_y = true_y[cut_on_true_E]
+                    true_z = true_z[cut_on_true_E]
+                    true_t = true_t[cut_on_true_E]
+                    true_trck_len = true_t[cut_on_true_E]
+
                 true_xyzt_from_i3[flavor][int_type] = {}
                 true_xyzt_from_i3[flavor][int_type]['x'] = true_x 
                 true_xyzt_from_i3[flavor][int_type]['y'] = true_y
@@ -262,6 +284,13 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
                 oscillated_rate = Oscillated_ExpectedNumber[flavor][cut_pid[flavor][channel]]
                 reco_energy = MN_reco_energy[flavor][cut_pid[flavor][channel]] 
                 reco_coszen = MN_reco_coszen[flavor][cut_pid[flavor][channel]]
+                true_energy = MC_true_energy[flavor][cut_pid[flavor][channel]] 
+                if use_cut_on_trueE:
+                    cut_on_true_E = np.logical_and(true_energy >= ebins[0], true_energy <= ebins[-1])
+                    reco_energy = reco_energy[cut_on_true_E]
+                    reco_coszen = reco_coszen[cut_on_true_E]
+                    oscillated_rate = oscillated_rate[cut_on_true_E]
+
                 oscillated_rate_pid = np.concatenate([oscillated_rate_pid, oscillated_rate])
                 reco_energy_pid = np.concatenate([reco_energy_pid, reco_energy]) 
                 reco_coszen_pid = np.concatenate([reco_coszen_pid, reco_coszen])
