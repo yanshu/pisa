@@ -90,9 +90,9 @@ else:
     raise ValueError( "sim allowed: ['5digit', '4digit', 'dima']")
 
 # Just make sure the reco_mc_file is correct
-template_settings_Reco['params']['reco_mc_wt_file']['value'] = reco_mc_file
-template_settings_Reco['params']['reco_vbwkde_evts_file']['value'] = reco_mc_file
-template_settings_Reco['params']['pid_events']['value'] = reco_mc_file
+template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
+template_settings['params']['reco_vbwkde_evts_file']['value'] = reco_mc_file
+template_settings['params']['pid_events']['value'] = reco_mc_file
 
 if args.plotReso:
     utils.mkdir(outdir+'/plots/resolutions_withweight/')
