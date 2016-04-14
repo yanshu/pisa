@@ -47,7 +47,7 @@
         46.08625607,
         62.06648387,
         83.58779273,
-        112.57153069,
+        112.57153069
     ],
     "oversample_cz": 10,
     "oversample_e": 10,
@@ -476,7 +476,7 @@
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/5digit_RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+      "value": "reco_prcs/5digit_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_10_by_16.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,

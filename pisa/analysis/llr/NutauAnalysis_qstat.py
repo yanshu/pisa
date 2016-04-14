@@ -70,6 +70,7 @@ parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='i
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
 parser.add_argument('--fluct', default='poisson', help='''What random sampling to be used for psudo data, this is usually just poisson, but can also be set to model_stat to gaussian fluctuate the model expectations by theiruncertainty''')
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
+parser.add_argument('-fd', default='', dest='f_param_data', help='''fix a niusance parameter for the psudo data to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusance parameter to a value by e.g. -f nuisance_p=1.2 for grid point calculations''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
@@ -115,6 +116,14 @@ if not args.f_param == '':
         fix_param_val = float(f_param[1])
         template_settings['params'] = change_settings(template_settings['params'],fix_param_name,fix_param_val,True)
         print 'fixed param %s to %s'%(fix_param_name,fix_param_val)
+
+if not args.f_param_data == '':
+    f_param_data = args.f_param_data.split('=')
+    assert(len(f_param_data)==2)
+    fix_param_name = f_param_data[0]
+    fix_param_val = float(f_param_data[1])
+    pseudo_data_settings['params'] = change_settings(pseudo_data_settings['params'],fix_param_name,fix_param_val,True)
+    print 'fixed param %s to %s'%(fix_param_name,fix_param_val)
 
 fix_param_scan_name = None
 fix_param_scan_val = None

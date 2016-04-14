@@ -78,7 +78,7 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     raise ValueError(error_msg)
 
 if args.sim == '4digit':
-    reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == '5digit':
     reco_mc_file = "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == 'dima':
@@ -130,10 +130,10 @@ if not args.templ_already_saved:
               'template_settings' : template_settings}
     if args.pseudo_data_settings is not None:
         output['pseudo_data_settings'] = pseudo_data_settings
-    to_json(output,outdir+'%s_RecoPrcs_templates_10_by_16.json'%args.sim)
+    to_json(output,outdir+'/%s_RecoPrcs_templates_10_by_16.json'%args.sim)
 else:
     # if templates already saved
-    output_template = from_json(outdir+'%s_RecoPrcs_templates_10_by_16.json'%args.sim)
+    output_template = from_json(outdir+'/%s_RecoPrcs_templates_10_by_16.json'%args.sim)
     tmaps = output_template['tmaps']
     MCmaps = output_template['MCmaps']
 
@@ -203,8 +203,8 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     plt.scatter(reco_prcs_vals, templ_MC[:,i,j], color='blue')
                     plt.xlim(min(reco_prcs_vals)-0.01, max(reco_prcs_vals)+0.01)
                     if(fig_num == n_czbins * n_ebins-1):
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
 
@@ -233,13 +233,13 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                         #plt.figtext(0.5, 0.95, 'Reco Precision cubic fits %s'%flav, fontsize=60,ha='center')
                         #fig.subplots_adjust(hspace=0)
                         #fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
         coeffs[precision_tag][flav] = coeff
 
 
 #And write to file
-to_json(coeffs,outdir+'%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_10_by_16.json'%(args.sim, min(reco_prcs_vals), max(reco_prcs_vals)))
+to_json(coeffs,outdir+'/%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_10_by_16.json'%(args.sim, min(reco_prcs_vals), max(reco_prcs_vals)))
 
