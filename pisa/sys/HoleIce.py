@@ -14,14 +14,17 @@ class HoleIce(SysBase):
         self.linear = {} 
         self.quadratic = {} 
         self.fixed_ratios = {} 
+        self.slope = {}
         self.sim = sim_ver
         for channel in ['cscd', 'trck']:
             # add up and down together
-            self.linear[channel] = slopes[channel]['linear']
-            self.quadratic[channel] = slopes[channel]['quadratic']
+            #self.linear[channel] = slopes[channel]['linear']
+            #self.quadratic[channel] = slopes[channel]['quadratic']
+            self.slope[channel] = slopes[channel]['slopes']
             if self.sim == '4digit':
                 self.fixed_ratios[channel] = slopes[channel]['fixed_ratios']
 
     def get_scales(self, channel, sys_val):
         # get the sacles to be applied to a map
-        return self.linear[channel]*(sys_val - self.hole_ice_val_nominal) + self.quadratic[channel]*(sys_val - self.hole_ice_val_nominal)**2 + 1.
+        # return self.linear[channel]*(sys_val - self.hole_ice_val_nominal) + self.quadratic[channel]*(sys_val - self.hole_ice_val_nominal)**2 + 1.
+        return self.slope[channel]*(sys_val - self.hole_ice_val_nominal) + 1.

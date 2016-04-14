@@ -17,6 +17,7 @@ import random as rnd
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import pisa.utils.utils as utils
 from pisa.utils.log import logging, profile, physics, set_verbosity
+import pisa.utils.events as events
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
@@ -45,6 +46,8 @@ parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('--plotMC',action='store_true',default=False,
                     help="Plot the MC events number in each bin vs DOM efficiency and hole ice values.")
+parser.add_argument('--plotReso',action='store_true',default=False,
+                    help="Plot the Resolution.")
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
@@ -66,7 +69,6 @@ czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
 template_settings['params']['atmos_mu_scale']['value'] = 0
 
-template_settings = copy.deepcopy(template_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 
 # make sure that both pseudo data and template are using the same
@@ -78,7 +80,7 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     raise ValueError(error_msg)
 
 if args.sim == '4digit':
-    reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == '5digit':
     reco_mc_file = "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == 'dima':
@@ -86,6 +88,64 @@ elif args.sim == 'dima':
     print "to do, dima sets"
 else:
     raise ValueError( "sim allowed: ['5digit', '4digit', 'dima']")
+
+# Just make sure the reco_mc_file is correct
+template_settings_Reco['params']['reco_mc_wt_file']['value'] = reco_mc_file
+template_settings_Reco['params']['reco_vbwkde_evts_file']['value'] = reco_mc_file
+template_settings_Reco['params']['pid_events']['value'] = reco_mc_file
+
+if args.plotReso:
+    utils.mkdir(outdir+'/plots/resolutions_withweight/')
+    utils.mkdir(outdir+'/plots/resolutions_noweight/')
+    evts = events.Events(find_resource(reco_mc_file))
+    for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+        flavor_dict = {}
+        logging.debug("Working on %s kernels"%flavor)
+        for int_type in ['cc','nc']:
+            true_energy = evts[flavor][int_type]['true_energy']
+            true_coszen = evts[flavor][int_type]['true_coszen']
+            reco_energy = evts[flavor][int_type]['reco_energy']
+            reco_coszen = evts[flavor][int_type]['reco_coszen']
+            weight = evts[flavor][int_type]['weighted_aeff']
+
+    for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
+        for int_type in ['cc','nc']:
+            n_ebins = len(ebin_edges)-1
+            n_czbins = len(czbin_edges)-1
+            for i in range(0, n_ebins):
+                for j in range(0, n_czbins):
+                    E_select = np.logical_and(true_energy<ebin_edges[i+1], true_energy>=ebin_edges[i])
+                    CZ_select = np.logical_and(true_coszen<czbin_edges[j+1], true_coszen>=czbin_edges[j])
+                    # select values in this bin
+                    select = np.logical_and(E_select, CZ_select)
+                    E_true = true_energy[select]
+                    CZ_true = true_coszen[select]
+                    E_reco = reco_energy[select]
+                    CZ_reco = reco_coszen[select]
+                    weight_select = weight[select]
+                    fig_num = i * n_czbins+ j
+                    if (fig_num == 0 or fig_num == n_czbins * n_ebins):
+                        fig = plt.figure(num=3, figsize=( 4*n_czbins, 4*n_ebins))
+                        fig = plt.figure(num=4, figsize=( 4*n_czbins, 4*n_ebins))
+                    plt.figure(3)
+                    subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
+                    plt.subplot(n_ebins, n_czbins, subplot_idx)
+                    plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                    plt.hist((E_reco-E_true)/E_true, weights=weight_select, bins=50)
+                    if(fig_num == n_czbins * n_ebins-1):
+                        plt.savefig(outdir+ '/plots/resolutions_withweight/'+'%s_%s_resolutions_%s_withweight.png'%(args.sim, flavor, int_type))
+                        plt.savefig(outdir+ '/plots/resolutions_withweight/'+'%s_%s_resolutions_%s_withweight.pdf'%(args.sim, flavor, int_type))
+                        plt.clf()
+
+                    plt.figure(4)
+                    plt.subplot(n_ebins, n_czbins, subplot_idx)
+                    plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                    plt.hist((E_reco-E_true)/E_true, bins=50)
+                    if(fig_num == n_czbins * n_ebins-1):
+                        plt.savefig(outdir+ '/plots/resolutions_noweight/'+'%s_%s_%s_resolutions_noweight.png'%(args.sim, flavor, int_type))
+                        plt.savefig(outdir+ '/plots/resolutions_noweight/'+'%s_%s_%s_resolutions_noweight.pdf'%(args.sim, flavor, int_type))
+                        plt.clf()
+
 
 
 def func_cubic_through_nominal(x, a, b, c):
@@ -130,14 +190,15 @@ if not args.templ_already_saved:
               'template_settings' : template_settings}
     if args.pseudo_data_settings is not None:
         output['pseudo_data_settings'] = pseudo_data_settings
-    to_json(output,outdir+'%s_RecoPrcs_templates_10_by_16.json'%args.sim)
+    to_json(output,outdir+'/%s_RecoPrcs_templates_10_by_16.json'%args.sim)
 else:
     # if templates already saved
-    output_template = from_json(outdir+'%s_RecoPrcs_templates_10_by_16.json'%args.sim)
+    output_template = from_json(outdir+'/%s_RecoPrcs_templates_10_by_16.json'%args.sim)
     tmaps = output_template['tmaps']
     MCmaps = output_template['MCmaps']
 
 
+#print "nominal MCmaps = ", MCmaps['e_reco_precision_up']['1.0']['cscd']
 for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
     templ_list = []
     coeffs[precision_tag] = {'trck':{},
@@ -158,7 +219,6 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
             templ_err.append(np.sqrt(tmaps[precision_tag][str(reco_prcs_val)][flav])/np.sqrt(MCmaps[precision_tag][str(reco_prcs_val)][flav]))  
 
         templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
-        #print "templ_nominal[", flav , "] = ", templ_nominal[flav]
         templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav])/np.sqrt(MCmaps[precision_tag]['1.0'][flav]))
         templ = np.array(templ)
         templ_MC = np.array(templ_MC)
@@ -181,6 +241,8 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
 
                 # if use bin value ratio (to nominal bin value) as y axis
                 bin_ratio_values = templ[:,i,j]/templ_nominal[i,j]  #divide by the nominal value
+                if templ_nominal[i,j] ==0:
+                    print "templ_nominal[i,j]  == 0: "
 
                 # standard error of ratio n1/n2: (n1/n2)*sqrt((SE1/n1)^2 + (SE2/n2)^2) 
                 bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(templ_nominal_err[i,j]/templ_nominal[i,j])+np.square(templ_err[:,i,j]/templ[:,i,j]))
@@ -196,6 +258,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     fig_num = i * n_czbins+ j
                     if (fig_num == 0 or fig_num == n_czbins * n_ebins):
                         fig = plt.figure(num=1, figsize=( 4*n_czbins, 4*n_ebins))
+                    plt.figure(1)
                     subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
                     #print 'subplot_idx = ', subplot_idx
                     plt.subplot(n_ebins, n_czbins, subplot_idx)
@@ -203,8 +266,8 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     plt.scatter(reco_prcs_vals, templ_MC[:,i,j], color='blue')
                     plt.xlim(min(reco_prcs_vals)-0.01, max(reco_prcs_vals)+0.01)
                     if(fig_num == n_czbins * n_ebins-1):
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
 
@@ -212,6 +275,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     fig_num = i * n_czbins+ j
                     if (fig_num == 0 or fig_num == n_czbins * n_ebins):
                         fig = plt.figure(num=2, figsize=( 4*n_czbins, 4*n_ebins))
+                    plt.figure(2)
                     subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
                     #print 'subplot_idx = ', subplot_idx
                     plt.subplot(n_ebins, n_czbins, subplot_idx)
@@ -233,13 +297,13 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                         #plt.figtext(0.5, 0.95, 'Reco Precision cubic fits %s'%flav, fontsize=60,ha='center')
                         #fig.subplots_adjust(hspace=0)
                         #fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
         coeffs[precision_tag][flav] = coeff
 
 
 #And write to file
-to_json(coeffs,outdir+'%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_10_by_16.json'%(args.sim, min(reco_prcs_vals), max(reco_prcs_vals)))
+to_json(coeffs,outdir+'/%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_10_by_16.json'%(args.sim, min(reco_prcs_vals), max(reco_prcs_vals)))
 

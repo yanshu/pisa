@@ -69,17 +69,14 @@ class RecoServiceMC(RecoServiceBase):
                 reco_energy = evts[flavor][int_type]['reco_energy']
                 reco_coszen = evts[flavor][int_type]['reco_coszen']
                 weight = evts[flavor][int_type]['weighted_aeff']
+                #weight = evts[flavor][int_type]['mc_weight']
 
                 if e_reco_precision_up != 1:
                     delta = reco_energy[true_coszen<=0] - true_energy[true_coszen<=0]
                     change = delta/true_energy[true_coszen<=0]
                     print 'more than 100 %% delta for %s %% of the events '%(np.count_nonzero(change[change>1.])/float(len(change))*100)
-                    #print true_energy[true_coszen<=0][change>1.]
-                    #print reco_energy[true_coszen<=0][change>1.]
                     delta *= e_reco_precision_up
                     reco_energy[true_coszen<=0] = true_energy[true_coszen<=0] + delta
-                    #reco_energy[true_coszen<=0] *= e_reco_precision_up
-                    #reco_energy[true_coszen<=0] -= (e_reco_precision_up - 1) * true_energy[true_coszen<=0]
 
                 if e_reco_precision_down != 1:
                     reco_energy[true_coszen>0] *= e_reco_precision_down
