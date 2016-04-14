@@ -27,7 +27,6 @@ import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
 from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
-from pisa.flux.HondaFluxService_NuFluxIP import HondaFluxService as nufluxIPHondaFluxService
 from pisa.flux.IPHondaFluxService import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
@@ -107,8 +106,6 @@ class TemplateMaker:
         flux_mode = template_settings['flux_mode']
         if flux_mode.lower() == 'bisplrep':
             self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
-        elif flux_mode.lower() == 'nuflux_ip':
-            self.flux_service = nufluxIPHondaFluxService(**template_settings)
         elif flux_mode.lower() == 'integral-preserving':
             self.flux_service = IPHondaFluxService(**template_settings)
         else:
