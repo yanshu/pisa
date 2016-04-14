@@ -33,7 +33,7 @@ from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample, get_true_template, get_stat_fluct_map
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, change_nutau_norm_settings, fix_param, change_settings
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings
 
 # --- parse command line arguments ---
 parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
@@ -92,6 +92,8 @@ if args.bs:
 template_settings = from_json(args.template_settings)
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 minimizer_settings  = from_json(args.minimizer_settings)
+if args.bs:
+    template_settings['params']['livetime']['value'] = 0.045 
 ebins = template_settings['binning']['ebins']
 anlys_ebins = template_settings['binning']['anlys_ebins']
 czbins = template_settings['binning']['czbins']
@@ -269,7 +271,7 @@ for itrial in xrange(1,args.ntrials+1):
             if args.t_stat == 'llr':
                 physics.info("Finding best fit for hypothesis mu_tau = 1.0")
                 profile.info("start optimizer")
-                largs[2] = change_nutau_norm_settings(template_settings['params'], scan_param, 1.0, True)
+                largs[2] = change_settings(template_settings['params'], scan_param, 1.0, True)
             # profile LLH, and temporarily also asimov. since the convolution method alters the expecation value of he p.d.f
             elif args.t_stat == 'profile' or args.t_stat == 'asimov':
                 physics.info("Finding best fit while profiling %s"%scan_param)
