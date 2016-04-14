@@ -236,7 +236,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, read_osc_json=True, read_osc_flux_json=False, read_flux_json=False, read_wt_json=True, use_cut_on_trueE=True):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, read_osc_json=False, read_osc_flux_json=False, read_flux_json=False, read_wt_json=False, use_cut_on_trueE=True):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -290,7 +290,6 @@ class TemplateMaker:
                     true_cz = evts[prim][int_type]['true_coszen']
                     if use_cut_on_trueE:
                         cut = np.logical_and(true_e < self.ebins[-1], true_e>= self.ebins[0])
-                        #cut = np.logical_and(true_e < self.anlys_ebins[-1], true_e>= self.anlys_ebins[0])
                         true_e = true_e[cut]
                         true_cz = true_cz[cut]
                     osc_probs[prim][int_type] = self.osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **params)
@@ -340,7 +339,6 @@ class TemplateMaker:
                 #event = evts[prim][int_type]['event']
                 if use_cut_on_trueE:
                     cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
-                    #cut = np.logical_and(true_e < self.anlys_ebins[-1], true_e>= self.anlys_ebins[0])
                     true_e = true_e[cut]
                     true_cz = true_cz[cut]
                     reco_e = reco_e[cut]
@@ -375,8 +373,7 @@ class TemplateMaker:
                     self.weights[prim][int_type]['true_energy'] = true_e 
                     self.weights[prim][int_type]['true_coszen'] = true_cz
                     #self.weights[prim][int_type]['event'] = event 
-                #weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
-                weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=anlys_bins)
+                weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
                 self.event_rate_maps[prim][int_type] = {}
                 self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * Julian_year * params['aeff_scale'] * scale
                 self.event_rate_maps[prim][int_type]['ebins']=self.ebins
