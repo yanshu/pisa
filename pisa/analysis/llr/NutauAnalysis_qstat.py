@@ -187,7 +187,7 @@ for itrial in xrange(1,args.ntrials+1):
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
         physics.info('Running on real data! (%s)'%args.bs)
-        fmap = get_burn_sample(burn_sample_file=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', cut_level='L6', channel=channel)
+        fmap = get_burn_sample(burn_sample_file=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel)
     # Randomly sampled (poisson) data
     else:
         if args.seed:
