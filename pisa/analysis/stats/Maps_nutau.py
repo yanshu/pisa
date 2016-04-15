@@ -19,7 +19,7 @@ from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 from scipy.stats import poisson, norm
 
-def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_level, channel):
+def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, channel):
 
     burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
 
@@ -50,14 +50,14 @@ def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, cut_leve
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # throw away dLLH < -3
-    #reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
-    #reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
-    #dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
+    reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
+    reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
+    dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
 
     # don't throw away dLLH < -3
-    reco_energy_L6_cut1 = reco_energy_L6
-    reco_coszen_L6_cut1 = reco_coszen_L6
-    dLLH_L6_cut1 = dLLH_L6
+    #reco_energy_L6_cut1 = reco_energy_L6
+    #reco_coszen_L6_cut1 = reco_coszen_L6
+    #dLLH_L6_cut1 = dLLH_L6
 
     # get cscd array and trck array
     reco_energy = {}

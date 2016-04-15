@@ -20,17 +20,29 @@ from scipy import stats
 from matplotlib.offsetbox import AnchoredText
 from scipy.special import gammaln
 from scipy.stats import poisson
-
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy
+import pisa.utils.utils as utils
 import pisa.analysis.stats.Maps as Maps
-from pisa.analysis.stats.Maps_nutau import get_up_map, get_flipped_down_map, get_burn_sample, get_template_for_plot
+from pisa.analysis.stats.Maps_nutau import get_burn_sample
 from pisa.utils.log import set_verbosity,logging,profile
 from pisa.resources.resources import find_resource
 from pisa.utils.utils import Timer, is_linear, is_logarithmic, get_bin_centers
 from pisa.utils.jsons import from_json
 from pisa.utils.plot import show_map, sum_map, ratio_map, delta_map
 from pisa.background.BackgroundServiceICC_nutau import BackgroundServiceICC
+
+def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, annotate_prcs=2, max=None, min=None):
+    plt.figure()
+    show_map(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']),
+            vmax= max if max!=None else np.max(map_to_plot['map']), logE=logE, annotate_prcs=annotate_prcs)
+    if save:
+        filename = os.path.join(outdir, fig_name + '.png')
+        pdf_filename = os.path.join(outdir+'/pdf/', fig_name + '.pdf')
+        plt.title(fig_title)
+        plt.savefig(filename,dpi=150)
+        plt.savefig(pdf_filename,dpi=150)
+        plt.clf()
 
 def get_1D_projection(map_2d, axis):
     if axis == 'coszen':
@@ -178,8 +190,6 @@ making the final level hierarchy asymmetry plots from the input
 settings file. ''')
     parser.add_argument('--template_settings',metavar='JSON',
                         help='Settings file to use for template generation')
-    parser.add_argument('--no_nutau_template_settings',metavar='JSON',
-                        help='Settings file to use for template generation (no nutau)')
     parser.add_argument('--burn_sample_file',metavar='FILE',type=str,
                         default='burn_sample/Matt_L5b_burn_sample_IC86_2_to_4.hdf5',
                         help='''HDF5 File containing burn sample.'
@@ -209,46 +219,61 @@ settings file. ''')
                         help='Directory to save the output figures.')
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help='set verbosity level')
-    parser.add_argument('-f1', '--fit-results-1', default=None, dest='fit_file_tau',
-                        help='use post fit parameters from fit result json file (nutau_norm = 1)')
-    parser.add_argument('-f0', '--fit-results-0', default=None, dest='fit_file_notau',
-                        help='use post fit parameters from fit result json file (nutau_norm = 0)')
+    parser.add_argument('--llr', '--llr-results', default=None, dest='fit_file_llr',required=True,
+                        help='use post fit parameters from LLR fit result json file')
+    parser.add_argument('--profile', '--profile-results', default=None, dest='fit_file_profile',required=True,
+                        help='use post fit parameters from profile fit result json file')
     args = parser.parse_args()
     set_verbosity(args.verbose)
+
+    # creat out dir
+    utils.mkdir(args.outdir)
+    utils.mkdir(args.outdir+'/pdf/')
 
     # get settings file for nutau norm = 1
     template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
     template_settings['params']['livetime']['value'] = args.y
 
-    if args.fit_file_tau:
-        # replace with parameters determ,ined in fit
-        fit_file_tau = from_json(args.fit_file_tau)
-        syslist = fit_file_tau['trials'][0]['fit_results'][0].keys()
-        for sys in syslist:
-            if not sys == 'llh':
-                val = fit_file_tau['trials'][0]['fit_results'][0][sys][0]
-                if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
-                    sys += '_nh'
-                print '%s at %.4f'%(sys,val)
-                template_settings['params'][sys]['value'] = val
+    # replace with parameters determined in fit
+    fit_file_llr = from_json(find_resource(args.fit_file_llr))
+    syslist = fit_file_llr['trials'][0]['fit_results'][1].keys()
+    for sys in syslist:
+        if not sys == 'llh':
+            val = fit_file_llr['trials'][0]['fit_results'][1][sys][0]
+            if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                sys += '_nh'
+            print '%s at %.4f'%(sys,val)
+            template_settings['params'][sys]['value'] = val
 
     # get settings file for nutau norm = 0
-    no_nutau_template_settings = from_json(args.no_nutau_template_settings)
-    no_nutau_template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
-    no_nutau_template_settings['params']['livetime']['value'] = args.y
+    no_nutau_template_settings = copy.deepcopy(template_settings)
+    no_nutau_template_settings['params']['nutau_norm']['value'] = 0.0 
 
-    if args.fit_file_notau:
-        # replace with parameters determ,ined in fit
-        fit_file_notau = from_json(args.fit_file_notau)
-        syslist = fit_file_notau['trials'][0]['fit_results'][0].keys()
-        for sys in syslist:
-            if not sys == 'llh':
-                val = fit_file_notau['trials'][0]['fit_results'][0][sys][0]
-                if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
-                    sys += '_nh'
-                print '%s at %.4f'%(sys,val)
-                no_nutau_template_settings['params'][sys]['value'] = val
+    # replace with parameters determined in fit
+    syslist = fit_file_llr['trials'][0]['fit_results'][0].keys()
+    for sys in syslist:
+        if not sys == 'llh':
+            val = fit_file_llr['trials'][0]['fit_results'][0][sys][0]
+            if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                sys += '_nh'
+            print '%s at %.4f'%(sys,val)
+            no_nutau_template_settings['params'][sys]['value'] = val
+
+    # get settings file for nutau norm = free
+    free_nutau_template_settings = copy.deepcopy(template_settings)
+
+    # replace with parameters determined in fit
+    #fit_file_profile = from_json(args.fit_file_profile)
+    fit_file_profile = from_json(find_resource(args.fit_file_profile))
+    syslist = fit_file_profile['trials'][0]['fit_results'][1].keys()
+    for sys in syslist:
+        if not sys == 'llh':
+            val = fit_file_profile['trials'][0]['fit_results'][1][sys][0]
+            if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
+                sys += '_nh'
+            print '%s at %.4f'%(sys,val)
+            free_nutau_template_settings['params'][sys]['value'] = val
 
     # get binning info
     ebins = template_settings['binning']['ebins']
@@ -259,13 +284,10 @@ settings file. ''')
     print 'czbins = ', czbins
     CZ_bin_centers = get_bin_centers(czbins)
     E_bin_centers = get_bin_centers(anlys_ebins)
-    print 'E_bin_centers = ', E_bin_centers
-    print 'CZ_bin_centers = ', CZ_bin_centers
+    #print 'E_bin_centers = ', E_bin_centers
+    #print 'CZ_bin_centers = ', CZ_bin_centers
 
     burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'])
-
-    #burn_sample_in_array = get_burn_sample(args.burn_sample_file, anlys_ebins, czbins, output_form = 'array', channel=template_settings['params']['channel']['value'])
-    #print '     total no. of events in burn sample :', np.sum(burn_sample_in_array) 
 
     if args.plot_sigl_side:
         sgnl_burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='sgnl_map', cut_level='L6', channel=template_settings['params']['channel']['value'])
@@ -273,71 +295,42 @@ settings file. ''')
 
     # plot burn sample maps
     for flav in ['cscd', 'trck']:
-        plt.figure()
-        show_map(burn_sample_maps[flav],vmax=15 if flav == 'cscd' else 10,logE=not(args.no_logE),annotate_prcs=0)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_burn_sample_%s.png'% flav)
-            plt.title(r'${\rm %s \, yr \, burn \, sample \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(burn_sample_maps[flav]['map'])), fontsize='large')
-            plt.savefig(filename,dpi=150)
-            plt.clf()
+        plot_one_map(burn_sample_maps[flav], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_burn_sample_%s'% (flav), fig_title=r'${\rm %s \, yr \, burn \, sample \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(burn_sample_maps[flav]['map'])), save=args.save, max=15 if flav=='cscd' else 10, annotate_prcs=0)
 
 
     ##################### Plot MC expectation #######################
 
-    fit_up_template_settings = copy.deepcopy(template_settings)
-    fit_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-    fit_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-
-    fit_down_template_settings = copy.deepcopy(template_settings)
-    fit_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-    fit_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-    fit_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-
-    fit_no_nutau_up_template_settings = copy.deepcopy(no_nutau_template_settings)
-    fit_no_nutau_up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-    fit_no_nutau_up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-
-    fit_no_nutau_down_template_settings = copy.deepcopy(no_nutau_template_settings)
-    fit_no_nutau_down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-    fit_no_nutau_down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/1X60_pid_down.json'}
-    fit_no_nutau_down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-
+    fit_nutau_template_settings = copy.deepcopy(template_settings)
+    fit_no_nutau_template_settings = copy.deepcopy(no_nutau_template_settings)
+    fit_free_nutau_template_settings = copy.deepcopy(free_nutau_template_settings)
     with Timer() as t:
-        fit_template_maker_down = TemplateMaker(get_values(fit_down_template_settings['params']), **fit_down_template_settings['binning'])
-        fit_template_maker_up = TemplateMaker(get_values(fit_up_template_settings['params']), **fit_up_template_settings['binning'])
-        fit_template_maker = [fit_template_maker_up, fit_template_maker_down]
-        fit_no_nutau_template_maker_down = TemplateMaker(get_values(fit_no_nutau_down_template_settings['params']), **fit_no_nutau_down_template_settings['binning'])
-        fit_no_nutau_template_maker_up = TemplateMaker(get_values(fit_no_nutau_up_template_settings['params']), **fit_no_nutau_up_template_settings['binning'])
-        fit_no_nutau_template_maker = [fit_no_nutau_template_maker_up, fit_no_nutau_template_maker_down]
-
+        fit_nutau_template_maker = TemplateMaker(get_values(fit_nutau_template_settings['params']), **fit_nutau_template_settings['binning'])
+        fit_no_nutau_template_maker = TemplateMaker(get_values(fit_no_nutau_template_settings['params']), **fit_no_nutau_template_settings['binning'])
+        fit_free_nutau_template_maker = TemplateMaker(get_values(fit_free_nutau_template_settings['params']), **fit_free_nutau_template_settings['binning'])
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
     # Make nutau template:
-    fit_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_up_template_settings['params'],True,1.0))
-    fit_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_down_template_settings['params'],True,1.0))
-    fit_no_nutau_up_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_up_template_settings['params'],True,0.0))
-    fit_no_nutau_down_params = copy.deepcopy(select_hierarchy_and_nutau_norm( fit_no_nutau_down_template_settings['params'],True,0.0))
+    fit_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(fit_nutau_template_settings['params'],True,1.0))
+    fit_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm(fit_no_nutau_template_settings['params'],True,0.0))
+    fit_free_nutau_params = copy.deepcopy(select_hierarchy(fit_no_nutau_template_settings['params'],True))
 
-    #with Timer(verbose=False) as t:
-    #    fit_nutau_up = fit_template_maker_up.get_template(get_values(fit_nutau_up_params),return_stages=args.all)
-    #    fit_nutau_down = fit_template_maker_down.get_template(get_values(fit_nutau_down_params),return_stages=args.all)
-    #    print "from Template_maker, fit_nutau cscd = ", sum_map(fit_nutau_up['cscd'], fit_nutau_down['cscd'])
-    #    fit_no_nutau_up = fit_no_nutau_template_maker_up.get_template(get_values(fit_no_nutau_up_params),return_stages=args.all)
-    #    fit_no_nutau_down = fit_no_nutau_template_maker_down.get_template(get_values(fit_no_nutau_down_params),return_stages=args.all)
-    #profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
+    with Timer(verbose=False) as t:
+        fit_nutau = fit_nutau_template_maker.get_template(get_values(fit_nutau_params),return_stages=args.all, no_sys_applied= False)
+        fit_no_nutau = fit_no_nutau_template_maker.get_template(get_values(fit_no_nutau_params),return_stages=args.all, no_sys_applied= False)
+        fit_free_nutau = fit_free_nutau_template_maker.get_template(get_values(fit_free_nutau_params),return_stages=args.all, no_sys_applied= False)
+    profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
+    #print "fit_nutau cscd = "
+    #print fit_nutau['cscd']
+    #print "\n"
 
-    fit_nutau_up_params = dict(get_values(fit_nutau_up_params).items())
-    fit_nutau = get_template_for_plot(fit_nutau_up_params, fit_template_maker)
-    print "from get_template_for_plot, fit_nutau cscd = "
-    print fit_nutau['cscd']
-    print "\n"
+    #print "fit_no_nutau cscd = "
+    #print fit_no_nutau['cscd']
+    #print "\n"
 
-    fit_no_nutau_up_params = dict(get_values(fit_no_nutau_up_params).items())
-    fit_no_nutau = get_template_for_plot(fit_no_nutau_up_params, fit_no_nutau_template_maker)
-    print "from get_template_for_plot, fit_no_nutau cscd = "
-    print fit_no_nutau['cscd']
-    print "\n"
+    #print "fit_free_nutau cscd = "
+    #print fit_free_nutau['cscd']
+    #print "\n"
 
     ################## PLOT MC/Data comparison ##################
 
@@ -347,73 +340,32 @@ settings file. ''')
 
     # Plot nominal PISA template (cscd and trck separately), and the ratio of burn sample to PISA template 
     for flav in ['cscd', 'trck']:
-        plt.figure()
-        show_map(fit_nutau[flav],vmax=np.max(fit_nutau[flav]['map'])+10,logE=not(args.no_logE))
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_%s_yr_NutauCCNorm_1_%s.png' % (args.y, flav))
-            plt.title(r'${\rm %s \, yr \, %s \, (Nevts: \, %.1f) }$'%(args.y, flav, np.sum(fit_nutau[flav]['map'])), fontsize='large')
-            plt.savefig(filename,dpi=150)
-            plt.clf()
+        plot_one_map(fit_nutau[flav], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_1_%s'% (args.y, flav), fig_title=r'${\rm %s \, yr \, PISA \, %s \, (\nu_{\tau} \, CC \, = \, 1 \, Nevts: \, %.1f) }$'%(args.y, flav, np.sum(fit_nutau[flav]['map'])), save=args.save, max=10+np.max(fit_nutau[flav]['map']), annotate_prcs=1)
+        plot_one_map(fit_no_nutau[flav], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_0_%s'% (args.y, flav), fig_title=r'${\rm %s \, yr \, PISA \, (\nu_{\tau} \, CC \, = \, 0 \, %s \, Nevts: \, %.1f) }$'%(args.y, flav, np.sum(fit_no_nutau[flav]['map'])), save=args.save, max=10+np.max(fit_no_nutau[flav]['map']), annotate_prcs=1)
 
         delta_pid_pisa_pid_bs = delta_map(burn_sample_maps[flav], fit_nutau[flav])
-        plt.figure()
-        show_map(delta_pid_pisa_pid_bs, vmin= np.min(delta_pid_pisa_pid_bs['map']), vmax= np.max(delta_pid_pisa_pid_bs['map']),annotate_prcs=2)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_Delta_BurnSample_PISA_%s.png' % flav)
-            plt.title('Difference of %s map (BurnSample-PISA)' % flav)
-            plt.savefig(filename,dpi=150)
-            plt.clf()
+        plot_one_map(delta_pid_pisa_pid_bs, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_1_PISA_BurnSample_Delta_%s'% (args.y, flav), fig_title=r'${\rm Difference \, of \, %s \, map \, (BurnSample \, - \, PISA \, , \nu_{\tau} \, CC \, = \, 1 \, Nevts: \, %.1f)}$'%(flav, np.sum(delta_pid_pisa_pid_bs['map'])), save=args.save)
 
         ratio_pid_pisa_pid_bs = ratio_map(burn_sample_maps[flav], fit_nutau[flav])
-        plt.figure()
-        show_map(ratio_pid_pisa_pid_bs, vmin= np.min(ratio_pid_pisa_pid_bs['map']), vmax= np.max(ratio_pid_pisa_pid_bs['map']),annotate_prcs=2)
-        if args.save:
-            filename = os.path.join(args.outdir,args.title+ '_Ratio_BurnSample_PISA_%s.png' % flav)
-            plt.title('Ratio of %s map (BurnSample/PISA)' % flav)
-            plt.savefig(filename,dpi=150)
-            plt.clf()
+        plot_one_map(ratio_pid_pisa_pid_bs, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_1_PISA_BurnSample_Ratio_%s'% (args.y, flav), fig_title=r'${\rm Ratio \, of \, %s \, map \, (BurnSample \, / \, PISA \, , \nu_{\tau} \, CC \, = \, 1 )}$'%(flav), save=args.save)
 
 
     # plot the cscd + trck maps and the ratio of burn sample to PISA map
     fit_nutau_no_pid = sum_map(fit_nutau['cscd'], fit_nutau['trck'])
+    fit_no_nutau_no_pid = sum_map(fit_no_nutau['cscd'], fit_no_nutau['trck'])
     burn_sample_maps_no_pid = sum_map(burn_sample_maps['cscd'], burn_sample_maps['trck'])
-    print "sum of burn_sample_maps['cscd'] = ", np.sum(burn_sample_maps['cscd']['map'])
-    print "sum of burn_sample_maps['trck'] = ", np.sum(burn_sample_maps['trck']['map'])
     ratio_bs_pisa_no_pid = ratio_map( burn_sample_maps_no_pid, fit_nutau_no_pid)
     delta_bs_pisa_no_pid = delta_map( burn_sample_maps_no_pid, fit_nutau_no_pid)
 
-    plt.figure()
-    show_map(fit_nutau_no_pid,vmax=np.max(fit_nutau_no_pid['map'])+10,logE=not(args.no_logE),annotate_prcs=1)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_NutauCCNorm_1_'+ 'all_channel.png')
-        plt.title(r'${\rm 1 \, yr \, PISA \, cscd \, + \, trck \, (Nevts: \, %.1f) }$'%(np.sum(fit_nutau_no_pid['map'])), fontsize='large')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
+    plot_one_map(fit_nutau_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_all_channel_%s_yr_NutauCCNorm_1'% (args.y), fig_title=r'${\rm %s \, yr \, PISA \, cscd \, + \, trck \, (\nu_{\tau} \, CC \, = \, 1 \, Nevts: \, %.1f) }$'%(args.y, np.sum(fit_nutau_no_pid['map'])), save=args.save, max=10+np.max(fit_nutau_no_pid['map']), annotate_prcs=1)
 
-    fig = plt.figure()
-    show_map(burn_sample_maps_no_pid,logE=not(args.no_logE),vmax=15,annotate_prcs=0)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_Burn_Sample_final_event_rate_all_channel.png')
-        plt.title(r'${\rm 1 \, yr \, Burn \, Sample \, cscd \, + \, trck \, map \, (Nevts: \, %.1f) }$'%(np.sum(burn_sample_maps_no_pid['map'])), fontsize='large')
-        print ' Burn Sample cscd+trck, total no. of evts = ', np.sum(burn_sample_maps_no_pid['map'])
-        plt.savefig(filename,dpi=150)
-        plt.clf()
+    plot_one_map(fit_no_nutau_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_all_channel_%s_yr_NutauCCNorm_0'% (args.y), fig_title=r'${\rm %s \, yr \, PISA \, cscd \, + \, trck \, (\nu_{\tau} \, CC \, = \, 0 \, Nevts: \, %.1f) }$'%(args.y, np.sum(fit_no_nutau_no_pid['map'])), save=args.save, max=10+np.max(fit_no_nutau_no_pid['map']), annotate_prcs=1)
 
-    plt.figure()
-    show_map(delta_bs_pisa_no_pid, vmin= np.min(delta_bs_pisa_no_pid['map']), vmax= np.max(delta_bs_pisa_no_pid['map']),annotate_prcs=2)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_Delta_BurnSample_PISA_all_channel.png')
-        plt.title('Difference of cscd+trck map (BurnSample-PISA)')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
+    plot_one_map(burn_sample_maps_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_all_channel_%s_yr_BurnSample'% (args.y), fig_title=r'${\rm %s \, yr \, Burn \, Sample \, cscd \, + \, trck \, (Nevts: \, %.1f) }$'%(args.y, np.sum(burn_sample_maps_no_pid['map'])), save=args.save, max=10+np.max(burn_sample_maps_no_pid['map']), annotate_prcs=0)
 
-    plt.figure()
-    show_map(ratio_bs_pisa_no_pid, vmin= np.min(ratio_bs_pisa_no_pid['map']), vmax= np.max(ratio_bs_pisa_no_pid['map']),annotate_prcs=2)
-    if args.save:
-        filename = os.path.join(args.outdir,args.title+ '_Ratio_BurnSample_PISA_all_channel.png')
-        plt.title('Ratio of cscd+trck map (BurnSample/PISA)')
-        plt.savefig(filename,dpi=150)
-        plt.clf()
+    plot_one_map(delta_bs_pisa_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_1_PISA_BurnSample_Delta_all_channel'% (args.y), fig_title=r'${\rm Difference \, of \, cscd \, + trck \, map \, (BurnSample \, - \, PISA \, , \,\nu_{\tau} \, CC \, = \, 1 )}$', save=args.save, annotate_prcs=2)
+
+    plot_one_map(ratio_bs_pisa_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_%s_yr_NutauCCNorm_1_PISA_BurnSample_Ratio_all_channel'% (args.y), fig_title=r'${\rm Ratio \, of \, cscd \, + trck \, map \, (BurnSample \, / \, PISA \, , \, \nu_{\tau} \, CC \, = \, 1 )}$', save=args.save, annotate_prcs=2)
 
     print 'no. of fit_nutau_cscd = ', np.sum(fit_nutau['cscd']['map'])
     print 'no. of fit_nutau_trck = ', np.sum(fit_nutau['trck']['map'])
@@ -422,6 +374,11 @@ settings file. ''')
     print 'no. of fit_no_nutau_cscd = ', np.sum(fit_no_nutau['cscd']['map'])
     print 'no. of fit_no_nutau_trck = ', np.sum(fit_no_nutau['trck']['map'])
     print ' total of the above two : ', np.sum(fit_no_nutau['cscd']['map'])+np.sum(fit_no_nutau['trck']['map'])
+    print ' \n'
+
+    print "no. of burn_sample_cscd = ", np.sum(burn_sample_maps['cscd']['map'])
+    print "no. of burn_sample_trck = ", np.sum(burn_sample_maps['trck']['map'])
+    print ' total of the above two : ', np.sum(burn_sample_maps['cscd']['map'])+ np.sum(burn_sample_maps['trck']['map'])
     print ' \n'
    
 

@@ -324,8 +324,6 @@ class TemplateMaker:
             tmp_event_rate_trck[prim] = {}
             for int_type in ['cc', 'nc']:
                 isbar = '_bar' if 'bar' in prim else ''
-                orig_flux_nue = 'nue'+ isbar
-                orig_flux_numu = 'numu' + isbar
                 scale = 1.0
                 if prim == 'nutau' or prim == 'nutau_bar':
                     if int_type == 'cc':
@@ -350,8 +348,8 @@ class TemplateMaker:
                 # Get flux maps
                 if not read_flux_json:
                     self.flux_maps[prim][int_type] = {} 
-                    self.flux_maps[prim][int_type]['nue'+isbar] = self.flux_service.get_flux(true_e, true_cz, orig_flux_nue, event_by_event=True)
-                    self.flux_maps[prim][int_type]['numu'+isbar] = self.flux_service.get_flux(true_e, true_cz, orig_flux_numu, event_by_event=True)
+                    self.flux_maps[prim][int_type]['nue'+isbar] = self.flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
+                    self.flux_maps[prim][int_type]['numu'+isbar] = self.flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
                 # Get event_rate maps
                 #print "Getting event_rate map for ", prim , " "
                 nue_flux = self.flux_maps[prim][int_type]['nue'+isbar]

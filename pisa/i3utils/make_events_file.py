@@ -20,7 +20,10 @@ import pisa.utils.events as events
 import pisa.utils.mcSimRunSettings as MCSRS
 import pisa.utils.dataProcParams as DPP
 import pisa.resources.resources as resources
-
+from pisa.flux.IPHondaFluxService_MC import IPHondaFluxService
+from pisa.oscillations.Prob3OscillationServiceMC import Prob3OscillationServiceMC
+from pisa.utils.params import get_values, select_hierarchy
+from pisa.utils.jsons import from_json
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 
@@ -67,12 +70,13 @@ OUTPUT_FIELDS = (
     'reco_coszen',
     'weighted_aeff',
     'mc_weight',
+    'neutrino_weight',
     'pid',
 )
 
 
 def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
-                   join=None, cust_cuts=None,
+                   phys_params, join=None, cust_cuts=None,
                    extract_fields=EXTRACT_FIELDS, output_fields=OUTPUT_FIELDS):
     """
     Takes the simulated and reconstructed HDF5 file(s) (as converted from I3
@@ -118,6 +122,10 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
         file; note that if 'weighted_aeff' is not preent, effective area will
         not be computed
     """
+
+    # flux and osc service
+    flux_service = IPHondaFluxService(**phys_params)
+    osc_service = Prob3OscillationServiceMC([],[],**phys_params)
     # Create Events object to store data
     evts = events.Events()
     evts.metadata.update({
@@ -297,7 +305,7 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
     #
     # See Justin Lanfranchi's presentation on the PINGU Analysis call,
     # 2015-10-21, for more details.
-    if 'weighted_aeff' in output_fields or 'mc_weight' in output_fields:
+    if 'weighted_aeff' in output_fields or 'mc_weight' in output_fields or 'neutrino_weight' in output_fields:
         fmtfields = (' '*12+'flavint_group',
                      'int type',
                      '     run',
@@ -343,6 +351,20 @@ def makeEventsFile(data_files, outdir, run_settings, data_proc_params, cut,
                     Emin =  np.array([run_settings[run]['energy_min'] for run in extracted_data[grp_n][int_type]['run']])
                     extracted_data[grp_n][int_type]['mc_weight'] = \
                             np.power(E, gamma)/ array_ngen_it_tot / (Emax - Emin)
+                if 'neutrino_weight' in output_fields:
+                    true_e = extracted_data[grp_n][int_type]['true_energy']
+                    true_cz = extracted_data[grp_n][int_type]['true_coszen']
+                    grp_name = str(flavint_group)
+                    isbar = '_bar' if 'bar' in grp_name else ''
+                    prim = grp_name.split('_')[0] 
+                    if 'bar' in grp_name:
+                        prim = grp_name.split('bar_')[0] 
+                        prim += '_bar'
+                    nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
+                    numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
+                    osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
+                    osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
+                    extracted_data[grp_n][int_type]['neutrino_weight'] = osc_flux * extracted_data[grp_n][int_type]['weighted_aeff'] 
 
     # Report file count per run
     for run, count in filecount.items():
@@ -573,6 +595,12 @@ def main():
         help='set verbosity level'
     )
 
+    parser.add_argument(
+        '-t', '--template_settings',metavar='JSON',
+        help='''Settings file that contains informatino of flux file, oscillation
+        parameters, PREM model, etc., for calculation of neutrino weights'''
+    )
+
     args = parser.parse_args()
 
     set_verbosity(args.verbose)
@@ -623,6 +651,10 @@ def main():
     ]
     #groupings = [None]    
 
+    # get template settings
+    template_settings = from_json(args.template_settings)
+    phys_params = get_values(select_hierarchy(template_settings['params'], normal_hierarchy=True))
+
     # Create the events files
     for grouping in groupings:
         makeEventsFile(
@@ -630,6 +662,7 @@ def main():
             outdir=args.outdir,
             run_settings=run_settings,
             data_proc_params=data_proc_params,
+            phys_params = phys_params,
             join=grouping,
             cut=args.cut,
             cust_cuts=ccut,
