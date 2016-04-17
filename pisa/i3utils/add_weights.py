@@ -15,8 +15,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, osc_service, outdir):
     print 'data_file_path = ', data_file_path
-    data_file, attrs = from_hdf(resources.find_resource(data_file_path), return_attrs = True)
     if file_type == 'pisa':
+        data_file, attrs = from_hdf(resources.find_resource(data_file_path), return_attrs = True)
         for prim in data_file.keys():
             for int_type in data_file[prim].keys():
                 true_e = data_file[prim][int_type]['true_energy']
@@ -27,17 +27,16 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
                 osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
                 osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
                 data_file[prim][int_type]['neutrino_weight'] = osc_flux * data_file[prim][int_type]['weighted_aeff'] 
+        data_file_name = os.path.basename(data_file_path)
+        output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_weights.hdf5' 
+        to_hdf(data_file, output_file_name, attrs=attrs, overwrite=True)
+
     elif file_type == 'intermediate':
-        #data_file = h5py.File(resources.find_resource(data_file_path), "r")
+        data_file = h5py.File(resources.find_resource(data_file_path), "r+")
         true_e = data_file['trueNeutrino']['energy']
         true_cz = np.cos(data_file['trueNeutrino']['zenith'])
         one_weight = data_file['I3MCWeightDict']['OneWeight']
         pdg_encoding = data_file['trueNeutrino']['pdg_encoding']
-        #data_file.close()
-        #true_e = true_e[0:10]
-        #true_cz = true_cz[0:10]
-        #one_weight = one_weight[0:10]
-        #pdg_encoding = pdg_encoding[0:10]
         nuDict = {'12':'nue', '14':'numu', '16':'numu', '-12': 'nue_bar', '-14': 'nutau_bar', '-16': 'nutau_bar'}
         # 4 digit simulaiton negen:
         n_files = {'nue': 2700, 'numu': 4000, 'nutau': 1400}
@@ -56,15 +55,11 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
         numu_flux = flux_service.get_flux(true_e, true_cz,flux_name_numu, event_by_event=True)
         osc_probs = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **phys_params)
         osc_flux = nue_flux*osc_probs['nue_maps'] + numu_flux*osc_probs['numu_maps']
-        #data_file['I3MCWeightDict']['neutrino_weight'] = osc_flux * weighted_aeff
         data_file['neutrino_weight'] = osc_flux * weighted_aeff
+        data_file.close()
     else:
         raise ValueError('file_type only allow: pisa, intermediate')
 
-
-    data_file_name = os.path.basename(data_file_path)
-    output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_weights.hdf5' 
-    to_hdf(data_file, output_file_name, attrs=attrs, overwrite=True)
 
 if __name__ == '__main__':
 
