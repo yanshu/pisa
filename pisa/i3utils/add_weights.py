@@ -37,7 +37,7 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
         true_cz = np.cos(data_file['trueNeutrino']['zenith'])
         one_weight = data_file['I3MCWeightDict']['OneWeight']
         pdg_encoding = data_file['trueNeutrino']['pdg_encoding']
-        nuDict = {'12':'nue', '14':'numu', '16':'numu', '-12': 'nue_bar', '-14': 'nutau_bar', '-16': 'nutau_bar'}
+        nuDict = {'12':'nue', '14':'numu', '16':'nutau', '-12': 'nue_bar', '-14': 'numu_bar', '-16': 'nutau_bar'}
         # 4 digit simulaiton negen:
         n_files = {'nue': 2700, 'numu': 4000, 'nutau': 1400}
         ngen = {}
