@@ -28,6 +28,7 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
                 osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
                 data_file[prim][int_type]['neutrino_weight'] = osc_flux * data_file[prim][int_type]['weighted_aeff'] 
         data_file_name = os.path.basename(data_file_path)
+        utils.mkdir(args.outdir)
         output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_weights.hdf5' 
         to_hdf(data_file, output_file_name, attrs=attrs, overwrite=True)
 
@@ -86,7 +87,6 @@ settings file. ''')
         file_type = 'intermediate'
 
     outdir = args.outdir
-    utils.mkdir(args.outdir)
     
     # get template settings
     template_settings = from_json(args.template_settings)
