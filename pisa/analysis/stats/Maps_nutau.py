@@ -18,34 +18,46 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
 import pisa.analysis.stats.Maps as Maps
 from scipy.stats import poisson, norm
+import pisa.utils.mcSimRunSettings as MCSRS
+import pisa.utils.dataProcParams as DPP
 
-def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, channel):
+def get_low_level_quantities(file_name, file_type, anlys_ebins, czbins, fields, sim_version, cuts='analysis',
+                              run_setting_file='events/mc_sim_run_settings.json', det='deepcore',
+                              data_proc_file='events/data_proc_params.json'):
+    data_proc_params = DPP.DataProcParams(
+            detector=det,
+            proc_ver=sim_version,
+            data_proc_params=find_resource(data_proc_file))
+    run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector=det)
+    data = data_proc_params.getData(find_resource(file_name), run_settings=run_settings, file_type=file_type)
+    cut_data = data_proc_params.applyCuts(data,
+                    cuts=cuts,
+                    return_fields=fields)
+    return cut_data
 
-    burn_sample_file = h5py.File(find_resource(burn_sample_file),'r')
+def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, sim_version='4digit'):
+    # right now only use burn sample with sim_version = '4digit'
+    if sim_version == "4digit":
+        Reco_Neutrino_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
+        Reco_Track_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Track'
+    elif sim_version == "5digit":
+        Reco_Neutrino_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC'
+        Reco_Track_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_Track'
+    else:
+        raise ValueError('only allow 4digit and 5digit!') 
 
-    dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
+    burn_sample_file = h5py.File(find_resource(file_name),'r')
     L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
-
-    reco_x_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['x']
-    reco_y_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['y']
-    reco_z_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['z']
-    reco_t_all = burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['time']
-
-    reco_energy_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
-    reco_coszen_all = np.array(np.cos(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
-    reco_trck_len_all = np.array(burn_sample_file['IC86_Dunkman_L6_MultiNest8D_PDG_Track']['length'])
-
+    dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
+    reco_energy_all = np.array(burn_sample_file[Reco_Neutrino_Name]['energy'])
+    reco_coszen_all = np.array(np.cos(burn_sample_file[Reco_Neutrino_Name]['zenith']))
+    reco_trck_len_all = np.array(burn_sample_file[Reco_Track_Name]['length'])
+    burn_sample_file.close()
     #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
-
-    reco_x_L6 = reco_x_all[L6_result==1]
-    reco_y_L6 = reco_y_all[L6_result==1]
-    reco_z_L6 = reco_z_all[L6_result==1]
-    reco_t_L6 = reco_t_all[L6_result==1]
-    reco_trck_len_L6 = reco_trck_len_all[L6_result==1]
 
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
@@ -54,7 +66,7 @@ def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, channel)
     reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
     dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
 
-    # don't throw away dLLH < -3
+    # don't throw away dLLH < -3, only use this when using param service for PID in PISA
     #reco_energy_L6_cut1 = reco_energy_L6
     #reco_coszen_L6_cut1 = reco_coszen_L6
     #dLLH_L6_cut1 = dLLH_L6
@@ -89,9 +101,6 @@ def get_burn_sample(burn_sample_file, anlys_ebins, czbins, output_form, channel)
 
     if output_form == 'map':
         return burn_sample_maps
-
-    if output_form == 'reco_info':
-        return (reco_x_L6, reco_y_L6, reco_z_L6, reco_t_L6, reco_energy_L6, reco_coszen_L6, reco_trck_len_L6)
 
     if output_form == 'side_map':
         f_select = from_json('sgnl_side_region_selection.json')

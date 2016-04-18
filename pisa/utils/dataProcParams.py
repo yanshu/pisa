@@ -12,7 +12,7 @@ parameters (e.g., PINGU's V5 processing).
 
 import os
 import h5py
-
+import collections
 import pisa.utils.jsons as jsons
 from pisa.utils.flavInt import NuFlav, IntType, FlavIntData
 import pisa.resources.resources as resources
@@ -355,13 +355,19 @@ class DataProcParams(dict):
         bool_idx = eval(cut_pass_if)
         return bool_idx
 
-    def getData(self, h5, run_settings=None, flav=None):
+    def getData(self, h5, run_settings=None, flav=None, file_type='mc'):
         """Get data attached to an HDF5 node, returned as a dictionary.
 
         The returned dictionary's keys match those in the field_map and the
         dict's values are the data from the HDF5's nodes found at the addresses
         specified as values in the field_map
         """
+        field_map = self['field_map']
+        if file_type == 'data':
+            for name, path in field_map.items():
+                if ('I3MCWeightDict' in path) or ('PrimaryNu' in path) or ('trueNeutrino' in path):
+                    del field_map[name]
+
         myfile = False
         try:
             if isinstance(h5, basestring):
@@ -369,14 +375,14 @@ class DataProcParams(dict):
                 h5 = h5py.File(os.path.expandvars(os.path.expanduser(h5)),
                                mode='r')
             data = {name:self.retrieveNodeData(h5, path)
-                    for name, path in self['field_map'].items()}
+                    for name, path in field_map.items()}
         finally:
             if myfile and isinstance(h5, h5py.File):
                 try:
                     h5.close()
                 except: # TODO: specify exception type(s)!
                     pass
-        self.interpretData(data)
+        self.interpretData(data, file_type)
         # TODO: enable consistency checks here & implement in run_settings
         #if run_settings is not None:
         #    run_settings.consistencyChecks(data, flav=flav)
@@ -384,7 +390,7 @@ class DataProcParams(dict):
         # TODO: implement flav filtering (or not? or more advanced filtering?)
         return data
 
-    def interpretData(self, data):
+    def interpretData(self, data, file_type):
         """Perform mappings from non-standard to standard values (such as
         translating non-PDG neutrino flavor codes to PDG codes) and add
         fields expected to be useful (such as coszen, derived from zen fields).
@@ -396,8 +402,11 @@ class DataProcParams(dict):
             data['nu_code'] = [
                 self.nu_code_to_pdg_map[code] for code in data['nu_code']
             ]
-        data['true_coszen'] = np.cos(data['true_zenith'])
-        data['reco_coszen'] = np.cos(data['reco_zenith'])
+        if file_type == 'mc':
+            data['true_coszen'] = np.cos(data['true_zenith'])
+            data['reco_coszen'] = np.cos(data['reco_zenith'])
+        if file_type == 'data':
+            data['reco_coszen'] = np.cos(data['reco_zenith'])
         return data
 
     @staticmethod
