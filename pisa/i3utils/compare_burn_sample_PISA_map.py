@@ -39,7 +39,7 @@ def plot_param_distribution(data, bg, mc, mc_weights, nbins, outdir, x_label, fi
     bg_weights =np.ones(len(bg))*livetime*atmos_mu_scale
     data_counts,x_bin_edges = np.histogram(data, bins=nbins)
     mc_counts,_ = np.histogram(mc, bins=x_bin_edges)
-    mc_event_counts,_ = np.histogram(mc, bins=x_bin_edges, weights=1.0e-4*mc_weights*mc_norm)
+    mc_event_counts,_ = np.histogram(mc, bins=x_bin_edges, weights= CMSQ_TO_MSQ*mc_weights*mc_norm)
     print "x_bin_edges = ", x_bin_edges
     bg_counts,_ = np.histogram(bg, bins=x_bin_edges, weights=bg_weights)
     fig = plt.figure(figsize=(8,8))
@@ -53,7 +53,7 @@ def plot_param_distribution(data, bg, mc, mc_weights, nbins, outdir, x_label, fi
         ax1.errorbar(x_bin_centers, hist_data, yerr=data_error,fmt='o',color='black')
 
         # normalize by the sum of the integral of mc and background 
-        mc_bin_vals, mc_bin_edges = np.histogram(mc, weights =1.0e-4*mc_weights*mc_norm, bins=x_bin_edges)
+        mc_bin_vals, mc_bin_edges = np.histogram(mc, weights = CMSQ_TO_MSQ*mc_weights*mc_norm, bins=x_bin_edges)
         bg_bin_vals, bg_bin_edges = np.histogram(bg, weights = bg_weights, bins=x_bin_edges)
         integral_mc = np.sum(np.diff(mc_bin_edges) * mc_bin_vals)
         integral_bg = np.sum(np.diff(bg_bin_edges) * bg_bin_vals)
@@ -63,7 +63,7 @@ def plot_param_distribution(data, bg, mc, mc_weights, nbins, outdir, x_label, fi
         bg_error = np.sqrt(bg_counts)/integral_total
         ax1.bar(x_bin_edges[:-1], 2*bg_error, bottom=hist_bg-bg_error, width=x_bin_width, color='b', alpha=0.25, linewidth=0)
 
-        hist_mc, _, _ = ax1.hist(mc, weights =1.0e-4*mc_weights*mc_norm/integral_total, bins=x_bin_edges, histtype='step', lw=2, color='g', label='MC nu',log=logy)
+        hist_mc, _, _ = ax1.hist(mc, weights = CMSQ_TO_MSQ*mc_weights*mc_norm/integral_total, bins=x_bin_edges, histtype='step', lw=2, color='g', label='MC nu',log=logy)
         mc_error = mc_event_counts/np.sqrt(mc_counts)/integral_total
         ax1.bar(x_bin_edges[:-1], 2*mc_error, bottom=hist_mc-mc_error, width=x_bin_width, color='g', alpha=0.25, linewidth=0)
 
@@ -79,7 +79,7 @@ def plot_param_distribution(data, bg, mc, mc_weights, nbins, outdir, x_label, fi
         bg_error = np.sqrt(bg_counts)
         ax1.bar(x_bin_edges[:-1], 2*bg_error, bottom=hist_bg-bg_error, width=x_bin_width, color='b', alpha=0.25, linewidth=0)
 
-        hist_mc,_,_ = ax1.hist(mc, weights =1.0e-4*mc_weights*mc_norm, bins=x_bin_edges, histtype='step', lw=2, color='g', normed=False, label='MC neutrino',log=logy)
+        hist_mc,_,_ = ax1.hist(mc, weights = CMSQ_TO_MSQ*mc_weights*mc_norm, bins=x_bin_edges, histtype='step', lw=2, color='g', normed=False, label='MC neutrino',log=logy)
         mc_error = mc_event_counts/np.sqrt(mc_counts)
         ax1.bar(x_bin_edges[:-1], 2*mc_error, bottom=hist_mc-mc_error, width=x_bin_width, color='g', alpha=0.25, linewidth=0)
 
@@ -322,6 +322,8 @@ settings file. ''')
                         help='use post fit parameters from profile fit result json file')
     parser.add_argument('-y','--y',default=0.045,type=float,required=True,
                         help='No. of livetime[ unit: Julian year] for MC, for burn sample, default is 0.045.')
+    parser.add_argument('-CMSQ_TO_MSQ','--CMSQ_TO_MSQ',action='store_true',default=False,
+                        help='Use conversion from cm2 to m2 in sim_weights.')
     parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
     parser.add_argument('--plot_sanity_checks',action='store_true',default=False,
@@ -343,6 +345,11 @@ settings file. ''')
 
     ##################### Settings Preparation  #######################
 
+    if args.CMSQ_TO_MSQ:
+        CMSQ_TO_MSQ = 1.0e-4    # In the calcuation of neutrino weight, CMSQ_TO_MSQ was not added, so need to use it here
+    else:
+        CMSQ_TO_MSQ = 1.0
+
     # fields to plot 
     fields_to_plot = ['reco_x', 'reco_y', 'reco_z', 'reco_azimuth', 'reco_trck_len', 'reco_trck_zenith', 'reco_trck_azimuth', 'reco_energy', 'reco_coszen', 
             'C2QR6', 'CausalVetoHits', 'CausalVetoPE', 'DCFiducialPE', 'ICVetoPE', 'NAbove200PE', 'NchCleaned', 'NoiseEngine', 'STW9000_DTW300Hits',
@@ -351,7 +358,8 @@ settings file. ''')
             'linefit_zenith', 'separation',   'total_charge', 'santa_direct_charge',
             'mn_start_contained', 'mn_stop_contained', 'x_prime', 'y_prime', 'z_prime', 't_prime', 'r_prime', 'rho_prime', 'theta_prime', 'phi_prime',
             'stop_x_prime', 'stop_y_prime', 'stop_z_prime', 'stop_r_prime', 'stop_rho_prime', 'stop_theta_prime', 'stop_phi_prime',
-            'santa_direct_doms', 'spe11_zenith', 'pid', 'corridor_doms_over_threshold']
+            'santa_direct_doms', 'spe11_zenith', 'pid']
+            #'corridor_doms_over_threshold']
 
     # creat out dir
     utils.mkdir(args.outdir)
@@ -447,9 +455,9 @@ settings file. ''')
             mc_numu_weight = file_numu['neutrino_weight_best_fit'][numu_cut_L6]
             mc_nutau_weight = file_nutau['neutrino_weight_best_fit'][nutau_cut_L6]
         else:
-            mc_nue_weight = file_nue['neutrino_weight'][nue_cut_L6]
-            mc_numu_weight = file_numu['neutrino_weight'][numu_cut_L6]
-            mc_nutau_weight = file_nutau['neutrino_weight'][nutau_cut_L6]
+            mc_nue_weight = file_nue['neutrino__weight'][nue_cut_L6]
+            mc_numu_weight = file_numu['neutrino__weight'][numu_cut_L6]
+            mc_nutau_weight = file_nutau['neutrino__weight'][nutau_cut_L6]
         for field_name, bs_field_content in bs_low_level.items():
             print "     field_name = ", field_name
             mc_nue_field_content = mc_nue_low_level[field_name]
@@ -474,7 +482,7 @@ settings file. ''')
 
 
     ##################### Plot Burn Sample maps and PISA maps #######################
-    if args.plot_maps==True:
+    if args.plot_map_checks==True:
         # get burn sample maps
         burn_sample_maps = get_burn_sample_maps(file_name= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', channel=template_settings['params']['channel']['value'])
         # plot burn sample maps
