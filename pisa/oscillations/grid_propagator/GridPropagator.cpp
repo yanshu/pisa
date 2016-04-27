@@ -163,11 +163,13 @@ void GridPropagator::SetEarthDensityParams(fType prop_height,
   m_maxLayers = m_earthModel->get_MaxLayers();
 
   size_t layer_size = m_nczbins*m_maxLayers*sizeof(fType);
+  free(m_densityInLayer);
   m_densityInLayer = (fType*)malloc(layer_size);
   memset(m_densityInLayer,0.0,layer_size);
+  free(m_distanceInLayer);
   m_distanceInLayer = (fType*)malloc(layer_size);
   memset(m_distanceInLayer,0.0,layer_size);
-
+  free(m_numberOfLayers);
   m_numberOfLayers = (int*)malloc(m_nczbins*sizeof(int));
 
   for (int i=0; i<m_nczbins; i++) {
