@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,icc_bg_file=None,**kwargs):
+    def __init__(self,ebins,czbins,sim_ver,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
@@ -32,13 +32,24 @@ class BackgroundServiceICC:
         logging.info("Creating a ICC background dict...")
 
         dLLH = np.array(bg_file['IC86_Dunkman_L6']['delta_LLH'])
-        reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
-        reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
-
-        # throw away delta LLH < -3:
-        reco_energy_all = reco_energy_all[dLLH>=-3]
-        reco_coszen_all = reco_coszen_all[dLLH>=-3]
-        dLLH = dLLH[dLLH>=-3]
+        if sim_ver == '4digit':
+            reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
+            reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
+            # throw away delta LLH < -3:
+            reco_energy_all = reco_energy_all[dLLH>=-3]
+            reco_coszen_all = reco_coszen_all[dLLH>=-3]
+            dLLH = dLLH[dLLH>=-3]
+            pid_cut = 3.0       # this cut value 3.0 is from MSU, might need to be optimized
+        elif sim_ver == '5digit':
+            reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['energy'])
+            reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['zenith']))
+            # throw away delta LLH < -2:
+            reco_energy_all = reco_energy_all[dLLH>=-2]
+            reco_coszen_all = reco_coszen_all[dLLH>=-2]
+            dLLH = dLLH[dLLH>=-2]
+            pid_cut = 3.0       # this cut value 3.0 is from MSU, might need to be optimized
+        else:
+            raise ValueError('Only allow sim_ver  4digit or 5 digit!')
 
         # split in half for testing:
         #the commented out section was just a test for using subsets of the MC files
@@ -52,9 +63,9 @@ class BackgroundServiceICC:
         # write to dictionary
         for flavor in ['cscd','trck']:
             if flavor == 'cscd':
-                cut = dLLH < 3.0 
+                cut = dLLH < pid_cut 
             if flavor == 'trck':
-                cut = dLLH >= 3.0 
+                cut = dLLH >= pid_cut 
             reco_energy = reco_energy_all[cut]
             reco_coszen = reco_coszen_all[cut]
 
