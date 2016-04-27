@@ -81,7 +81,7 @@ if __name__ == '__main__':
         parameters, PREM model, etc., for calculation of neutrino weights''')
     parser.add_argument('--use_best_fit',action='store_true',default=False,
                         help='Use best fit params to calculate neutrino weights.')
-    parser.add_argument('--profile', '--profile-results', default=None, dest='fit_file_profile',required=True,
+    parser.add_argument('--profile', '--profile-results', default=None, dest='fit_file_profile',
                         help='use post fit parameters from profile fit result json file')
     parser.add_argument('-o','--outdir',metavar='DIR',default='',
                         help='Directory to save the output figures.')
@@ -123,4 +123,4 @@ if __name__ == '__main__':
     if args.use_best_fit:
         add_weights_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino_best_fit', outdir=outdir)
     else:
-        add_weights_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino_', outdir=outdir)
+        add_weights_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino', outdir=outdir)
