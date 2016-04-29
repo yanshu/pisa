@@ -43,7 +43,7 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
         one_weight = data_file['I3MCWeightDict']['OneWeight']
         pdg_encoding = data_file['trueNeutrino']['pdg_encoding']
         nuDict = {'12':'nue', '14':'numu', '16':'nutau', '-12': 'nue_bar', '-14': 'numu_bar', '-16': 'nutau_bar'}
-        # 4 digit simulaiton negen:
+        # 4 digit simulation nugen:
         n_files = {'nue': 2700, 'numu': 4000, 'nutau': 1400}
         ngen = {}
         for nu in ['nue', 'numu', 'nutau']:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='''Add neutrino weights(osc*flux*sim_weight) for each event. ''')
     parser_file = parser.add_mutually_exclusive_group(required=True)
     parser_file.add_argument( '-fp', '--pisa_file', metavar='H5_FILE', type=str, help='input HDF5 file')
-    parser_file.add_argument( '-fi', '--intermediate_file', metavar='H5_FILE', type=str, help='input HDF5 file')
+    parser_file.add_argument( '-fi', '--intermediate_file', metavar='H5_FILE', type=str, help='input HDF5 file, only works for old simulation.')
     parser.add_argument( '-t', '--template_settings',metavar='JSON',
         help='''Settings file that contains informatino of flux file, oscillation
         parameters, PREM model, etc., for calculation of neutrino weights''')
@@ -95,6 +95,7 @@ if __name__ == '__main__':
     else:
         hd5_file_name = args.intermediate_file
         file_type = 'intermediate'
+        print "The input is intermediate file, make sure it is the old simulation (4 digit)."
 
     outdir = args.outdir
     
