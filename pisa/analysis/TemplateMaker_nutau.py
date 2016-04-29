@@ -146,7 +146,8 @@ class TemplateMaker:
                                                **template_settings)
         elif aeff_mode == 'MC':
             physics.debug(" Using effective area from MC EVENT DATA...")
-            self.aeff_service = AeffServiceMC(self.ebins, self.czbins,
+            #self.aeff_service = AeffServiceMC(self.ebins, self.czbins,
+            self.aeff_service = AeffServiceMC(self.oversample_ebins, self.oversample_czbins,
                                               **template_settings)
         else:
             error_msg = "aeff_mode: '%s' is not implemented! "%aeff_mode
@@ -191,20 +192,36 @@ class TemplateMaker:
 
         self.calc_mc_errors()
 
-    def downsample_binning(self,maps):
+    def downsample_binning(self, maps, map_type):
         # the ugliest way to handle this.....sorry
         new_maps = {}
         new_maps['params'] = maps['params']
-        for flavour in maps.keys():
-            if flavour == 'params': continue
-            new_maps[flavour] = {'ebins': self.ebins,
-                                  'czbins': self.czbins}
-            new_maps[flavour]['map'] = np.zeros((len(self.ebins)-1,len(self.czbins)-1))
-            for e in xrange(len(self.ebins)-1):
-                for cz in xrange(len(self.czbins)-1):
-                    for e_o in xrange(self.actual_oversample_e):
-                        for cz_o in xrange(self.actual_oversample_cz):
-                            new_maps[flavour]['map'][e][cz] += maps[flavour]['map'][e*self.actual_oversample_e+e_o][cz*self.actual_oversample_cz+cz_o]
+        if map_type == 'osc_flux':
+            for flavour in maps.keys():
+                if flavour == 'params': continue
+                new_maps[flavour] = {'ebins': self.ebins,
+                                      'czbins': self.czbins}
+                new_maps[flavour]['map'] = np.zeros((len(self.ebins)-1,len(self.czbins)-1))
+                for e in xrange(len(self.ebins)-1):
+                    for cz in xrange(len(self.czbins)-1):
+                        for e_o in xrange(self.actual_oversample_e):
+                            for cz_o in xrange(self.actual_oversample_cz):
+                                new_maps[flavour]['map'][e][cz] += maps[flavour]['map'][e*self.actual_oversample_e+e_o][cz*self.actual_oversample_cz+cz_o]
+        elif map_type == 'aeff':
+            for flavour in maps.keys():
+                new_maps[flavour] = {}
+                for int_type in ['cc', 'nc']:
+                    if flavour == 'params': continue
+                    new_maps[flavour][int_type] = {'ebins': self.ebins,
+                                          'czbins': self.czbins}
+                    new_maps[flavour][int_type]['map'] = np.zeros((len(self.ebins)-1,len(self.czbins)-1))
+                    for e in xrange(len(self.ebins)-1):
+                        for cz in xrange(len(self.czbins)-1):
+                            for e_o in xrange(self.actual_oversample_e):
+                                for cz_o in xrange(self.actual_oversample_cz):
+                                    new_maps[flavour][int_type]['map'][e][cz] += maps[flavour][int_type]['map'][e*self.actual_oversample_e+e_o][cz*self.actual_oversample_cz+cz_o]
+        else:
+            raise ValueError('Only implemented downsampling for two types of maps: osc_flux and aeff')
         return new_maps
 
 
@@ -282,9 +299,10 @@ class TemplateMaker:
             if any(step_changed[:2]):
                 physics.debug("STAGE 2: Getting osc prob maps...")
                 with Timer() as t:
-                    osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
+                    #osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
+                    self.osc_flux_maps = get_osc_flux(self.flux_maps, self.osc_service,oversample_e=self.oversample_e,oversample_cz=self.oversample_cz,**params)
                 profile.debug("==> elapsed time for oscillations stage: %s sec"%t.secs)
-                self.osc_flux_maps = self.downsample_binning(osc_flux_maps)
+                #self.osc_flux_maps = self.downsample_binning(osc_flux_maps, map_type = 'osc_flux')
             else:
                 profile.debug("STAGE 2: Reused from step before...")
 
@@ -294,13 +312,12 @@ class TemplateMaker:
                 flavours = ['numu', 'numu_bar','nue','nue_bar']
                 test_map = flux_maps['nue']
                 for flav in flavours:
-                    osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
+                    self.osc_flux_maps[flav] = {'map': np.zeros_like(test_map['map']),
                                        'ebins': np.zeros_like(test_map['ebins']),
                                        'czbins': np.zeros_like(test_map['czbins'])}
 
-                self.osc_flux_maps = self.downsample_binning(osc_flux_maps)
-
-
+                #self.osc_flux_maps = self.downsample_binning(self.osc_flux_maps, map_type = 'osc_flux')
+                self.osc_flux_maps = osc_flux_maps 
 
         else:
             # Skipping oscillation stage...
@@ -320,7 +337,8 @@ class TemplateMaker:
             if any(step_changed[:3]):
                 physics.debug("STAGE 3: Getting event rate true maps...")
                 with Timer() as t:
-                    self.event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
+                    event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
+                    self.event_rate_maps = self.downsample_binning(event_rate_maps, map_type = 'aeff')
                 profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
             else:
                 profile.debug("STAGE 3: Reused from step before...")
