@@ -137,14 +137,6 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
     nuDict = {'nue':12,'numu':14,'nutau':16,'nue_bar':-12,'numu_bar':-14,'nutau_bar':-16}
     inttypeDict = {'cc':1, 'nc':2}
 
-    # cut to get aeff maps and osc_flux maps from i3 files
-    #cut_osc_flux = {}
-    #for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
-    #    cut_osc_flux[flavor] = {}
-    #    for int_type in ['cc','nc']:
-    #        cut_osc_flux[flavor][int_type] = TrueNeutrino_pdg[flavor.split('_bar')[0]] == nuDict[flavor][int_type]
-    #            cut_aeff[flavor][int_type] = np.logical_and(L6_result[flavor.split('_bar')[0]] ==1 , np.logical_and(TrueNeutrino_pdg[flavor.split('_bar')[0]] == nuDict[flavor], InteractionType[flavor.split('_bar')[0]] == inttypeDict[int_type]))
-
     cut_aeff = {}
     for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
         cut_aeff[flavor] = {}
@@ -156,19 +148,6 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
             else:
                 #TODO
                 raise ValueError("cut level above L5 is not available")
-
-    #osc_weights = {}
-    #osc_flux_maps_from_i3 = {}
-    #for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
-    #    for int_type in ['cc','nc']:
-    #        oscillated_rate = OscillatedRate_modified[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]]
-    #        osc_weights[flavor] = oscillated_rate
-    #        true_energy = MC_true_energy[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]] 
-    #        true_coszen = MC_true_coszen[flavor.split('_bar')[0]][cut_osc_flux[flavor][int_type]]
-    #        osc_flux_hist,_,_ = np.histogram2d(true_energy,true_coszen, weights=oscillated_rate,bins=anlys_bins)
-    #        osc_flux_maps_from_i3[flavor] = {'map':osc_flux_hist,
-    #                                     'ebins':anlys_ebins,
-    #                                     'czbins':czbins}
 
 
     aeff_maps_from_i3 = {}
@@ -266,25 +245,24 @@ def get_i3_maps(nue_file, numu_file, nutau_file, n_nue_files, n_numu_files, n_nu
     if output_form == 'reco_info':
         return (reco_xyzt_from_i3, reco_energy_from_i3, reco_coszen_from_i3, trck_len_from_i3, osc_weights)
 
-    #if output_form == 'osc_flux_map':
-    #    return osc_flux_maps_from_i3
-
     if output_form == 'aeff_and_final_map':
         final_maps_from_i3 = {}
         cut_pid = {}
         if sim_version == "4digit":
-            cut_bound = 3.0     #cut_bound between cscd and trck, for 4 digit: 3.0
+            cut_value = 3.0     #cut_value between cscd and trck, for 4 digit: 3.0
+            cut_remove = -3.0   #remove dLLH < -3 events
         elif sim_version == "5digit":
-            cut_bound = 2.0     #cut_bound between cscd and trck, for 5 digit: 2.0
+            cut_value = 3.0     #cut_value between cscd and trck, for 5 digit: 3.0
+            cut_remove = -2.0   #remove dLLH < -2 events
         else:
             raise ValueError('only allow 4digit and 5digit!') 
         for flavor in ['nue', 'numu', 'nutau']:
             cut_pid[flavor]={}
-            cut_pid[flavor]['trck'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]>= cut_bound)
+            cut_pid[flavor]['trck'] = np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]>= cut_value)
 
-            # This is the correct way: throw away events with pid < -3. (Note: right now PID param service couldn't throw away events with deltaLLH < -3;
-            # when using param service, need to change the code here to allow events with pid<-3, but normally we use PID MC service.)
-            cut_pid[flavor]['cscd'] = np.logical_and(np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< cut_bound), deltaLLH[flavor]>= -3.0)
+            # This is the correct way: throw away events with pid < cut_remove. (Note: right now PID param service couldn't throw away events with deltaLLH < cut_remove;
+            # when using param service, need to change the code here to allow events with pid< cut_remove, but normally we use PID MC service.)
+            cut_pid[flavor]['cscd'] = np.logical_and(np.logical_and(L6_result[flavor] ==1 , deltaLLH[flavor]< cut_value), deltaLLH[flavor]>= cut_remove)
 
         for channel in ['cscd','trck']:
             reco_energy_pid = np.array([])

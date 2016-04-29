@@ -346,7 +346,7 @@ settings file. ''')
     ##################### Settings Preparation  #######################
 
     if args.CMSQ_TO_MSQ:
-        CMSQ_TO_MSQ = 1.0e-4    # In the calcuation of neutrino weight, CMSQ_TO_MSQ was not added, so need to use it here
+        CMSQ_TO_MSQ = 1.0e-4    # If the calcuation of neutrino weight, CMSQ_TO_MSQ is not added, then need to use it here
     else:
         CMSQ_TO_MSQ = 1.0
 

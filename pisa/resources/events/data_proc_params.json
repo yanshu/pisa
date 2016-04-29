@@ -117,6 +117,8 @@
          "reco_y": "IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC/y",
          "reco_z": "IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC/z",
          "reco_trck_len": "IC86_Dunkman_L6_PegLeg_MultiNest8D_Track/length",
+         "reco_trck_zenith": "IC86_Dunkman_L6_PegLeg_MultiNest8D_Track/zenith",
+         "reco_trck_azimuth": "IC86_Dunkman_L6_PegLeg_MultiNest8D_Track/azimuth",
          "reco_azimuth": "IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC/azimuth",
          "true_energy": "trueNeutrino/energy",
          "true_zenith": "trueNeutrino/zenith",
