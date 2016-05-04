@@ -21,9 +21,7 @@ def processTrial(combined, partial_run):
     """
 
     good_keys = ['seed','hypo_NMH','hypo_IMH']
-
     for key,value in partial_run.items():
-
         if key not in good_keys:
             raise KeyError("ERROR: key: {0:%s} must be one of {1:%s}"
                            .format(key, good_keys))
@@ -31,10 +29,35 @@ def processTrial(combined, partial_run):
         if key == 'seed':
             combined[key].append(value)
         else:
+            if key not in combined.keys():
+                combined[key] = {}
             for key1 in partial_run[key].keys():
-                if key1 not in combined[key].keys(): combined[key][key1] = []
-                combined[key][key1].append(partial_run[key][key1][-1])
-
+                # "opt_flags" and "opt_data"
+                if key1 not in combined[key].keys(): combined[key][key1] = {}
+                for key2 in partial_run[key][key1].keys():
+                   # the "llh" entry is a list of dicts of values-per-channel
+                   # (i.e. one per step the optimizer takes)
+                   if key2 == "llh" and "llh" not in combined[key][key1].keys():
+                       combined[key][key1]["llh"] = {}
+                   # the other entries (parameters) are lists
+                   elif key2 not in combined[key][key1].keys():
+                       combined[key][key1][key2] = []
+                   # opt flags describe the outcome of the minimization process,
+                   # so no list
+                   if key1=='opt_flags':
+                       combined[key][key1][key2].append(partial_run[key][key1][key2])
+                   else:
+                       if key2=="llh":
+                           for chan in partial_run[key][key1][key2][-1].keys():
+                               if chan not in combined[key][key1][key2].keys():
+                                   # make a separate list of llh values for each channel
+                                   combined[key][key1][key2][chan] = []
+                               combined[key][key1][key2][chan].append(
+                                         partial_run[key][key1][key2][-1][chan])
+                       else:
+                           # separate list of best fits for each parameter
+                           combined[key][key1][key2].append(
+                                     partial_run[key][key1][key2][-1])
 
     return
 
@@ -59,20 +82,30 @@ def appendTrials(combined, partial_run):
     """
 
     for key in partial_run.keys():
-
+        # true_h_fiducial or false_h_best_fit
         # Check if combined has been defined this far:
         if key not in combined.keys():
-            combined[key] = {nkey: {} for nkey in partial_run[key][0].keys()}
+            combined[key] = {nkey: [] for nkey in partial_run[key].keys() if nkey!='trials'}
             # Seed needs to be an array:
             combined[key]['seed'] = []
-
-        ntrials =  len(partial_run[key])
-        new_keys = partial_run[key][0].keys()
-
+            # Store false h settings and corresponding llh just once (first time they are found)
+            if 'false' in key:
+                try:
+                    if len(combined[key]['false_h_settings'])==0:
+                        combined[key]['false_h_settings'] = partial_run[key]['false_h_settings']
+                    if len(combined[key]['llh_null'])==0:
+                        # partial_run[key]['llh_null'] has dict in list, needs special treatment
+                        combined[key]['llh_null'] = partial_run[key]['llh_null']
+                        combined[key]['llh_null']['llh'] = combined[key]['llh_null']['llh'][0]
+                    if len(combined[key]['opt_flags'])==0:
+                        combined[key]['opt_flags'] = partial_run[key]['opt_flags']
+                except: pass
+        ntrials =  len(partial_run[key]['trials'])
+        new_keys = partial_run[key].keys()
         # Loop over each trial, adding seed and data in
         # true_NMH/true_IMH to
         for ii in xrange(ntrials):
-            processTrial(combined[key], partial_run[key][ii])
+            processTrial(combined[key], partial_run[key]['trials'][ii])
 
 
     return

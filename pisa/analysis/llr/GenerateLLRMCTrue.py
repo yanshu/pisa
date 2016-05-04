@@ -19,8 +19,7 @@ from copy import deepcopy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy, find_alt_hierarchy_fit
-from pisa.analysis.stats.LLHStatistics import get_random_map
-from pisa.analysis.stats.Maps import get_pseudo_data_fmap, get_seed, get_asimov_fmap
+from pisa.analysis.stats.Maps import getAsimovData, get_seed, get_random_map
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.log import logging, tprofile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
@@ -36,25 +35,6 @@ def check_scipy_version(minimizer_settings):
             logging.warn('Optimizer settings for \"maxiter\" will be ignored')
             minimizer_settings.pop('maxiter')
     return
-
-
-def getAsimovData(template_maker, params, data_normal):
-    """
-    Generates the asimov data set (expected counts distribution) at
-    parameters assuming hierarchy of data_normal
-
-    \Params:
-      * template_maker - instance of class TemplateMaker service.
-      * params - parameters with values, fixed, range, etc. of systematics
-      * data_normal - bool for Mass hierarchy being Normal (True)
-        or inverted (False)
-    """
-
-    fiducial_params = get_values(select_hierarchy(
-        params, normal_hierarchy=data_normal))
-    return get_asimov_fmap(template_maker, fiducial_params,
-                           channel=fiducial_params['channel'])
-
 
 parser = ArgumentParser(
     description='''Runs the LLR optimizer-based analysis varying a number of systematic
@@ -132,21 +112,23 @@ for data_tag, data_normal in [('data_NMH',True),('data_IMH',False)]:
         results['seed'] = get_seed()
         logging.info("  RNG seed: %ld"%results['seed'])
         # Get random map generated from asimov data (or from data_tag).
-        fmap = get_random_map(asimov_data, seed=results['seed'])
+        pd_map = get_random_map(asimov_data, seed=results['seed'])
 
         for hypo_tag, hypo_normal in [('hypo_NMH',True),('hypo_IMH',False)]:
 
             physics.info(
                 "Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
             with Timer() as t:
-                llh_data = find_opt_scipy(
-                    fmap, template_maker, template_settings['params'],
+                llh_data, opt_flags = find_opt_scipy(
+                    pd_map, template_maker, template_settings['params'],
                     minimizer_settings, args.save_steps,
                     normal_hierarchy=hypo_normal, check_octant=check_octant)
             tprofile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
             # Store the LLH data
-            results[hypo_tag] = llh_data
+	    results[hypo_tag] = {}
+	    results[hypo_tag]['opt_data'] = llh_data
+	    results[hypo_tag]['opt_flags'] = opt_flags            
 
         trials += [results]
         tprofile.info("stop trial %d"%itrial)

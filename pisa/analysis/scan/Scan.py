@@ -12,7 +12,6 @@ from itertools import product
 
 from pisa.utils.log import logging, physics, tprofile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
-from pisa.analysis.stats.Maps import flatten_map
 from pisa.analysis.stats.LLHStatistics import get_binwise_llh
 
 def calc_steps(params, settings):

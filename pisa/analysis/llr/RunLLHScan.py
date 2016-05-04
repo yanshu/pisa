@@ -17,7 +17,7 @@ from itertools import product
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy
-from pisa.analysis.stats.Maps import get_asimov_fmap
+from pisa.analysis.stats.Maps import getAsimovData
 from pisa.analysis.scan.Scan import calc_steps
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.log import logging, tprofile, physics, set_verbosity
@@ -112,9 +112,9 @@ logging.info("Running with data: %s and hypo: %s"%(data_tag, hypo_tag))
 results[data_tag] = {}
 
 data_params = select_hierarchy(params,normal_hierarchy=data_normal)
-asimov_data_set = get_asimov_fmap(template_maker,get_values(data_params),
-                                  channel=channel)
-results[data_tag]['asimov_data'] = asimov_data_set
+asimov_data = getAsimovData(template_maker, data_params,
+                            data_normal)
+results[data_tag]['asimov_data'] = asimov_data
 
 
 hypo_params = select_hierarchy(params,normal_hierarchy=hypo_normal)
@@ -134,6 +134,7 @@ print "atm_params: ",atm_params
 # Prepare to store all the steps
 steps = {key:[] for key in atm_params.keys()}
 steps['llh'] = []
+steps['opt_flags'] = []
 
 # Iterate over the cartesian product, and set fixed parameter to value
 for pos in product(*steplist):
@@ -144,12 +145,15 @@ for pos in product(*steplist):
         steps[k].append(v)
 
     with Timer() as t:
-        llh_data = find_opt_scipy(asimov_data_set,template_maker,hypo_params,
+        llh_data, opt_flags = find_opt_scipy(
+				  asimov_data,template_maker,hypo_params,
                                   minimizer_settings,args.save_steps,
                                   normal_hierarchy=hypo_normal)
     tprofile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
-    steps['llh'].append(llh_data['llh'][-1])
+    min_ind = np.argmin( [ val['total'] for val in llh_data['llh'] ] )
+    steps['llh'].append(llh_data['llh'][min_ind])
+    steps['opt_flags'].append(opt_flags)
 
     #Store the LLH data
     results[data_tag][hypo_tag] = steps

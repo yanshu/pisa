@@ -16,6 +16,8 @@ from scipy.special import multigammaln
 from scipy.stats import poisson
 
 from pisa.utils.jsons import from_json
+from pisa.utils.utils import get_all_channel_names
+from pisa.analysis.stats.Maps import get_channel_template
 
 
 def generalized_ln_poisson(data, expectation):
@@ -43,38 +45,60 @@ def generalized_ln_poisson(data, expectation):
         raise ValueError(
             "Unknown data dtype: %s. Must be float or int!"%psuedo_data.dtype)
 
-def get_binwise_llh(pseudo_data, template):
+def get_binwise_llh(pseudo_data, template, channel='all'):
     """
     Computes the log-likelihood (llh) of the pseudo_data from the
     template, where each input is expected to be a 2d numpy array
     """
-    if not np.alltrue(template >= 0.0):
-        raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
-
-    totalLLH = np.sum(generalized_ln_poisson(pseudo_data,template))
+    if isinstance(pseudo_data, dict) and isinstance(template, dict):
+	pd_channel_tmpl = get_channel_template(pseudo_data, channel)
+	hypo_tmpl = get_channel_template(template, channel)
+	totalLLH = {}
+	pd_chans = \
+	    sorted(set(pd_channel_tmpl.keys()) & set(get_all_channel_names()))
+	tmpl_chans = \
+	    sorted(set(hypo_tmpl.keys()) & set(get_all_channel_names()))
+	if not pd_chans == tmpl_chans:
+            raise ValueError("Templates must have the same channels.")
+	for chan in pd_chans:
+	    if not np.alltrue(hypo_tmpl[chan] >= 0.0):
+	        raise ValueError("Template must have all bins >= 0.0!"
+				 " Template generation bug?")
+	    totalLLH[chan] = \
+	        np.sum(generalized_ln_poisson(
+                    pd_channel_tmpl[chan],hypo_tmpl[chan]))
+    else:
+	raise TypeError("Incompatible type(s): pseudo data=%s, template=%s" %
+			(type(pseudo_data), type(template)))
 
     return totalLLH
 
-def get_binwise_chisquare(pseudo_data, template):
-    '''
+def get_binwise_chisquare(pseudo_data, template, channel='all'):
+    """
     Computes the chisquare between the pseudo_data
     and the template, where each input is expected to be a 2d numpy array
-    '''
-    if not np.alltrue(template >= 0.0):
-        raise ValueError("Template must have all bins >= 0.0! Template generation bug?")
-
-    total_chisquare = np.sum(np.divide(np.power((pseudo_data - template), 2), pseudo_data))
+    """
+    if isinstance(pseudo_data, dict) and isinstance(template, dict):
+	pd_channel_tmpl = get_channel_template(pseudo_data, channel)
+	hypo_tmpl = get_channel_template(template, channel)
+	total_chisquare = {}
+	pd_chans = \
+	    sorted(set(pd_channel_tmpl.keys()) & set(get_all_channel_names()))
+	tmpl_chans = \
+	    sorted(set(hypo_tmpl.keys()) & set(get_all_channel_names()))
+	if not pd_chans == tmpl_chans:
+            raise ValueError("Templates must have the same channels.")
+	for chan in pd_chans:
+	    if not np.alltrue(hypo_tmpl[chan] >= 0.0):
+	        raise ValueError("Template must have all bins >= 0.0!"
+				 " Template generation bug?")
+	    total_chisquare[chan] = \
+	        np.sum(np.divide(np.power(
+		      (pd_channel_tmpl[chan] - hypo_tmpl[chan]), 2),
+		       pd_channel_tmpl[chan]))
+    else:
+	raise TypeError("Incompatible type(s): pseudo data=%s, template=%s" %
+			(type(pseudo_data), type(template)))
 
     return total_chisquare
 
-def get_random_map(template, seed=None):
-    """
-    Gets an event map with integer entries from non-integer entries
-    (in general) in the template, varied according to Poisson
-    statistics.
-    """
-    # Set the seed if given
-    if not seed is None:
-        np.random.seed(seed=seed)
-
-    return poisson.rvs(template)

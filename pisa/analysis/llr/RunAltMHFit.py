@@ -16,10 +16,9 @@ from itertools import product
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.llr.LLHAnalysis import find_alt_hierarchy_fit
-from pisa.analysis.stats.Maps import get_asimov_fmap
 from pisa.analysis.scan.Scan import calc_steps
 from pisa.analysis.TemplateMaker import TemplateMaker
-from pisa.utils.log import logging, profile, physics, set_verbosity
+from pisa.utils.log import logging, tprofile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.utils.params import get_values, select_hierarchy, get_atm_params, get_free_params, get_fixed_params
 from pisa.utils.utils import Timer
@@ -99,7 +98,7 @@ if args.gpu_id is not None:
 with Timer() as t:
     template_maker = TemplateMaker(get_values(template_settings['params']),
                                    **template_settings['binning'])
-profile.info("==> elapsed time to initialize templates: %s sec"%t.secs)
+tprofile.info("==> elapsed time to initialize templates: %s sec"%t.secs)
 
 
 #Get the parameters
@@ -133,9 +132,7 @@ for true_tag, true_normal in mctrue_types:
 
         print "Running at asimov parameters: %s"%step
         asimov_params = get_values(getAsimovParams(params,true_normal,step))
-        asimov_data_set = get_asimov_fmap(
-            template_maker, asimov_params,
-            channel=asimov_params['channel'])
+        asimov_data = template_maker.get_template(asimov_params)
 
         # Store injected true values in result:
         for key in free_params.keys():
@@ -143,16 +140,17 @@ for true_tag, true_normal in mctrue_types:
             result['true_'+key].append(asimov_params[key])
         result['true_theta23'].append(step)
 
-        result['asimov_data'].append(asimov_data_set)
+        result['asimov_data'].append(asimov_data)
 
         # now get fitted values of opposite hierarchy:
         hypo_normal = False if true_normal else True
         hypo_tag = 'hypo_IMH' if true_normal else 'hypo_NMH'
-        llh_data = find_alt_hierarchy_fit(
-            asimov_data_set,template_maker, params, hypo_normal,
+        llh_data, opt_flags = find_alt_hierarchy_fit(
+            asimov_data, template_maker, params, hypo_normal,
             minimizer_settings, only_atm_params=False, check_octant=args.check_octant)
 
-        for key in free_params.keys(): result['fit_'+key].append(llh_data[key][-1])
+	result['opt_flags'] = opt_flags
+	for key in free_params.keys(): result['fit_'+key].append(llh_data[key][-1])
 
     results[true_tag] = result
 

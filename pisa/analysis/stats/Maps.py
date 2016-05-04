@@ -8,9 +8,11 @@
 
 import os
 import numpy as np
-from pisa.analysis.stats.LLHStatistics import get_random_map
-from pisa.utils.log import logging
+from scipy.stats import poisson
 
+from pisa.utils.log import logging
+from pisa.utils.utils import get_all_channel_names, get_channels
+from pisa.utils.params import get_values, select_hierarchy
 
 def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_type=None):
     """
@@ -44,66 +46,35 @@ def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_typ
 
     return scaled_map1, scaled_map2
 
-def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
+
+def get_channel_template(template, channel='all'):
     """
-    Creates a true template from fiducial_params, then uses Poisson statistics
-    to vary the expected counts per bin to create a pseudo data set.
-    If seed is provided, the random state is seeded with seed before the map is
-    created.
-
-    IMPORTANT: returns a SINGLE flattened map of trck/cscd combined
-    \params:
-      * channel = channel of flattened fmap to use.
-        if 'all': returns a single flattened map of trck/cscd combined.
-        if 'cscd' or 'trck' only returns the channel requested.
+    Takes a final level true (expected) template, and returns template for
+    the selected channel (zero bins are kept).
     """
+    channels = get_channels(channel)
+    logging.trace("Creating map of channel: %s"%channel)
+    channel_template = {}
+    for chan in channels:
+        channel_template[chan] = template[chan]['map'].flatten()
 
-    true_template = template_maker.get_template(fiducial_params)
-    true_fmap = flatten_map(true_template, channel=channel)
-    fmap = get_random_map(true_fmap, seed=seed)
-    return fmap
+    return channel_template
 
-def get_asimov_fmap(template_maker, fiducial_params, channel=None):
-    """Creates a true template from fiducial_params"""
-
-    true_template = template_maker.get_template(fiducial_params)
-    #print "  params in asimov: ",fiducial_params.items()
-    return flatten_map(true_template, channel=channel)
-
-def flatten_map(template, channel='all'):
+def getAsimovData(template_maker, params, data_normal):
     """
-    Takes a final level true (expected) template of trck/cscd, and returns a
-    single flattened map of trck appended to cscd, with all zero bins
-    removed.
+    Generates the asimov data set (expected counts distribution) at
+    parameters assuming hierarchy of data_normal
+
+    \Params:
+      * template_maker - instance of class TemplateMaker service.
+      * params - parameters with values, fixed, range, etc. of systematics
+      * data_normal - bool for Mass hierarchy being Normal (True)
+        or inverted (False)
     """
 
-    logging.trace("Getting flattened map of channel: %s"%channel)
-
-    if channel == 'all':
-        cscd = template['cscd']['map'].flatten()
-        trck = template['trck']['map'].flatten()
-        fmap = np.append(cscd, trck)
-    elif channel == 'trck':
-        trck = template[channel]['map'].flatten()
-        fmap = np.array(trck)
-        #fmap = np.array(fmap)[np.nonzero(fmap)]
-    elif channel == 'cscd':
-        cscd = template[channel]['map'].flatten()
-        fmap = np.array(cscd)
-        #fmap = np.array(fmap)[np.nonzero(fmap)]
-    elif channel == 'no_pid':
-        cscd = template['cscd']['map'].flatten()
-        trck = template['trck']['map'].flatten()
-        fmap = cscd + trck
-        #fmap = np.array(fmap)[np.nonzero(fmap)]
-    else:
-        raise ValueError(
-            "channel: '%s' not implemented! Allowed: ['all', 'trck', 'cscd', 'no_pid']"
-            %channel)
-
-
-    fmap = np.array(fmap)[np.nonzero(fmap)]
-    return fmap
+    fiducial_param_vals = get_values(select_hierarchy(
+        params, normal_hierarchy=data_normal))
+    return template_maker.get_template(fiducial_param_vals)
 
 def get_seed():
     """
@@ -112,3 +83,16 @@ def get_seed():
     """
 
     return int(os.urandom(4).encode('hex'), 16)
+
+def get_random_map(template, seed=None):
+    """
+    Gets an event map with integer entries from non-integer entries
+    (in general) in the template, varied according to Poisson
+    statistics.
+    """
+    # Set the seed if given
+    if not seed is None:
+	np.random.seed(seed=seed)
+
+    return { chan: {'map': poisson.rvs(tmplt['map'])}
+	for (chan, tmplt) in template.items() if chan in get_all_channel_names() }

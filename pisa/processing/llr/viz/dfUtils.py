@@ -37,16 +37,18 @@ def get_llr_data_frames(llh_data):
             for key3 in layer3:
 
                 # Shortcut for writing this all:
-                curr_dict = llh_data[key1][key2][key3]
-                final_keys = curr_dict.keys()
+                curr_dict = llh_data[key1][key2][key3]['opt_data']
+                final_keys = [ k for k in curr_dict.keys() if k!="llh" ]
                 entries = len(curr_dict[final_keys[0]])
 
                 data = { key: np.array(curr_dict[key]) for key in final_keys }
+                # Only get the llh summed over all channels for now
+                # TODO: allow plotting LLR for all channels
+                data['llh'] = np.array(curr_dict['llh']['total'])
                 data['mctrue'] = np.empty_like(data[final_keys[0]], dtype='|S16')
                 data['mctrue'][:] = key1
                 data['hypo'] = np.empty_like(data[final_keys[0]], dtype='|S16')
                 data['hypo'][:] = key3
-
                 df = DataFrame(data)
                 if key2 == true_h_name_layer2: true_h_df.append(df)
                 elif key2 == false_h_name_layer2: false_h_df.append(df)
@@ -105,6 +107,6 @@ def get_llh_ratios(df_frames):
     llr_dNMH = get_llh_ratio(df_frames[1], df_frames[0])
     llr_dIMH = get_llh_ratio(df_frames[3], df_frames[2])
 
-    llr_dict = {'true_NH':llr_dNMH, 'true_IH': llr_dIMH}
+    llr_dict = {'true_NH': llr_dNMH, 'true_IH': llr_dIMH}
 
     return llr_dict

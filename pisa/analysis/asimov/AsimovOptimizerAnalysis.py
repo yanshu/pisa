@@ -20,9 +20,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.log import logging, tprofile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis import find_opt_scipy
-from pisa.analysis.stats.Maps import get_asimov_fmap
 from pisa.analysis.TemplateMaker import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy
+from pisa.analysis.stats.Maps import getAsimovData
 
 parser = ArgumentParser(description='''Runs the Asimov optimizer-based analysis varying a number of systematic parameters
 defined in settings.json file and saves the likelihood (or chisquare) values for all
@@ -75,17 +75,18 @@ if scipy.__version__ < '0.12.0':
 channel = template_settings['params']['channel']['value']
 if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg = "Both template and pseudo data must have same channel!\n"
-    error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' "%(pseudo_data_settings['params']['channel']['value'],channel)
+    error_msg += " pseudo_data_settings chan: '%s', template chan: '%s' " % \
+		  (pseudo_data_settings['params']['channel']['value'], channel)
     raise ValueError(error_msg)
 
 
 template_maker = TemplateMaker(get_values(template_settings['params']),
                                **template_settings['binning'])
 if args.pseudo_data_settings:
-    pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
+    pd_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
                                                **pseudo_data_settings['binning'])
 else:
-    pseudo_data_template_maker = template_maker
+    pd_template_maker = template_maker
 
 
 # //////////////////////////////////////////////////////////////////////
@@ -94,49 +95,40 @@ else:
 # of the hierarchy hypotheses.
 # //////////////////////////////////////////////////////////////////////
 results = {}
-for data_tag, data_normal in [('data_NMH',True),('data_IMH',False)]:
-
+for data_tag, data_normal in [('data_NMH', True), ('data_IMH', False)]:
     results[data_tag] = {}
     # 1) get "Asimov" average fiducial template:
-    asimov_fmap = get_asimov_fmap(pseudo_data_template_maker,
-                                  get_values(select_hierarchy(pseudo_data_settings['params'],
-                                                              normal_hierarchy=data_normal)),
-                                  channel=channel)
+    asimov_data = getAsimovData(pd_template_maker,
+				pseudo_data_settings['params'],
+				data_normal)
 
     # 2) find max llh or min chisquare (and best fit free params) from matching pseudo data
     #    to templates.
-    for hypo_tag, hypo_normal in [('hypo_NMH',True),('hypo_IMH',False)]:
-        physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
-	tprofile.info("start optimizer")
-	tprofile.info("Using %s"%metric_name)
+    for hypo_tag, hypo_normal in [('hypo_NMH', True), ('hypo_IMH', False)]:
+        physics.info("Finding best fit for %s under %s assumption"%(data_tag, hypo_tag))
+        tprofile.info("start optimizer")
+        tprofile.info("Using %s"%metric_name)
 
-	opt_data = find_opt_scipy(asimov_fmap,template_maker,template_settings['params'],
-                                  minimizer_settings,args.save_steps,
-                                  normal_hierarchy=hypo_normal, check_octant=args.check_octant,
-                                  metric_name=metric_name)
+        opt_data, opt_flags = find_opt_scipy(asimov_data, template_maker,
+				template_settings['params'], minimizer_settings,
+				args.save_steps, normal_hierarchy=hypo_normal,
+				check_octant=args.check_octant,
+				metric_name=metric_name)
 
-	tprofile.info("stop optimizer")
+        tprofile.info("stop optimizer")
 
-	# Store the optimum data
-	results[data_tag][hypo_tag] = opt_data
+        results[data_tag][hypo_tag] = {}
+        results[data_tag][hypo_tag]['opt_data'] = opt_data
+        results[data_tag][hypo_tag]['opt_flags'] = opt_flags
 
 # Assemble output dict
-output = {'results' : results,
-          'template_settings' : template_settings,
-          'minimizer_settings' : minimizer_settings}
+output = {'results': results,
+          'template_settings': template_settings,
+          'minimizer_settings': minimizer_settings}
 
 if args.pseudo_data_settings is not None:
     output['pseudo_data_settings'] = pseudo_data_settings
 
 # And write to file
-to_json(output,args.outfile)
+to_json(output, args.outfile)
 
-# Finally, report on what we have
-if not args.use_chisquare:
-    llr_nmh = -(np.min(results['data_NMH']['hypo_IMH'][metric_name]) - np.min(results['data_NMH']['hypo_NMH'][metric_name]))
-    llr_imh = -(np.min(results['data_IMH']['hypo_IMH'][metric_name]) - np.min(results['data_IMH']['hypo_NMH'][metric_name]))
-    logging.info('(hypo NMH is numerator): llr_nmh: %.4f, llr_imh: %.4f'%(llr_nmh,llr_imh))
-else:
-    chi2_nmh = np.min(results['data_NMH']['hypo_IMH'][metric_name])
-    chi2_imh = np.min(results['data_IMH']['hypo_NMH'][metric_name])
-    logging.info('chi2_nmh: %.4f, chi2_imh: %.4f'%(chi2_nmh, chi2_imh))
