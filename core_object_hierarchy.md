@@ -27,10 +27,10 @@ Some examples are given to facilitate understanding.
           * Transform t2
           * Transform ...
         * MapSet as (in)/output
-                    - Map m1 (e.g. numu_cc)
-                    - Map m2 (e.g. numu_nc)
-                    - ...
-                    - MultiDimBinning
-                        - OneDimBinning d1 (e.g. energy bins)
-                        - OneDimBinning d2 (e.g. coszen bins)
-                        - ...
+          * Map m1 (e.g. numu_cc)
+          * Map m2 (e.g. numu_nc)
+          * Map ...
+            * MultiDimBinning
+              * OneDimBinning d1 (e.g. energy bins)
+              * OneDimBinning d2 (e.g. coszen bins)
+              * OneDimBinning ...
