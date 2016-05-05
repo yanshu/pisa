@@ -101,6 +101,9 @@
          "cuts": {
              "analysis": {
                  "fields": [
+                 "dunkman_L3",
+                 "dunkman_L4",
+                 "dunkman_L5",
                  "dunkman_L6"
                  ],
              "pass_if": "(dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.1) & (dunkman_L6 == 1)"
@@ -214,6 +217,10 @@
          "cuts": {
              "analysis": {
                  "fields": [
+                 "dunkman_direct_doms",
+                 "dunkman_L3",
+                 "dunkman_L4",
+                 "dunkman_L5",
                  "dunkman_L6"
                  ],
              "pass_if": "(dunkman_direct_doms>=3) & (dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.1) & (dunkman_L6 == 1)"

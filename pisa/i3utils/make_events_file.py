@@ -65,7 +65,6 @@ OUTPUT_FIELDS = (
     'reco_energy',
     'reco_coszen',
     'weighted_aeff',
-    'mc_weight',
     'pid',
 )
 
@@ -621,7 +620,7 @@ def main():
         # together; used for reco services (MC and vbwkde)
         'nuecc+nuebarcc;numucc+numubarcc;nutaucc+nutaubarcc;nuallnc+nuallbarnc',
     ]
-    groupings = [None]    
+    #groupings = [None]    
 
     # Create the events files
     for grouping in groupings:
