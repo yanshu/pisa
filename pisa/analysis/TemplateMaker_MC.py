@@ -11,6 +11,13 @@
 # date:   7 Oct 2014
 #
 
+def apply_ratio_scale(flux1, flux2, ratio_scale):
+    orig_sum = flux1 + flux2
+    orig_ratio = flux1/flux2
+    scaled_flux2 = orig_sum / (1 + ratio_scale*orig_ratio)
+    scaled_flux1 = ratio_scale*orig_ratio*scaled_flux2
+    return scaled_flux1, scaled_flux2
+
 import sys
 import numpy as np
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -26,8 +33,6 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
-from pisa.flux.IPHondaFluxService_MC import IPHondaFluxService
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -74,9 +79,10 @@ class TemplateMaker:
         '''
 
         self.cache_params = None
+        self.fluxes = None
         self.flux_maps = None
         self.weights = None
-        self.osc_flux_maps = None
+        self.osc_probs = None
         self.event_rate_maps = None
         self.event_rate_reco_maps = None
         self.event_rate_pid_maps = None
@@ -109,8 +115,10 @@ class TemplateMaker:
         # Instantiate a flux model service
         flux_mode = template_settings['flux_mode']
         if flux_mode.lower() == 'bisplrep':
+            from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
             self.flux_service = HondaFluxService(oversample_e = self.oversample_e, oversample_cz = self.oversample_cz,**template_settings)
         elif flux_mode.lower() == 'integral-preserving':
+            from pisa.flux.IPHondaFluxService_MC_merge import IPHondaFluxService
             self.flux_service = IPHondaFluxService(**template_settings)
         else:
             error_msg = "flux_mode: %s is not implemented! "%flux_mode
@@ -120,7 +128,7 @@ class TemplateMaker:
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
         if osc_code == 'prob3':
-            from pisa.oscillations.Prob3OscillationServiceMC import Prob3OscillationServiceMC
+            from pisa.oscillations.Prob3OscillationServiceMC_merge import Prob3OscillationServiceMC
             self.osc_service = Prob3OscillationServiceMC(
                 self.oversample_ebins, self.oversample_czbins, **template_settings)
         elif osc_code == 'ocelot':
@@ -169,6 +177,12 @@ class TemplateMaker:
         self.pid_service = PID.pid_service_factory(
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
         )
+        # set up pid ( remove pid < pid_remove and separate cscd and trck by pid_bound)
+        if sim_ver == '5digit':
+            self.pid_remove = -2
+        else:
+            self.pid_remove = -3
+        self.pid_bound = 3
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -236,7 +250,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, read_osc_json=False, read_osc_flux_json=False, read_flux_json=False, read_wt_json=False, use_cut_on_trueE=True):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, read_wt_json=False, use_cut_on_trueE=True):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -268,54 +282,68 @@ class TemplateMaker:
         bins = (self.ebins, self.czbins)
         anlys_bins = (self.anlys_ebins, self.czbins)
 
+        #if not no_osc_maps:
+        #    if any(step_changed[:2]):
         # Get osc probability maps
-        if read_osc_json:
-            osc_probs = from_json('osc_probs.json')
-        else:
-            osc_probs = {}
-            params =  select_hierarchy(self.params, normal_hierarchy=True)
-            for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
-                osc_probs[prim]= {}
-                for int_type in ['cc', 'nc']:
-                    osc_probs[prim][int_type] = {}
-                    for nu in ['nue','numu','nue_bar','numu_bar']:
-                        isbar = '_bar' if 'bar' in nu else ''
-                        osc_probs[prim][int_type][nu+'_maps'] = {'nue'+isbar: [],
-                                                                 'numu'+isbar: [],
-                                                                 'nutau'+isbar: []}
+        with Timer(verbose=False) as t:
+            if any(step_changed[:2]):
+                physics.debug("STAGE 2: Getting osc prob maps...")
+                self.osc_probs = {}
+                for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
+                    self.osc_probs[prim]= {}
+                    for int_type in ['cc', 'nc']:
+                        self.osc_probs[prim][int_type] = {}
+                        for nu in ['nue','numu','nue_bar','numu_bar']:
+                            self.osc_probs[prim][int_type] = {'nue_maps': [], 'numu_maps' :[]}
+                for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
+                    for int_type in ['cc', 'nc']:
+                        true_e = evts[prim][int_type]['true_energy']
+                        true_cz = evts[prim][int_type]['true_coszen']
+                        if use_cut_on_trueE:
+                            cut = np.logical_and(true_e < self.ebins[-1], true_e>= self.ebins[0])
+                            true_e = true_e[cut]
+                            true_cz = true_cz[cut]
+                        self.osc_probs[prim][int_type] = self.osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
+            else:
+                #self.osc_probs = from_json('osc_probs.json')
+                profile.info("STAGE 2: Reused from step before...")
+        profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
 
-            for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
-                for int_type in ['cc', 'nc']:
-                    true_e = evts[prim][int_type]['true_energy']
-                    true_cz = evts[prim][int_type]['true_coszen']
-                    if use_cut_on_trueE:
-                        cut = np.logical_and(true_e < self.ebins[-1], true_e>= self.ebins[0])
-                        true_e = true_e[cut]
-                        true_cz = true_cz[cut]
-                    osc_probs[prim][int_type] = self.osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **params)
+        # set up flux, apply flux related systematics (nue_numu_ratio, nu_nubar_ratio, numu_spectral_index)
+        #self.fluxes = {}
+        #for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
+        #    self.fluxes[prim] = {}
+        #    isbar = '_bar' if 'bar' in prim else ''
+        #    for int_type in ['cc', 'nc']:
+        #        self.fluxes[prim][int_type] = {}
+        #        nue_flux = evts[prim][int_type]['neutrino_nue_flux']
+        #        numu_flux = evts[prim][int_type]['neutrino_numu_flux']
+        #        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'])
+        #        self.fluxes[prim][int_type]['nue'+isbar] = scaled_nue_flux
+        #        self.fluxes[prim][int_type]['numu'+isbar] = scaled_numu_flux
+        ## apply nu nubar ratio:
+        #for prim in ['nue', 'numu', 'nutau']:
+        #    for int_type in ['cc', 'nc']:
+        #        for source_prim in ['nue', 'numu']:
+        #            nu_flux = self.fluxes[prim][int_type][source_prim]
+        #            nubar_flux = self.fluxes[prim+'_bar'][int_type][source_prim+'_bar']
+        #            scaled_nu_flux, scaled_nubar_flux = apply_ratio_scale(nu_flux, nubar_flux, params['nu_nubar_ratio'])
+        #            self.fluxes[prim][int_type][source_prim] = scaled_nu_flux
+        #            self.fluxes[prim+'_bar'][int_type][source_prim+'_bar'] = scaled_nubar_flux
 
         self.flux_maps = {}
-        self.osc_flux_maps = {}
         self.weights = {} 
-        if read_flux_json:
-            self.flux_maps = from_json('flux_maps.json')
-        if read_osc_flux_json:
-            self.osc_flux_maps = from_json('osc_flux_maps.json')
         if read_wt_json:
             self.weights = from_json('weights.json')
 
         self.event_rate_maps = {'params':params}
-        sum_events_event_rate = 0
         sum_event_rate_cscd = 0
         sum_event_rate_trck = 0
         tmp_event_rate_reco_maps = {}
         tmp_event_rate_cscd = {}
         tmp_event_rate_trck = {}
         for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
-            if not read_flux_json:
-                self.flux_maps[prim] = {}
-            if not read_osc_flux_json:
-                self.osc_flux_maps[prim] = {}
+            self.flux_maps[prim] = {}
             if not read_wt_json:
                 self.weights[prim] = {} 
             tmp_event_rate_reco_maps[prim] = {}
@@ -324,17 +352,21 @@ class TemplateMaker:
             tmp_event_rate_trck[prim] = {}
             for int_type in ['cc', 'nc']:
                 isbar = '_bar' if 'bar' in prim else ''
-                scale = 1.0
+                nutau_scale = 1.0    # for nutau CC, nutau_scale = nutau_norm; otherwise nutau_scale = 1
                 if prim == 'nutau' or prim == 'nutau_bar':
                     if int_type == 'cc':
-                        scale = params['nutau_norm']
+                        nutau_scale = params['nutau_norm']
                 true_e = evts[prim][int_type]['true_energy']
                 true_cz = evts[prim][int_type]['true_coszen']
                 reco_e = evts[prim][int_type]['reco_energy']
                 reco_cz = evts[prim][int_type]['reco_coszen']
                 aeff_weights = evts[prim][int_type]['weighted_aeff']
                 pid = evts[prim][int_type]['pid']
-                #event = evts[prim][int_type]['event']
+                # directly read from key 'neutrino_nue(/numu)_flux', which is precalculated by add_weights.py
+                nue_flux = evts[prim][int_type]['neutrino_nue_flux']
+                numu_flux = evts[prim][int_type]['neutrino_numu_flux']
+
+                # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:
                     cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
                     true_e = true_e[cut]
@@ -343,25 +375,24 @@ class TemplateMaker:
                     reco_cz = reco_cz[cut]
                     aeff_weights = aeff_weights[cut]
                     pid = pid[cut]
-                    #event = event[cut]
+                    nue_flux = nue_flux[cut]
+                    numu_flux = numu_flux[cut]
 
                 # Get flux maps
-                if not read_flux_json:
-                    self.flux_maps[prim][int_type] = {} 
-                    self.flux_maps[prim][int_type]['nue'+isbar] = self.flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
-                    self.flux_maps[prim][int_type]['numu'+isbar] = self.flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
-                # Get event_rate maps
-                #print "Getting event_rate map for ", prim , " "
-                nue_flux = self.flux_maps[prim][int_type]['nue'+isbar]
-                numu_flux = self.flux_maps[prim][int_type]['numu'+isbar]
+                self.flux_maps[prim][int_type] = {} 
+                weighted_hist_nue_flux, _, _ = np.histogram2d(true_e, true_cz, weights= nue_flux * aeff_weights, bins=bins)
+                weighted_hist_numu_flux, _, _ = np.histogram2d(true_e, true_cz, weights= numu_flux * aeff_weights, bins=bins)
+                self.flux_maps[prim][int_type] = {}
+                self.flux_maps[prim][int_type]['nue'+isbar] = weighted_hist_nue_flux 
+                self.flux_maps[prim][int_type]['numu'+isbar] = weighted_hist_numu_flux 
+                self.flux_maps[prim][int_type]['ebins']=self.ebins
+                self.flux_maps[prim][int_type]['czbins']=self.czbins
 
-                # get osc_flux maps
-                if read_osc_flux_json:
-                    osc_flux = self.osc_flux_maps[prim][int_type]
-                else:
-                    isbar = '_bar' if 'bar' in prim else ''
-                    osc_flux = nue_flux*osc_probs[prim][int_type]['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs[prim][int_type]['numu'+isbar+'_maps'][prim]
-                    self.osc_flux_maps[prim][int_type] = osc_flux
+                # Get osc_flux 
+                osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
+
+                # Get event_rate(true) maps
+                #print "Getting event_rate map for ", prim , " "
                 if read_wt_json:
                     weights = self.weights[prim][int_type]['weight']
                 else:
@@ -370,25 +401,24 @@ class TemplateMaker:
                     self.weights[prim][int_type]['weight'] = weights 
                     self.weights[prim][int_type]['true_energy'] = true_e 
                     self.weights[prim][int_type]['true_coszen'] = true_cz
-                    #self.weights[prim][int_type]['event'] = event 
                 weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
                 self.event_rate_maps[prim][int_type] = {}
-                self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * Julian_year * params['aeff_scale'] * scale
+                self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
                 self.event_rate_maps[prim][int_type]['ebins']=self.ebins
                 self.event_rate_maps[prim][int_type]['czbins']=self.czbins
-                sum_events_event_rate += np.sum(self.event_rate_maps[prim][int_type]['map'])
 
                 # Get event_rate_reco maps (step1, tmp maps in 12 flavs)
                 weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= osc_flux * aeff_weights, bins=anlys_bins)
-                tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * Julian_year * params['aeff_scale'] * scale
+                tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
 
                 # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
-                pid_cscd =  np.logical_and(pid < 3, pid>=-3)
-                pid_trck =  pid >=3 
+                #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
+                pid_cscd =  pid < self.pid_bound
+                pid_trck =  pid >= self.pid_bound
                 weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
                 weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
-                tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * Julian_year * params['aeff_scale'] * scale
-                tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * Julian_year * params['aeff_scale'] * scale
+                tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
+                tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
                 sum_event_rate_cscd += np.sum(tmp_event_rate_cscd[prim][int_type])
                 sum_event_rate_trck += np.sum(tmp_event_rate_trck[prim][int_type])
 
@@ -403,7 +433,6 @@ class TemplateMaker:
         self.event_rate_reco_maps['nuall_nc']= {'map': event_rate_reco_map_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
         # Get event_rate_pid maps (step2, combine all flavs)
-        print "Getting PID map"
         self.event_rate_pid_maps = {'params':self.params}
         event_rate_pid_map_cscd = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
         event_rate_pid_map_trck = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
@@ -414,18 +443,23 @@ class TemplateMaker:
         self.event_rate_pid_maps['cscd'] = {'map': event_rate_pid_map_cscd, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
         self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
-        if not read_osc_json:
-        	to_json(osc_probs, 'osc_probs.json')
-        if not read_flux_json:
-            to_json(self.flux_maps, 'flux_maps.json')
-        if not read_osc_flux_json:
-            to_json(self.osc_flux_maps, 'osc_flux_maps.json')
+        # Get event_rate_pid maps in nue+nuebar cc; numu+numubar cc; nutau+nutaubar cc and nuall_nc ( this is only for testing)
+        event_rate_pid_map_grouped = {'params': params, 'cscd': {}, 'trck': {}}
+        for prim in ['nue', 'numu', 'nutau']:
+            event_rate_pid_map_grouped['cscd'][prim+'_cc'] = {'map': tmp_event_rate_cscd[prim]['cc'] + tmp_event_rate_cscd[prim+'_bar']['cc'],
+                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            event_rate_pid_map_grouped['trck'][prim+'_cc'] = {'map': tmp_event_rate_trck[prim]['cc'] + tmp_event_rate_trck[prim+'_bar']['cc'],
+                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
+        event_rate_cscd_nuall_nc = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
+        event_rate_trck_nuall_nc = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
+        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+            event_rate_cscd_nuall_nc += tmp_event_rate_cscd[prim]['nc']
+            event_rate_trck_nuall_nc += tmp_event_rate_trck[prim]['nc']
+        event_rate_pid_map_grouped['cscd']['nuall_nc']= {'map': event_rate_cscd_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+        event_rate_pid_map_grouped['trck']['nuall_nc']= {'map': event_rate_trck_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+
         if not read_wt_json:
             to_json(self.weights, 'weights.json')
-        #to_json(self.event_rate_maps, 'event_rate_maps.json')
-        #to_json(self.event_rate_reco_maps, 'event_rate_reco_maps.json')
-        #to_json(self.event_rate_pid_maps, 'event_rate_pid_maps.json')
-
 
         if any(step_changed[:6]):
             physics.debug("STAGE 6: Applying systematics...")
@@ -461,8 +495,8 @@ class TemplateMaker:
         if not return_stages: return self.final_event_rate
 
         # Otherwise, return all stages as a simple tuple
-        return (self.flux_maps, self.osc_flux_maps, self.event_rate_maps,
-                self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
+        #return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
+        return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.event_rate_pid_maps, event_rate_pid_map_grouped)
 
 
 if __name__ == '__main__':

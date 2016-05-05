@@ -49,10 +49,10 @@
         83.58779273,
         112.57153069
     ],
-    "oversample_cz": 10,
-    "oversample_e": 10,
-    "actual_oversample_cz": 1,
-    "actual_oversample_e": 1
+    "oversample_cz": 1,
+    "oversample_e": 1,
+    "actual_oversample_cz": 20,
+    "actual_oversample_e": 20 
   },
   "params": {
     "sim_ver":{
