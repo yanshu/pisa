@@ -111,6 +111,8 @@ def show_map(pmap, title=None, cbar = True,
                     plt.annotate('%.1f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=6)
                 if annotate_prcs == 2:
                     plt.annotate('%.2f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=6)
+                if annotate_prcs == 3:
+                    plt.annotate('%.3f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=6)
 
     #Add nice labels
     #if xlabel == None:
@@ -252,6 +254,8 @@ def show_map_swap(pmap, title=None, cbar = True,
                     plt.annotate('%.1f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=7)
                 if annotate_prcs == 2:
                     plt.annotate('%.2f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=7)
+                if annotate_prcs == 3:
+                    plt.annotate('%.3f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=7)
 
     #Add nice labels
     #if xlabel == None:
