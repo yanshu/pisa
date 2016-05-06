@@ -81,7 +81,6 @@ class TemplateMaker:
         self.cache_params = None
         self.fluxes = None
         self.flux_maps = None
-        self.weights = None
         self.osc_probs = None
         self.event_rate_maps = None
         self.event_rate_reco_maps = None
@@ -250,7 +249,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, read_wt_json=False, use_cut_on_trueE=True):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, use_cut_on_trueE=True, no_osc_weight=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -305,7 +304,6 @@ class TemplateMaker:
                             true_cz = true_cz[cut]
                         self.osc_probs[prim][int_type] = self.osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
             else:
-                #self.osc_probs = from_json('osc_probs.json')
                 profile.info("STAGE 2: Reused from step before...")
         profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
 
@@ -332,24 +330,22 @@ class TemplateMaker:
         #            self.fluxes[prim+'_bar'][int_type][source_prim+'_bar'] = scaled_nubar_flux
 
         self.flux_maps = {}
-        self.weights = {} 
-        if read_wt_json:
-            self.weights = from_json('weights.json')
-
         self.event_rate_maps = {'params':params}
         sum_event_rate_cscd = 0
         sum_event_rate_trck = 0
         tmp_event_rate_reco_maps = {}
         tmp_event_rate_cscd = {}
+        true_tmp_event_rate_cscd = {}
         tmp_event_rate_trck = {}
+        true_tmp_event_rate_trck = {}
         for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
             self.flux_maps[prim] = {}
-            if not read_wt_json:
-                self.weights[prim] = {} 
             tmp_event_rate_reco_maps[prim] = {}
             self.event_rate_maps[prim] = {}
             tmp_event_rate_cscd[prim] = {}
             tmp_event_rate_trck[prim] = {}
+            true_tmp_event_rate_cscd[prim] = {}
+            true_tmp_event_rate_trck[prim] = {}
             for int_type in ['cc', 'nc']:
                 isbar = '_bar' if 'bar' in prim else ''
                 nutau_scale = 1.0    # for nutau CC, nutau_scale = nutau_norm; otherwise nutau_scale = 1
@@ -389,18 +385,19 @@ class TemplateMaker:
                 self.flux_maps[prim][int_type]['czbins']=self.czbins
 
                 # Get osc_flux 
-                osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
+                if no_osc_weight:
+                    if 'nue' in prim:
+                        osc_flux = nue_flux
+                    elif 'numu' in prim:
+                        osc_flux = numu_flux
+                    else:
+                        osc_flux = np.zeros(len(nue_flux))
+                else:
+                    osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
 
                 # Get event_rate(true) maps
                 #print "Getting event_rate map for ", prim , " "
-                if read_wt_json:
-                    weights = self.weights[prim][int_type]['weight']
-                else:
-                    weights = osc_flux * aeff_weights
-                    self.weights[prim][int_type] = {} 
-                    self.weights[prim][int_type]['weight'] = weights 
-                    self.weights[prim][int_type]['true_energy'] = true_e 
-                    self.weights[prim][int_type]['true_coszen'] = true_cz
+                weights = osc_flux * aeff_weights
                 weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
                 self.event_rate_maps[prim][int_type] = {}
                 self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
@@ -419,6 +416,11 @@ class TemplateMaker:
                 weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
                 tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
                 tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
+
+                true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
+                true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
+                true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
+                true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * Julian_year * params['aeff_scale'] * nutau_scale
                 sum_event_rate_cscd += np.sum(tmp_event_rate_cscd[prim][int_type])
                 sum_event_rate_trck += np.sum(tmp_event_rate_trck[prim][int_type])
 
@@ -458,8 +460,20 @@ class TemplateMaker:
         event_rate_pid_map_grouped['cscd']['nuall_nc']= {'map': event_rate_cscd_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
         event_rate_pid_map_grouped['trck']['nuall_nc']= {'map': event_rate_trck_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
-        if not read_wt_json:
-            to_json(self.weights, 'weights.json')
+        # Get true_event_rate_pid maps in nue+nuebar cc; numu+numubar cc; nutau+nutaubar cc and nuall_nc ( this is only for testing)
+        true_event_rate_pid_map_grouped = {'params': params, 'cscd': {}, 'trck': {}}
+        for prim in ['nue', 'numu', 'nutau']:
+            true_event_rate_pid_map_grouped['cscd'][prim+'_cc'] = {'map': true_tmp_event_rate_cscd[prim]['cc'] + true_tmp_event_rate_cscd[prim+'_bar']['cc'],
+                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            true_event_rate_pid_map_grouped['trck'][prim+'_cc'] = {'map': true_tmp_event_rate_trck[prim]['cc'] + true_tmp_event_rate_trck[prim+'_bar']['cc'],
+                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
+        true_event_rate_cscd_nuall_nc = np.zeros(np.shape(true_tmp_event_rate_cscd['nue']['nc']))
+        true_event_rate_trck_nuall_nc = np.zeros(np.shape(true_tmp_event_rate_trck['nue']['nc']))
+        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+            true_event_rate_cscd_nuall_nc += true_tmp_event_rate_cscd[prim]['nc']
+            true_event_rate_trck_nuall_nc += true_tmp_event_rate_trck[prim]['nc']
+        true_event_rate_pid_map_grouped['cscd']['nuall_nc']= {'map': true_event_rate_cscd_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+        true_event_rate_pid_map_grouped['trck']['nuall_nc']= {'map': true_event_rate_trck_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
         if any(step_changed[:6]):
             physics.debug("STAGE 6: Applying systematics...")
@@ -496,7 +510,7 @@ class TemplateMaker:
 
         # Otherwise, return all stages as a simple tuple
         #return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
-        return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.event_rate_pid_maps, event_rate_pid_map_grouped)
+        return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.event_rate_pid_maps, event_rate_pid_map_grouped, true_event_rate_pid_map_grouped)
 
 
 if __name__ == '__main__':
@@ -517,6 +531,8 @@ if __name__ == '__main__':
                          help="select the inverted hierarchy")
     parser.add_argument('-v', '--verbose', action='count', default=None,
                         help='set verbosity level.')
+    parser.add_argument('--no_osc_weight', action='store_true', default=False,
+                        help="Apply no osc.")
     parser.add_argument('-s', '--save_all', action='store_true', default=False,
                         help="Save all stages.")
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE',
@@ -529,6 +545,7 @@ if __name__ == '__main__':
     with Timer() as t:
         #Load all the settings
         model_settings = from_json(args.template_settings)
+        no_osc_weight = args.no_osc_weight
 
         #Select a hierarchy
         physics.debug('Selected %s hierarchy'%
@@ -544,7 +561,7 @@ if __name__ == '__main__':
     #Now get the actual template
     with Timer(verbose=False) as t:
         template_maps = template_maker.get_template(get_values(params),
-                                                    return_stages=args.save_all)
+                                                    return_stages=args.save_all,no_osc_weight=args.no_osc_weight)
     profile.debug("==> elapsed time to get template: %s sec"%t.secs)
 
     physics.debug("Saving file to %s"%args.outfile)

@@ -9,7 +9,7 @@
 # date:   2014-01-27
 
 from utils import is_linear, is_logarithmic, get_bin_centers
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -96,7 +96,7 @@ def show_map(pmap, title=None, cbar = True,
     z=cmap
     img = plt.imshow(z, vmin=vmin, vmax=vmax,
                 extent=[x.min(), x.max(), y.min(), y.max()],
-                origin='lower',**kwargs)
+                origin='lower',interpolation='none',**kwargs)
     #counts = colormesh.get_array()
     counts = img.get_array()
 
@@ -237,7 +237,7 @@ def show_map_swap(pmap, title=None, cbar = True,
     z=cmap
     img = plt.imshow(z, vmin=vmin, vmax=vmax,
                 extent=[x.min(), x.max(), y.min(), y.max()],
-                origin='lower',**kwargs)
+                origin='lower',interpolation='none',**kwargs)
     #counts = colormesh.get_array()
     counts = img.get_array()
 
@@ -294,6 +294,16 @@ def show_map_swap(pmap, title=None, cbar = True,
     #Return axes for further modifications
     return axis
 
+def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=1, cmap='cool'):
+    plt.figure()
+    show_map_swap(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap)
+    if save:
+        filename = os.path.join(outdir, fig_name + '.png')
+        pdf_filename = os.path.join(outdir+'/pdf/', fig_name + '.pdf')
+        plt.title(fig_title)
+        plt.savefig(filename,dpi=150)
+        plt.savefig(pdf_filename,dpi=150)
+        plt.clf()
 
 def delta_map(amap, bmap):
     '''
