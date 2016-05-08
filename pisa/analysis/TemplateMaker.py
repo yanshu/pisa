@@ -198,7 +198,7 @@ class TemplateMaker:
         logging.info("STAGE 5: Getting pid maps...")
         with Timer(verbose=False) as t:
             final_event_rate = get_pid_maps(event_rate_reco_maps,
-                                            self.pid_service)
+                                            self.pid_service, **params)
         tprofile.debug("==> elapsed time for pid stage: %s sec"%t.secs)
 
         if not return_stages:

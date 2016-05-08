@@ -104,6 +104,34 @@
       "value": "pid/V36_pid_recoEgy.json",
       "fixed": true
     },
+    "PID_offset": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 0.0,
+        "kind": "gaussian",
+        "sigma": 0.02
+      },
+      "range": [
+        -0.1,
+        0.1
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
+    "PID_scale": {
+      "fixed": true,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.02
+      },
+      "range": [
+        0.9,
+        1.1
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
     "pid_kernelfile": {
       "value": null,
       "fixed": true

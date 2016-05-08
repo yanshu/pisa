@@ -12,6 +12,7 @@ import logging
 
 import numpy as np
 
+from copy import copy
 from pisa.utils.jsons import to_json
 from pisa.utils.utils import is_equal_binning
 

@@ -27,16 +27,14 @@ from pisa.pid.PIDServiceParam import PIDServiceParam
 from pisa.pid.PIDServiceKernelFile import PIDServiceKernelFile
 
 
-def get_pid_maps(reco_events, pid_service=None, recalculate=False,
+def get_pid_maps(reco_events, pid_service=None,
                  return_unknown=False, **kwargs):
     """
     Primary function for this service, which returns the classified
     event rate maps (sorted after tracks and cascades) from the
     reconstructed ones (sorted after nu[e,mu,tau]_cc and nuall_nc).
     """
-    if recalculate:
-        pid_service.recalculate_kernels(**kwargs)
-
+    pid_service.recalculate_kernels(**kwargs)
     #Be verbose on input
     params = get_params()
     report_params(params, units = [])
