@@ -21,7 +21,7 @@ def add_fluxes_to_file(data_file_path, file_type, phys_params, flux_service, osc
         data_file, attrs = from_hdf(resources.find_resource(data_file_path), return_attrs = True)
         data_file_name = os.path.basename(data_file_path)
         utils.mkdir(args.outdir)
-        output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_weights.hdf5' 
+        output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_fluxes.hdf5' 
         if not os.path.isfile(output_file_name):
             for prim in data_file.keys():
                 for int_type in data_file[prim].keys():
@@ -31,14 +31,14 @@ def add_fluxes_to_file(data_file_path, file_type, phys_params, flux_service, osc
                     nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
                     numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
                     # the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
-                    oppo_isbar = '' if 'bar' else in prim '_bar'
+                    oppo_isbar = '' if 'bar' in prim else '_bar'
                     oppo_nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+oppo_isbar, event_by_event=True)
                     oppo_numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+oppo_isbar, event_by_event=True)
                     data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
                     data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
                     data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
                     data_file[prim][int_type][neutrino_weight_name+'_oppo_numu_flux'] = oppo_numu_flux
-                    # if need to calculate neutrino weights before hand
+                    # if need to calculate neutrino weights here
                     if add_weights:
                         osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
                         osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
