@@ -490,15 +490,15 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/DomEff_linear_fits_10_by_16.json"
+      "value": "domeff_holeice/4digit_DomEff_fits_10_by_16.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/HoleIce_quadratic_fits_10_by_16.json"
+      "value": "domeff_holeice/4digit_HoleIce_fits_10_by_16.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+      "value": "reco_prcs/4digit_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_10_by_16.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": false,

@@ -4,8 +4,8 @@ import os.path
 import h5py
 import copy
 import pisa.resources.resources as resources
-from pisa.flux.IPHondaFluxService_MC import IPHondaFluxService
-from pisa.oscillations.Prob3OscillationServiceMC import Prob3OscillationServiceMC
+from pisa.flux.IPHondaFluxService_MC_merge import IPHondaFluxService
+from pisa.oscillations.Prob3OscillationServiceMC_merge import Prob3OscillationServiceMC
 from pisa.utils.log import set_verbosity,logging,profile
 from pisa.utils.params import get_values, select_hierarchy
 from pisa.utils.jsons import from_json
@@ -45,7 +45,7 @@ def add_fluxes_to_file(data_file_path, file_type, phys_params, flux_service, osc
         to_hdf(data_file, output_file_name, attrs=attrs, overwrite=True)
 
     elif file_type == 'intermediate':
-        data_file = h5py.File(resources.find_resource(data_file_path), "r+")
+        data_file = h5py.File(resources.find_resource(data_file_path), 'r+')
         true_e = data_file['trueNeutrino']['energy']
         true_cz = np.cos(data_file['trueNeutrino']['zenith'])
         one_weight = data_file['I3MCWeightDict']['OneWeight']
@@ -69,7 +69,7 @@ def add_fluxes_to_file(data_file_path, file_type, phys_params, flux_service, osc
             numu_flux = flux_service.get_flux(true_e, true_cz,flux_name_numu, event_by_event=True)
             osc_probs = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **phys_params)
             osc_flux = nue_flux*osc_probs['nue_maps'] + numu_flux*osc_probs['numu_maps']
-        print "time = ", t.secs
+        print 'time = ', t.secs
         data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
         data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
         data_file[neutrino_weight_name+'_weight'] = osc_flux * weighted_aeff
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     else:
         hd5_file_name = args.intermediate_file
         file_type = 'intermediate'
-        print "The input is intermediate file, make sure it is the old simulation (4 digit)."
+        print 'The input is intermediate file, make sure it is the old simulation (4 digit).'
 
     outdir = args.outdir
     
