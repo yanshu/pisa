@@ -15,7 +15,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.utils import Timer, oversample_binning
 CMSQ_TO_MSQ = 1.0e-4
 
-def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, osc_service, neutrino_weight_name, outdir):
+def add_fluxes_to_file(data_file_path, file_type, phys_params, flux_service, osc_service, neutrino_weight_name, outdir, add_weights=False):
     print 'data_file_path = ', data_file_path
     if file_type == 'pisa':
         data_file, attrs = from_hdf(resources.find_resource(data_file_path), return_attrs = True)
@@ -26,11 +26,19 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
                 isbar = '_bar' if 'bar' in prim else ''
                 nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
                 numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
-                osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
-                osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
+                # the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
+                oppo_isbar = '' if 'bar' else in prim '_bar'
+                oppo_nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+oppo_isbar, event_by_event=True)
+                oppo_numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+oppo_isbar, event_by_event=True)
                 data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
                 data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
-                data_file[prim][int_type][neutrino_weight_name+'_weight'] = osc_flux * data_file[prim][int_type]['weighted_aeff'] 
+                data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
+                data_file[prim][int_type][neutrino_weight_name+'_oppo_numu_flux'] = oppo_numu_flux
+                # if need to calculate neutrino weights before hand
+                if add_weights:
+                    osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
+                    osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
+                    data_file[prim][int_type][neutrino_weight_name+'_weight'] = osc_flux * data_file[prim][int_type]['weighted_aeff'] 
         data_file_name = os.path.basename(data_file_path)
         utils.mkdir(args.outdir)
         output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_weights.hdf5' 
@@ -72,7 +80,7 @@ def add_weights_to_file(data_file_path, file_type, phys_params, flux_service, os
 
 if __name__ == '__main__':
 
-    parser = ArgumentParser(description='''Add neutrino weights(osc*flux*sim_weight) for each event. ''')
+    parser = ArgumentParser(description='''Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for each event. ''')
     parser_file = parser.add_mutually_exclusive_group(required=True)
     parser_file.add_argument( '-fp', '--pisa_file', metavar='H5_FILE', type=str, help='input HDF5 file')
     parser_file.add_argument( '-fi', '--intermediate_file', metavar='H5_FILE', type=str, help='input HDF5 file, only works for old simulation.')
@@ -80,7 +88,9 @@ if __name__ == '__main__':
         help='''Settings file that contains informatino of flux file, oscillation
         parameters, PREM model, etc., for calculation of neutrino weights''')
     parser.add_argument('--use_best_fit',action='store_true',default=False,
-                        help='Use best fit params to calculate neutrino weights.')
+                        help='Use best fit params to calculate fluxes.')
+    parser.add_argument('--add_weights',action='store_true',default=False,
+                        help='Calculate and store neutrino weights.')
     parser.add_argument('--profile', '--profile-results', default=None, dest='fit_file_profile',
                         help='use post fit parameters from profile fit result json file')
     parser.add_argument('-o','--outdir',metavar='DIR',default='',
@@ -122,6 +132,6 @@ if __name__ == '__main__':
     osc_service = Prob3OscillationServiceMC([],[],**phys_params)
 
     if args.use_best_fit:
-        add_weights_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino_best_fit', outdir=outdir)
+        add_fluxes_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino_best_fit', outdir=outdir)
     else:
-        add_weights_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino', outdir=outdir)
+        add_fluxes_to_file(hd5_file_name, file_type, phys_params, flux_service, osc_service, neutrino_weight_name='neutrino', outdir=outdir)
