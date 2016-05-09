@@ -76,7 +76,7 @@ class Prob3OscillationServiceMC(OscillationServiceBase):
             osc_prob_dict[nu+'_maps'] = []
 
         if type(prim)==list:
-            assert(len(prim)==len(ebins))
+            assert(len(prim)==len(ecen))
         else:
             assert(type(prim)==str)
 
@@ -93,7 +93,7 @@ class Prob3OscillationServiceMC(OscillationServiceBase):
         loglevel = logging.root.getEffectiveLevel()
         for ie,energy in enumerate(ecen):
             if type(prim)==list:
-                flav = prim[idx]
+                flav = prim[ie]
             else:
                 flav = prim
             if event_by_event:
