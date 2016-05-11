@@ -114,6 +114,8 @@ def show_map(pmap, title=None, cbar = True,
                     plt.annotate('%.2f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 3:
                     plt.annotate('%.3f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
+                if annotate_prcs == 4:
+                    plt.annotate('%.4e'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
 
     #Add nice labels
     #if xlabel == None:
@@ -258,6 +260,8 @@ def show_map_swap(pmap, title=None, cbar = True,
                     plt.annotate('%.2f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 3:
                     plt.annotate('%.3f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
+                if annotate_prcs == 4:
+                    plt.annotate('%.4f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
 
     #Add nice labels
     #if xlabel == None:
@@ -300,7 +304,7 @@ def show_map_swap(pmap, title=None, cbar = True,
     #Return axes for further modifications
     return axis
 
-def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=2, cmap='cool', counts_size=7):
+def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=1, cmap='cool', counts_size=7):
     plt.figure()
     show_map_swap(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap, counts_size=counts_size)
     if save:
