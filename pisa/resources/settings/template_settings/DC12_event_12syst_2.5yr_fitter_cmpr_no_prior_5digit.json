@@ -14,7 +14,11 @@
     1.0
     ],
     "ebins": [
-    2.8840315, 
+    0.95499259,
+    1.25892541,
+    1.65958691,
+    2.18776162,
+    2.8840315,
     3.80189396,
     5.01187234,
     6.60693448,
@@ -47,8 +51,8 @@
     ],
     "oversample_cz": 1,
     "oversample_e": 1,
-    "actual_oversample_cz": 20,
-    "actual_oversample_e": 20 
+    "actual_oversample_cz": 40,
+    "actual_oversample_e": 40 
   },
   "params": {
     "sim_ver":{
@@ -221,10 +225,10 @@
       },
       "range": [
         0.0,
-        360.0
+        6.283185307179586 
       ],
       "scale": 1.0,
-      "value": 306 
+      "value": 5.340707511102648 
     },
     "deltam21": {
       "fixed": true,
