@@ -166,7 +166,7 @@ if not args.templ_already_saved:
         DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
     
         DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
-        template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_applied=True)
+        template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
     
         templates[str(run_num)]['trck'] = template['trck']['map']
         templates[str(run_num)]['cscd'] = template['cscd']['map']

@@ -20,7 +20,6 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 import pisa.utils.events as events
 from pisa.utils.jsons import from_json,to_json
 from pisa.resources.resources import find_resource
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.analysis.GetMCError import GetMCError
 from pisa.utils.params import get_values, change_nutau_norm_settings
 
@@ -190,7 +189,7 @@ if not args.templ_already_saved:
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
     
             RP_template_maker = TemplateMaker(get_values(template_settings_Reco['params']), **template_settings_Reco['binning'])
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)),no_sys_applied= True, apply_reco_prcs=True)
+            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)),no_sys_maps= True, apply_reco_prcs=True)
             tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
     

@@ -507,9 +507,9 @@ settings file. ''')
         fit_free_nutau_params = copy.deepcopy(select_hierarchy(fit_no_nutau_template_settings['params'],True))
 
         with Timer(verbose=False) as t:
-            fit_nutau = fit_nutau_template_maker.get_template(get_values(fit_nutau_params),return_stages=False, no_sys_applied= False)
-            fit_no_nutau = fit_no_nutau_template_maker.get_template(get_values(fit_no_nutau_params),return_stages=False, no_sys_applied= False)
-            fit_free_nutau = fit_free_nutau_template_maker.get_template(get_values(fit_free_nutau_params),return_stages=False, no_sys_applied= False)
+            fit_nutau = fit_nutau_template_maker.get_template(get_values(fit_nutau_params),return_stages=False, no_sys_maps= False)
+            fit_no_nutau = fit_no_nutau_template_maker.get_template(get_values(fit_no_nutau_params),return_stages=False, no_sys_maps= False)
+            fit_free_nutau = fit_free_nutau_template_maker.get_template(get_values(fit_free_nutau_params),return_stages=False, no_sys_maps= False)
         profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
 
         #print "fit_nutau cscd = "

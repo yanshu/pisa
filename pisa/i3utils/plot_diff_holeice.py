@@ -83,7 +83,7 @@ for run_num in runs:
 
     DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
 
-    template = DH_template_maker.get_template(get_values(DH_template_settings['params']),no_sys_applied=True)
+    template = DH_template_maker.get_template(get_values(DH_template_settings['params']),no_sys_maps=True)
 
     templates[str(run_num)]['trck'] = template['trck']
     templates[str(run_num)]['cscd'] = template['cscd']
