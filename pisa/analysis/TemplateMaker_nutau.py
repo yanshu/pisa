@@ -260,7 +260,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -279,7 +279,7 @@ class TemplateMaker:
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
                     elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif (no_sys_applied==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
+                    elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
@@ -368,7 +368,8 @@ class TemplateMaker:
 
         if any(step_changed[:6]):
             physics.debug("STAGE 6: Applying systematics...")
-            if no_sys_applied:
+            if no_sys_maps:
+                # apply no dom_eff, hole_ice or reco_prcs
                 self.sys_maps = self.event_rate_pid_maps
             else: 
                 with Timer(verbose=False) as t:
