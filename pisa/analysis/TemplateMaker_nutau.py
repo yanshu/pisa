@@ -183,12 +183,15 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
-        self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
-        self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
-        self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
-        self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
+        if not no_sys_maps:
+            # when we are generating fits (creating the json files)
+            # for the first time ( no_sys_maps = True), this can't run 
+            self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
+            self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
+            self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
+            self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
+            self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
+            self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
         self.calc_mc_errors()
 
