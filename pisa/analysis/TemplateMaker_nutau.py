@@ -60,7 +60,8 @@ class TemplateMaker:
     them later when needed.
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
-                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, sim_ver=None,**kwargs):
+                 oversample_e=None, oversample_cz=None, actual_oversample_e=None,
+                 actual_oversample_cz=None, sim_ver=None,no_sys_maps=False, **kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
