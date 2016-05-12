@@ -41,9 +41,14 @@ parser.add_argument('--templ_already_saved',action='store_true',default=False,
                     help="Read templates from already saved file; saves time when only need plotting.")
 parser.add_argument('--reco_prcs_vals',type=str,
                     metavar='reco_prcs_vals',
-                    default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
+                    #default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
+                    default = 'np.linspace(0.7,1.3,3)', help = '''The reco. precision values to use.''')
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
+parser.add_argument('--use_event_PISA',action='store_true',default=False,
+                    help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
+parser.add_argument('--IMH',action='store_true',default=False,
+                    help="Use inverted mass hiearchy.")
 parser.add_argument('--plotMC',action='store_true',default=False,
                     help="Plot the MC events number in each bin vs DOM efficiency and hole ice values.")
 parser.add_argument('--plotReso',action='store_true',default=False,
@@ -62,6 +67,11 @@ set_verbosity(args.verbose)
 #Read in the settings
 x_steps = 0.05
 outdir = args.outdir
+if args.use_event_PISA:
+    from pisa.analysis.TemplateMaker_MC import TemplateMaker
+else:
+    from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+use_NMH = not(args.IMH)
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots')
 template_settings = from_json(args.template_settings)
@@ -83,9 +93,12 @@ if args.sim == '4digit':
     reco_mc_file = "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
 elif args.sim == '5digit':
     reco_mc_file = "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
-elif args.sim == 'dima':
+elif args.sim == 'dima_p1':
+    run_num = 600
+    reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num, run_num,run_num,run_num,run_num)
+elif args.sim == 'dima_p2':
     #TODO    
-    print "to do, dima sets"
+    print "to do, dima_p2 sets"
 else:
     raise ValueError( "sim allowed: ['5digit', '4digit', 'dima']")
 
@@ -159,11 +172,14 @@ data_nutau_norm = 1.0
 print "reco_prcs_vals = ", reco_prcs_vals
 
 if not args.templ_already_saved:
-    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
+    #for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
+    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down']:
+    #for precision_tag in ['cz_reco_precision_up', 'cz_reco_precision_down']:
         MCmaps[precision_tag] = {}
         tmaps[precision_tag] = {}
     
         for reco_prcs_val in reco_prcs_vals:
+            print "Getting maps for ", precision_tag , " = ", reco_prcs_val
             tmaps[precision_tag][str(reco_prcs_val)] = {'trck':{},
                                                         'cscd':{}}
             MCmaps[precision_tag][str(reco_prcs_val)] = {'trck':{},
@@ -174,7 +190,7 @@ if not args.templ_already_saved:
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
     
             RP_template_maker = TemplateMaker(get_values(template_settings_Reco['params']), **template_settings_Reco['binning'])
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=True)),no_sys_applied= True, apply_reco_prcs=True)
+            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)),no_sys_applied= True, apply_reco_prcs=True)
             tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
     
