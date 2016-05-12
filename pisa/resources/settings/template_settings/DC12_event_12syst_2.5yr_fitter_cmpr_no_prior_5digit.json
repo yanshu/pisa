@@ -1,60 +1,64 @@
 {
   "binning": {
     "czbins": [
-      -1.0,
-      -0.875,
-      -0.75,
-      -0.625,
-      -0.5,
-      -0.375,
-      -0.25,
-      -0.125,
-      0.0,
-      0.125,
-      0.25,
-      0.375,
-      0.5,
-      0.625,
-      0.75,
-      0.875,
-      1.0
+    -1.0,
+    -0.8,
+    -0.6,
+    -0.4,
+    -0.2,
+    0.0,
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
     ],
     "ebins": [
-      3.16227766,
-      4.21696503,
-      5.62341325,
-      7.49894209,
-      10.0,
-      13.33521432,
-      17.7827941,
-      23.71373706,
-      31.6227766,
-      42.16965034,
-      56.23413252,
-      74.98942093,
-      100.0,
-      133.35214322,
-      177.827941
+    0.95499259,
+    1.25892541,
+    1.65958691,
+    2.18776162,
+    2.8840315,
+    3.80189396,
+    5.01187234,
+    6.60693448,
+    8.7096359,
+    11.48153621,
+    15.13561248,
+    19.95262315,
+    26.30267992,
+    34.67368505,
+    45.70881896,
+    60.25595861,
+    79.43282347,
+    104.71285481,
+    138.03842646,
+    181.97008586,
+    239.8832919
     ],
     "anlys_ebins": [
-      5.62341325,
-      7.49894209,
-      10.0,
-      13.33521432,
-      17.7827941,
-      23.71373706,
-      31.6227766,
-      42.16965034,
-      56.23413252,
-      74.98942093,
-      100.0
+    5.01187234,
+    6.60693448,
+    8.7096359,
+    11.48153621,
+    15.13561248,
+    19.95262315,
+    26.30267992,
+    34.67368505,
+    45.70881896,
+    60.25595861,
+    79.43282347
     ],
-    "oversample_cz": 10,
-    "oversample_e": 10,
-    "actual_oversample_cz": 1,
-    "actual_oversample_e": 1
+    "oversample_cz": 1,
+    "oversample_e": 1,
+    "actual_oversample_cz": 40,
+    "actual_oversample_e": 40 
   },
   "params": {
+    "sim_ver":{
+      "fixed": true,
+      "value": "5digit"
+    },
     "PID_offset": {
       "fixed": true,
       "prior": {
@@ -154,7 +158,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__unjoined_with_weights.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -200,30 +204,16 @@
       "scale": 1,
       "value": 1.0
     },
-    "up_down_e_reco_prcs": {
-      "fixed": false,
+    "cz_reco_precision_down": {
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
         "sigma": 0.05
       },
       "range": [
-        0.8,
-        1.2
-      ],
-      "scale": 1,
-      "value": 1.0
-    },
-    "up_down_cz_reco_prcs": {
-      "fixed": false,
-      "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
-      },
-      "range": [
-        0.8,
-        1.2
+        0.7,
+        1.3
       ],
       "scale": 1,
       "value": 1.0
@@ -235,7 +225,7 @@
       },
       "range": [
         0.0,
-        6.283185307179586
+        6.283185307179586 
       ],
       "scale": 1.0,
       "value": 5.340707511102648 
@@ -276,7 +266,7 @@
         0.1
       ],
       "scale": 100.0,
-      "value": 0.00246
+      "value": 0.002457
     },
     "detector_depth": {
       "fixed": true,
@@ -297,7 +287,21 @@
       "value": 1.0
     },
     "e_reco_precision_up": {
-      "fixed": false,
+      "fixed": true,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.7,
+        1.3
+      ],
+      "scale": 1,
+      "value": 1.0
+    },
+    "e_reco_precision_down": {
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -328,9 +332,21 @@
       "scale": 1.0,
       "value": 1.0
     },
+    "flux_mode": {
+      "fixed": true,
+      "value": "integral-preserving"
+    },
     "flux_file": {
       "fixed": true,
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
+    },
+    "NuFluxIP_file": {
+      "fixed": true,
+      "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160_avg_100epoints_100czpoints.json"
+    },
+    "ocelot_file": {
+        "fixed": true,
+        "value": "oscillations/osc_probabilities_e140_cz160_good.json"
     },
     "hole_ice": {
       "fixed": false,
@@ -348,11 +364,11 @@
     },
     "icc_bg_file": {
       "fixed": true,
-      "value": "background/Matt_L5b_icc_data_IC86_2_3_4.hdf5"
+      "value": "background/Matt_L5b_icc_data_IC86_2_3_4_new_reco.hdf5"
     },
     "livetime": {
       "fixed": true,
-      "value": 4.0
+      "value": 2.5
     },
     "nu_nubar_ratio": {
       "fixed": false,
@@ -388,16 +404,12 @@
         "kind": "uniform"
       },
       "range": [
-        -1.5,
-        3.5
+       -1.5,
+        2.5
       ],
       "scale": 0.1,
       "value": 1.0
     },
-     "NuFluxIP_file": {
-          "fixed": true,
-           "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160.json"
-      },
     "osc_code": {
       "fixed": true,
       "value": "prob3"
@@ -406,9 +418,21 @@
       "fixed": true,
       "value": null
     },
+    "pid_events": {
+      "fixed": true,
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+    },
+    "pid_ver": {
+      "fixed": true,
+      "value": "1"
+    },
+    "pid_remove_true_downgoing": {
+      "fixed": true,
+      "value": false 
+    },
     "pid_mode": {
       "fixed": true,
-      "value": "param"
+      "value": "mc"
     },
     "pid_paramfile_up": {
       "fixed": true,
@@ -422,17 +446,13 @@
       "fixed": true,
       "value": 20.0
     },
-    "ratio_up_down": {
-      "fixed": true,
-      "value": false
-    },
     "reco_kernel_file": {
       "fixed": true,
       "value": null
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -444,32 +464,52 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v6__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/events__deepcore__IC86__runs_12585-16585:20000__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/DomEff_linear_fits_10_by_16.json"
+      "value": "domeff_holeice/5digit_DomEff_fits_10_by_16.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/HoleIce_quadratic_fits_10_by_16.json"
+      "value": "domeff_holeice/5digit_HoleIce_fits_10_by_16.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/RecoPrecisionCubicFitCoefficients_0.7_2.0_data_tau_10_by_16.json"
+      "value": "reco_prcs/5digit_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_10_by_16.json"
     },
-    "residual_up_down": {
+    "up_down_e_reco_prcs": {
       "fixed": true,
-      "value": false
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
     },
-    "simp_up_down": {
-      "fixed": true,
-      "value": true
+    "up_down_cz_reco_prcs": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.05
+      },
+      "range": [
+        0.8,
+        1.2
+      ],
+      "scale": 1,
+      "value": 1.0
     },
     "theta12": {
       "fixed": true,
       "prior": {
-        "fiducial": 0.5846852994181004,
+        "fiducial": 0.5839958715755919,
         "kind": "gaussian",
         "sigma": 0.013962634015954637
       },
@@ -478,12 +518,12 @@
         0.6283185307179586
       ],
       "scale": 1.0,
-      "value": 0.5846852994181004
+      "value": 0.5839958715755919
     },
     "theta13": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.14835298641951802,
+        "fiducial": 0.14819001778459273,
         "kind": "gaussian",
         "sigma": 0.003490658503988659
       },
@@ -492,7 +532,7 @@
         0.158824961931484
       ],
       "scale": 1.0,
-      "value": 0.14835298641951802
+      "value": 0.14819001778459273
     },
     "theta23_ih": {
       "fixed": false,
@@ -516,7 +556,7 @@
         1.0
       ],
       "scale": 1.0,
-      "value": 0.7382742735936014
+      "value": 0.7373241279447564
     }
   }
 }
