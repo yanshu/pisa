@@ -40,8 +40,7 @@ parser.add_argument('--templ_already_saved',action='store_true',default=False,
                     help="Read templates from already saved file; saves time when only need plotting.")
 parser.add_argument('--reco_prcs_vals',type=str,
                     metavar='reco_prcs_vals',
-                    #default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
-                    default = 'np.linspace(0.7,1.3,3)', help = '''The reco. precision values to use.''')
+                    default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('--use_event_PISA',action='store_true',default=False,
@@ -73,6 +72,7 @@ else:
 use_NMH = not(args.IMH)
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots')
+utils.mkdir(outdir+'/plots/png/')
 template_settings = from_json(args.template_settings)
 czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
@@ -109,6 +109,8 @@ template_settings['params']['pid_events']['value'] = reco_mc_file
 if args.plotReso:
     utils.mkdir(outdir+'/plots/resolutions_withweight/')
     utils.mkdir(outdir+'/plots/resolutions_noweight/')
+    utils.mkdir(outdir+'/plots/resolutions_withweight/png/')
+    utils.mkdir(outdir+'/plots/resolutions_noweight/png/')
     evts = events.Events(find_resource(reco_mc_file))
     for flavor in ['nue','nue_bar','numu','numu_bar','nutau','nutau_bar']:
         flavor_dict = {}
@@ -145,7 +147,7 @@ if args.plotReso:
                     plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                     plt.hist((E_reco-E_true)/E_true, weights=weight_select, bins=50)
                     if(fig_num == n_czbins * n_ebins-1):
-                        plt.savefig(outdir+ '/plots/resolutions_withweight/'+'%s_%s_resolutions_%s_withweight.png'%(args.sim, flavor, int_type))
+                        plt.savefig(outdir+ '/plots/resolutions_withweight/png/'+'%s_%s_resolutions_%s_withweight.png'%(args.sim, flavor, int_type))
                         plt.savefig(outdir+ '/plots/resolutions_withweight/'+'%s_%s_resolutions_%s_withweight.pdf'%(args.sim, flavor, int_type))
                         plt.clf()
 
@@ -154,7 +156,7 @@ if args.plotReso:
                     plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
                     plt.hist((E_reco-E_true)/E_true, bins=50)
                     if(fig_num == n_czbins * n_ebins-1):
-                        plt.savefig(outdir+ '/plots/resolutions_noweight/'+'%s_%s_%s_resolutions_noweight.png'%(args.sim, flavor, int_type))
+                        plt.savefig(outdir+ '/plots/resolutions_noweight/png/'+'%s_%s_%s_resolutions_noweight.png'%(args.sim, flavor, int_type))
                         plt.savefig(outdir+ '/plots/resolutions_noweight/'+'%s_%s_%s_resolutions_noweight.pdf'%(args.sim, flavor, int_type))
                         plt.clf()
 
@@ -171,9 +173,7 @@ data_nutau_norm = 1.0
 print "reco_prcs_vals = ", reco_prcs_vals
 
 if not args.templ_already_saved:
-    #for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
-    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down']:
-    #for precision_tag in ['cz_reco_precision_up', 'cz_reco_precision_down']:
+    for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
         MCmaps[precision_tag] = {}
         tmaps[precision_tag] = {}
     
@@ -188,8 +188,8 @@ if not args.templ_already_saved:
             template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
     
-            RP_template_maker = TemplateMaker(get_values(template_settings_Reco['params']), **template_settings_Reco['binning'])
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)),no_sys_maps= True, apply_reco_prcs=True)
+            RP_template_maker = TemplateMaker(get_values(template_settings_Reco['params']), no_sys_maps=True, **template_settings_Reco['binning'])
+            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True)
             tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
     
@@ -281,7 +281,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     plt.scatter(reco_prcs_vals, templ_MC[:,i,j], color='blue')
                     plt.xlim(min(reco_prcs_vals)-0.01, max(reco_prcs_vals)+0.01)
                     if(fig_num == n_czbins * n_ebins-1):
-                        plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/png/'+'%s_%s_MC_number_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
                         plt.savefig(outdir+ '/plots/'+'%s_%s_MC_number_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
@@ -312,7 +312,7 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                         #plt.figtext(0.5, 0.95, 'Reco Precision cubic fits %s'%flav, fontsize=60,ha='center')
                         #fig.subplots_adjust(hspace=0)
                         #fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/png/'+'%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
                         plt.savefig(outdir+ '/plots/'+'%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
 
