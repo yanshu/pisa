@@ -336,10 +336,6 @@
       "fixed": true,
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
     },
-    "NuFluxIP_file": {
-      "fixed": true,
-      "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160_avg_100epoints_100czpoints.json"
-    },
     "ocelot_file": {
         "fixed": true,
         "value": "oscillations/osc_probabilities_e140_cz160_good.json"
@@ -390,6 +386,18 @@
       "range": [
         0.7,
         1.3
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
+    "nc_norm": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        2.0
       ],
       "scale": 1.0,
       "value": 1.0
