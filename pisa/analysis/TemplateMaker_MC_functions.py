@@ -65,7 +65,7 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins):
             osc_probs[prim][int_type] = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
     return osc_probs
 
-def apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params, flux_sys_renorm):
+def apply_flux_ratio(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params, flux_sys_renorm):
     # nue_numu_ratio
     if params['nue_numu_ratio'] != 1:
         scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=flux_sys_renorm)
@@ -83,22 +83,30 @@ def apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, p
             _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
         nue_flux = scaled_nue_flux
         numu_flux = scaled_numu_flux
+    return nue_flux, numu_flux
 
-    #numu delta spectral index 
+def apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm):
     if params['atm_delta_index'] != 0:
         delta_index = params['atm_delta_index']
         egy_med = np.median(true_e) 
         #print "egy_med = ", egy_med
         scale = np.power((true_e/egy_med),delta_index)
         if flux_sys_renorm:
-            # keep sum constant
-            total_nue_flux = nue_flux.sum()
+            # keep weighted flux constant
+            weighted_nue_flux = nue_flux * aeff_weights
+            total_nue_flux = weighted_nue_flux.sum() 
             scaled_nue_flux = nue_flux*scale
-            scaled_nue_flux *= (total_nue_flux/scaled_nue_flux.sum())
+            weighted_scaled_nue_flux = scaled_nue_flux * aeff_weights
+            total_scaled_nue_flux = weighted_scaled_nue_flux.sum()
+            scaled_nue_flux *= (total_nue_flux/total_scaled_nue_flux)
             nue_flux = scaled_nue_flux
-            total_numu_flux = numu_flux.sum()
+
+            weighted_numu_flux = numu_flux * aeff_weights
+            total_numu_flux = weighted_numu_flux.sum() 
             scaled_numu_flux = numu_flux*scale
-            scaled_numu_flux *= (total_numu_flux/scaled_numu_flux.sum())
+            weighted_scaled_numu_flux = scaled_numu_flux * aeff_weights
+            total_scaled_numu_flux = weighted_scaled_numu_flux.sum()
+            scaled_numu_flux *= (total_numu_flux/total_scaled_numu_flux)
             numu_flux = scaled_numu_flux
         else:
             # do not keep sum constant
