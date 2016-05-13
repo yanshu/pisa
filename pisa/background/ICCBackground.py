@@ -37,7 +37,6 @@ def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
     # Get ICC background dictionary
     background_dict = background_service.get_icc_bg()
     n_nu = np.sum(event_rate_pid_maps['cscd']['map']) + np.sum(event_rate_pid_maps['trck']['map'])
-    print "n_nu = ", n_nu
     n_mu = np.sum(background_dict['cscd']) + np.sum(background_dict['trck'])
     for flav in ['trck','cscd']:
         ebins, czbins = get_binning(event_rate_pid_maps[flav])
