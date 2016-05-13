@@ -15,9 +15,9 @@ import sys
 import numpy as np
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import year
-
 import h5py
-from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_sys
+
+from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index
 
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
@@ -222,9 +222,9 @@ class TemplateMaker:
         mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
 
         final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
-        #self.rel_error = {}
-        #self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
-        #self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
+        self.rel_error = {}
+        self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
+        self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False, flux_sys_renorm=True, use_atmmu_f=False):
@@ -245,7 +245,7 @@ class TemplateMaker:
             step_changed = [False]*7
             for p,v in params.items():
                 if self.cache_params[p] != v:
-                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
+                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
                     elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
@@ -263,15 +263,6 @@ class TemplateMaker:
         bins = (self.ebins, self.czbins)
         anlys_bins = (self.anlys_ebins, self.czbins)
 
-        # Get osc probability maps
-        with Timer(verbose=False) as t:
-            if any(step_changed[:2]):
-                physics.debug("STAGE 2: Getting osc prob maps...")
-                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins)
-            else:
-                profile.info("STAGE 2: Reused from step before...")
-        profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
-
         # set up flux
         self.fluxes = {}
         for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
@@ -286,9 +277,18 @@ class TemplateMaker:
                 oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                 true_e = evts[prim][int_type]['true_energy']
                 # apply flux systematics (nue_numu_ratio, nu_nubar_ratio, numu_spectral_index)
-                nue_flux, numu_flux = apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
+                nue_flux, numu_flux = apply_flux_ratio(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
+
+        # Get osc probability maps
+        with Timer(verbose=False) as t:
+            if any(step_changed[:2]):
+                physics.debug("STAGE 2: Getting osc prob maps...")
+                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins)
+            else:
+                profile.info("STAGE 2: Reused from step before...")
+        profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
 
         self.flux_maps = {}
         self.event_rate_maps = {'params':params}
@@ -325,6 +325,8 @@ class TemplateMaker:
                 # get flux from self.fluxes
                 nue_flux = self.fluxes[prim][int_type]['nue']
                 numu_flux = self.fluxes[prim][int_type]['numu']
+                # apply spectral index
+                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:
@@ -454,9 +456,14 @@ class TemplateMaker:
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
                     e_param_down = 1. + params['up_down_e_reco_prcs']*(params['e_reco_precision_up']-1.)
+                    # for generating plots, to show its effect, otherwise, as long as e_reco_precision_up =1, e_param_down returns 1 
+                    #e_param_down = params['e_reco_precision_down']         
                     self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, e_param_down)
                     self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
-                    cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)
+                    # in a fit; only allow e_reco_precision_up and _down to go in the same direction
+                    cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)    
+                    # for generating plots to show its effect
+                    #cz_param_down = params['cz_reco_precision_down']       
                     self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
@@ -470,8 +477,8 @@ class TemplateMaker:
         else:
             profile.debug("STAGE 7: Reused from step before...")
 
-        #self.final_event_rate['cscd']['sumw2_nu'] = self.final_event_rate['cscd']['map_nu']**2 * self.rel_error['cscd']
-        #self.final_event_rate['trck']['sumw2_nu'] = self.final_event_rate['trck']['map_nu']**2 * self.rel_error['trck']
+        self.final_event_rate['cscd']['sumw2_nu'] = self.final_event_rate['cscd']['map_nu']**2 * self.rel_error['cscd']
+        self.final_event_rate['trck']['sumw2_nu'] = self.final_event_rate['trck']['map_nu']**2 * self.rel_error['trck']
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
 
