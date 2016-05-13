@@ -115,7 +115,7 @@ def show_map(pmap, title=None, cbar = True,
                 if annotate_prcs == 3:
                     plt.annotate('%.3f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 4:
-                    plt.annotate('%.4e'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
+                    plt.annotate('%.4f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
 
     #Add nice labels
     #if xlabel == None:
