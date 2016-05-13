@@ -6,18 +6,19 @@
 
 import numpy as np
 
-def apply_ratio_scale(flux1, flux2, ratio_scale):
-    # keep sum of flux1, flux2 constant
-    #orig_sum = flux1 + flux2
-    #orig_ratio = flux1/flux2
-    #scaled_flux2 = orig_sum / (1 + ratio_scale*orig_ratio)
-    #scaled_flux1 = ratio_scale*orig_ratio*scaled_flux2
-    #return scaled_flux1, scaled_flux2
-
-    # don't keep sum of flux1, flux2 constant
-    orig_ratio = flux1/flux2
-    scaled_flux1 = ratio_scale*orig_ratio*flux2
-    return scaled_flux1, flux2
+def apply_ratio_scale(flux1, flux2, ratio_scale, sum_const):
+    if sum_const:
+        # keep sum of flux1, flux2 constant
+        orig_sum = flux1 + flux2
+        orig_ratio = flux1/flux2
+        scaled_flux2 = orig_sum / (1 + ratio_scale*orig_ratio)
+        scaled_flux1 = ratio_scale*orig_ratio*scaled_flux2
+        return scaled_flux1, scaled_flux2
+    else:
+        # don't keep sum of flux1, flux2 constant
+        orig_ratio = flux1/flux2
+        scaled_flux1 = ratio_scale*orig_ratio*flux2
+        return scaled_flux1, flux2
 
 def apply_reco_sys(true_energy, true_coszen, reco_energy, reco_coszen, e_reco_precision_up, e_reco_precision_down, cz_reco_precision_up, cz_reco_precision_down):
     print "Apply reco precisions..."
@@ -64,38 +65,45 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins):
             osc_probs[prim][int_type] = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
     return osc_probs
 
-def apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params):
+def apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params, flux_sys_renorm):
     # nue_numu_ratio
     if params['nue_numu_ratio'] != 1:
-        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'])
+        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=flux_sys_renorm)
         nue_flux = scaled_nue_flux
         numu_flux = scaled_numu_flux
 
     # nu_nubar_ratio
     if params['nu_nubar_ratio'] != 1:
         if 'bar' not in prim:
-            scaled_nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'])
-            scaled_numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'])
+            scaled_nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
+            scaled_numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
         else:
             #nue(mu)_flux is actually nue(mu)_bar because prim has '_bar' in it
-            _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'])
-            _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'])
+            _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
+            _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
         nue_flux = scaled_nue_flux
         numu_flux = scaled_numu_flux
 
     #numu delta spectral index 
-    if params['atm_delta_index'] != 1:
+    if params['atm_delta_index'] != 0:
         delta_index = params['atm_delta_index']
         egy_med = np.median(true_e) 
+        #print "egy_med = ", egy_med
         scale = np.power((true_e/egy_med),delta_index)
-
-        total_nue_flux = nue_flux.sum()
-        scaled_nue_flux = nue_flux*scale
-        scaled_nue_flux *= (total_nue_flux/scaled_nue_flux.sum())
-        nue_flux = scaled_nue_flux
-
-        total_numu_flux = numu_flux.sum()
-        scaled_numu_flux = numu_flux*scale
-        scaled_numu_flux *= (total_numu_flux/scaled_numu_flux.sum())
-        numu_flux = scaled_numu_flux
+        if flux_sys_renorm:
+            # keep sum constant
+            total_nue_flux = nue_flux.sum()
+            scaled_nue_flux = nue_flux*scale
+            scaled_nue_flux *= (total_nue_flux/scaled_nue_flux.sum())
+            nue_flux = scaled_nue_flux
+            total_numu_flux = numu_flux.sum()
+            scaled_numu_flux = numu_flux*scale
+            scaled_numu_flux *= (total_numu_flux/scaled_numu_flux.sum())
+            numu_flux = scaled_numu_flux
+        else:
+            # do not keep sum constant
+            scaled_nue_flux = nue_flux*scale
+            nue_flux = scaled_nue_flux
+            scaled_numu_flux = numu_flux*scale
+            numu_flux = scaled_numu_flux
     return nue_flux, numu_flux
