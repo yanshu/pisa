@@ -227,7 +227,7 @@ class TemplateMaker:
         #self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False, flux_sys_renorm=True):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False, flux_sys_renorm=True, use_atmmu_f=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -391,6 +391,7 @@ class TemplateMaker:
                 true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 sum_event_rate_cscd += np.sum(tmp_event_rate_cscd[prim][int_type])
                 sum_event_rate_trck += np.sum(tmp_event_rate_trck[prim][int_type])
+        total_nu = sum_event_rate_cscd + sum_event_rate_trck
 
         # Get event_rate_reco maps (step2, combine nu and nubar for cc, and all flavs for nc)
         self.event_rate_reco_maps = {'params': params}
@@ -464,7 +465,7 @@ class TemplateMaker:
         if any(step_changed[:7]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service,**params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, use_atmmu_f=use_atmmu_f, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")
