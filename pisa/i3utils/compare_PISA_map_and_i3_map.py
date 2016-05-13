@@ -246,8 +246,8 @@ settings file. ''')
 
     # Make nutau template:
     with Timer(verbose=False) as t:
-        nominal_nutau_all_stages = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=args.all, no_sys_applied=True, read_flux_json=False, read_osc_json=True)
-        nominal_no_nutau_all_stages = no_nutau_nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all, no_sys_applied=True,read_flux_json=False, read_osc_json=True)
+        nominal_nutau_all_stages = nominal_template_maker.get_template(get_values(nominal_nutau_params),return_stages=args.all, no_sys_maps=True, read_flux_json=False, read_osc_json=True)
+        nominal_no_nutau_all_stages = no_nutau_nominal_template_maker.get_template(get_values(nominal_no_nutau_params),return_stages=args.all, no_sys_maps=True,read_flux_json=False, read_osc_json=True)
         evt_rate_map_nominal_nutau = nominal_nutau_all_stages[2]
         evt_rate_map_nominal_no_nutau = nominal_no_nutau_all_stages[2]
         reco_rate_map_nominal_nutau = nominal_nutau_all_stages[3]

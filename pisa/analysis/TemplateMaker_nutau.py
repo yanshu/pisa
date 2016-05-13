@@ -60,7 +60,8 @@ class TemplateMaker:
     them later when needed.
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
-                 oversample_e=None, oversample_cz=None, actual_oversample_e=None, actual_oversample_cz=None, sim_ver=None,**kwargs):
+                 oversample_e=None, oversample_cz=None, actual_oversample_e=None,
+                 actual_oversample_cz=None, sim_ver=None,no_sys_maps=False, **kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
@@ -183,12 +184,15 @@ class TemplateMaker:
                                                      **template_settings)
 
         # hole ice sys
-        self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
-        self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
-        self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
-        self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
-        self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
-        self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
+        if not no_sys_maps:
+            # when we are generating fits (creating the json files)
+            # for the first time ( no_sys_maps = True), this can't run 
+            self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver = sim_ver)
+            self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver = sim_ver)
+            self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
+            self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
+            self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
+            self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
         self.calc_mc_errors()
 
@@ -260,7 +264,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_applied = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False, use_atmmu_f=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -279,7 +283,7 @@ class TemplateMaker:
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
                     elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif (no_sys_applied==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
+                    elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
@@ -368,7 +372,8 @@ class TemplateMaker:
 
         if any(step_changed[:6]):
             physics.debug("STAGE 6: Applying systematics...")
-            if no_sys_applied:
+            if no_sys_maps:
+                # apply no dom_eff, hole_ice or reco_prcs
                 self.sys_maps = self.event_rate_pid_maps
             else: 
                 with Timer(verbose=False) as t:
@@ -387,7 +392,7 @@ class TemplateMaker:
         if any(step_changed[:7]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service,**params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, use_atmmu_f=use_atmmu_f, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")

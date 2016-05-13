@@ -20,7 +20,8 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.background.BackgroundServiceICC import BackgroundServiceICC
 
 
-def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,livetime,**kwargs):
+def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
+                        livetime, atmmu_f, noise_f, use_atmmu_f=False, **kwargs):
 
     """
     Primary function for this stage, returns the event map with ICC 
@@ -35,11 +36,25 @@ def add_icc_background(event_rate_pid_maps,background_service,atmos_mu_scale,liv
 
     # Get ICC background dictionary
     background_dict = background_service.get_icc_bg()
+    n_nu = np.sum(event_rate_pid_maps['cscd']['map']) + np.sum(event_rate_pid_maps['trck']['map'])
+    n_mu = np.sum(background_dict['cscd']) + np.sum(background_dict['trck'])
     for flav in ['trck','cscd']:
         ebins, czbins = get_binning(event_rate_pid_maps[flav])
         event_rate_pid_map = event_rate_pid_maps[flav]['map']
-        bg_rate_pid_map = background_dict[flav] * atmos_mu_scale * livetime
-        sumw2 = background_dict[flav] * atmos_mu_scale**2 * livetime**2
+        if use_atmmu_f:
+            # this is the oscFit way of defining the scale factor for background
+            # n_nu is the total no. of MC neutrinos
+            # atmmu_f is the fraction of atmospheric muons to total no. of events (neutrinos + background + noise), default = 0.2
+            # noise_f is the fraction of noise, it's set to 0 for MSU sample, since noise is only a few events (study from JP)
+            # n_total = n_total * atmmu_f + n_total * noise_f + n_nu
+            # thus: scale = n_total * atmmu_f/n_mu, where n_total = n_nu / (1 - atmmu_f - noise_f)
+            scale = n_nu * atmmu_f / n_mu / (1 - atmmu_f - noise_f)
+            bg_rate_pid_map = background_dict[flav] * scale
+            sumw2 = background_dict[flav] * scale**2
+        else:
+            # this is another way of defining the scale factor for background
+            bg_rate_pid_map = background_dict[flav] * atmos_mu_scale * livetime
+            sumw2 = background_dict[flav] * atmos_mu_scale**2 * livetime**2
         #replace zero entry errors (which are 0 here), with 0.5 * the smallest absolute error....if everything is zero, replace everything by one
         #if np.count_nonzero(bg_rate_pid_map) > 0:
         #    bg_rate_pid_map[bg_rate_pid_map==0] = np.min(bg_rate_pid_map[bg_rate_pid_map>0])/2.
@@ -75,6 +90,8 @@ if __name__ == '__main__':
                         inverted corridor cut data''')
     parser.add_argument('--atmos_mu_scale',type=float,default= 0.37,
                         help='''Overall scale on atmospheric muons for livetime = 1.0 yr''')
+    parser.add_argument('--atmmu_f',type=float,default= 0.2,
+                        help='''Fraction of atmospheric muons to total no. of neutrinos+background+noise''')
     parser.add_argument('--livetime',type=float,default=1.0,
                         help='''livetime in years to re-scale by.''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE', type=str,
