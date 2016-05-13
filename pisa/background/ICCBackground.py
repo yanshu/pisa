@@ -50,8 +50,8 @@ def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
             # n_total = n_total * atmmu_f + n_total * noise_f + n_nu
             # thus: scale = n_total * atmmu_f/n_mu, where n_total = n_nu / (1 - atmmu_f - noise_f)
             scale = n_nu * atmmu_f / n_mu / (1 - atmmu_f - noise_f)
-            bg_rate_pid_map = background_dict[flav] * scale * livetime
-            sumw2 = background_dict[flav] * scale**2 * livetime**2
+            bg_rate_pid_map = background_dict[flav] * scale
+            sumw2 = background_dict[flav] * scale**2
         else:
             # this is another way of defining the scale factor for background
             bg_rate_pid_map = background_dict[flav] * atmos_mu_scale * livetime
