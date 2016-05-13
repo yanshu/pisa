@@ -227,7 +227,7 @@ class TemplateMaker:
         #self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False, flux_sys_renorm=True):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -286,7 +286,7 @@ class TemplateMaker:
                 oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                 true_e = evts[prim][int_type]['true_energy']
                 # apply flux systematics (nue_numu_ratio, nu_nubar_ratio, numu_spectral_index)
-                nue_flux, numu_flux = apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params)
+                nue_flux, numu_flux = apply_flux_sys(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
 
@@ -309,6 +309,9 @@ class TemplateMaker:
             true_tmp_event_rate_trck[prim] = {}
             for int_type in ['cc', 'nc']:
                 isbar = '_bar' if 'bar' in prim else ''
+                nc_scale = 1.0    # for nutau CC, nc_scale = nc_norm; otherwise nc_scale = 1
+                if int_type == 'nc':
+                    nc_scale = params['nc_norm']
                 nutau_scale = 1.0    # for nutau CC, nutau_scale = nutau_norm; otherwise nutau_scale = 1
                 if prim == 'nutau' or prim == 'nutau_bar':
                     if int_type == 'cc':
@@ -365,13 +368,13 @@ class TemplateMaker:
                 weights = osc_flux * aeff_weights
                 weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
                 self.event_rate_maps[prim][int_type] = {}
-                self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * year * params['aeff_scale'] * nutau_scale
+                self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 self.event_rate_maps[prim][int_type]['ebins']=self.ebins
                 self.event_rate_maps[prim][int_type]['czbins']=self.czbins
 
                 # Get event_rate_reco maps (step1, tmp maps in 12 flavs)
                 weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= osc_flux * aeff_weights, bins=anlys_bins)
-                tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale
+                tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
                 # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
                 #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
@@ -379,13 +382,13 @@ class TemplateMaker:
                 pid_trck =  pid >= self.pid_bound
                 weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
                 weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
-                tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale
-                tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale
+                tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
                 true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
                 true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
-                true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale
-                true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale
+                true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 sum_event_rate_cscd += np.sum(tmp_event_rate_cscd[prim][int_type])
                 sum_event_rate_trck += np.sum(tmp_event_rate_trck[prim][int_type])
 
@@ -400,7 +403,7 @@ class TemplateMaker:
         self.event_rate_reco_maps['nuall_nc']= {'map': event_rate_reco_map_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
         # Get event_rate_pid maps (step2, combine all flavs)
-        self.event_rate_pid_maps = {'params':self.params}
+        self.event_rate_pid_maps = {'params':params}
         event_rate_pid_map_cscd = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
         event_rate_pid_map_trck = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
         for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
