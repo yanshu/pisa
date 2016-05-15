@@ -51,8 +51,10 @@ use_NMH = not(args.IMH)
 print "Use NMH : ", use_NMH
 if args.use_event_PISA:
     from pisa.analysis.TemplateMaker_MC import TemplateMaker
+    pisa_mode = 'event'
 else:
     from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+    pisa_mode = 'hist'
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots/')
 utils.mkdir(outdir+'/plots/png/')
@@ -183,11 +185,11 @@ if not args.templ_already_saved:
     output_template = {'templates' : templates,
                        'MCmaps': MCmaps,
                        'template_settings' : template_settings}
-    to_json(output_template, outdir+'%s_DomEff_HoleIce_templates_10_by_16.json'%args.sim)
+    to_json(output_template, outdir+'%s_%s_DomEff_HoleIce_templates_10_by_16.json'%(args.sim, pisa_mode))
 
 # if templates already saved
 else:
-    output_template = from_json(outdir+ '%s_DomEff_HoleIce_templates_10_by_16.json'%args.sim) 
+    output_template = from_json(outdir+ '%s_%s_DomEff_HoleIce_templates_10_by_16.json'% (args.sim, pisa_mode)) 
     templates = output_template['templates']
     MCmaps = output_template['MCmaps']
 
@@ -384,8 +386,8 @@ for flav in ['trck','cscd']:
                     plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
                     plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
                     plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
-                    plt.savefig(outdir+ 'plots/'+'%s_fits_holeice_%s.pdf'%(args.sim, flav))
-                    plt.savefig(outdir+ 'plots/png/'+'%s_fits_holeice_%s.png'%(args.sim, flav))
+                    plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s.pdf'%(args.sim, pisa_mode, flav))
+                    plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s.png'%(args.sim, pisa_mode, flav))
                     plt.clf()
 
     fits_HoleIce[flav]['slopes'] = k_HI_linear
@@ -397,6 +399,6 @@ for flav in ['trck','cscd']:
         fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
 #And write to file
-to_json(fits_DOMEff,outdir+'%s_DomEff_fits_10_by_16.json'%args.sim)
-to_json(fits_HoleIce,outdir+'%s_HoleIce_fits_10_by_16.json'%args.sim)
+to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_10_by_16.json'% (args.sim, pisa_mode))
+to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_10_by_16.json'% (args.sim, pisa_mode))
 
