@@ -227,7 +227,7 @@ class TemplateMaker:
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=True, apply_reco_prcs=False, flux_sys_renorm=True, use_atmmu_f=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=True, use_atmmu_f=False, turn_off_osc_NC=True):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -248,7 +248,8 @@ class TemplateMaker:
                     if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
                     elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
+                    #elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
+                    elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
@@ -277,15 +278,35 @@ class TemplateMaker:
                 oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                 true_e = evts[prim][int_type]['true_energy']
                 # apply flux systematics (nue_numu_ratio, nu_nubar_ratio, numu_spectral_index)
-                nue_flux, numu_flux = apply_flux_ratio(nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
+                nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
+        # first definition of spectral index 
+        mean_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
+        true_e_all = np.array([]) 
+        median_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
+        nuall_nc = np.array([])
+        for prim in ['nue', 'numu', 'nutau']:
+            nu_true_e = evts[prim]['cc']['true_energy']
+            nubar_true_e = evts[prim+'_bar']['cc']['true_energy']
+            nu_true_e_group_nu_nubar_cc = np.append(nu_true_e, nubar_true_e)
+            nu_true_e_group_nu_nubar_nc = np.append(evts[prim]['nc']['true_energy'], evts[prim+'_bar']['nc']['true_energy'])
+            true_e_all = np.append(true_e_all, np.append(nu_true_e_group_nu_nubar_cc, nu_true_e_group_nu_nubar_nc))
+            mean_true_e[prim+'_cc'] = np.mean(nu_true_e_group_nu_nubar_cc)
+            median_true_e[prim+'_cc'] = np.median(nu_true_e_group_nu_nubar_cc)
+            nuall_nc = np.append(nuall_nc, nu_true_e_group_nu_nubar_nc)
+        mean_true_e['nuall_nc'] = np.mean(nuall_nc)
+        median_true_e['nuall_nc'] = np.median(nuall_nc)
+        mean_true_e_all = np.mean(true_e_all)
+        print "mean_true_e = ", mean_true_e
+        print "median_true_e = ", median_true_e
+        print "mean_true_e_all = ", mean_true_e_all
 
         # Get osc probability maps
         with Timer(verbose=False) as t:
             if any(step_changed[:2]):
                 physics.debug("STAGE 2: Getting osc prob maps...")
-                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins)
+                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
             else:
                 profile.info("STAGE 2: Reused from step before...")
         profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
@@ -326,7 +347,15 @@ class TemplateMaker:
                 nue_flux = self.fluxes[prim][int_type]['nue']
                 numu_flux = self.fluxes[prim][int_type]['numu']
                 # apply spectral index
-                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
+                #nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
+                # second way, group nue+nuebar cc, numu+numubar cc, nutau+nutaubar cc, nuall nc
+                if int_type=='nc':
+                    egy_pivot = mean_true_e['nuall_nc']
+                else:
+                    flav = prim if 'bar' not in prim else prim.split('_bar')[0]
+                    egy_pivot = mean_true_e[flav+'_cc']
+                egy_pivot = mean_true_e_all
+                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:
@@ -454,17 +483,21 @@ class TemplateMaker:
                 else: 
                     self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
-                    self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
-                    e_param_down = 1. + params['up_down_e_reco_prcs']*(params['e_reco_precision_up']-1.)
-                    # for generating plots, to show its effect, otherwise, as long as e_reco_precision_up =1, e_param_down returns 1 
-                    #e_param_down = params['e_reco_precision_down']         
-                    self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, e_param_down)
-                    self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
-                    # in a fit; only allow e_reco_precision_up and _down to go in the same direction
-                    cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)    
-                    # for generating plots to show its effect
-                    #cz_param_down = params['cz_reco_precision_down']       
-                    self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
+                    #self.domeff_maps = self.event_rate_pid_maps
+                    if params['e_reco_precision_up']==1 and params['e_reco_precision_down']==1 and params['cz_reco_precision_up']==1 and params['cz_reco_precision_down']==1:
+                        self.sys_maps = self.domeff_maps
+                    else:
+                        self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
+                        e_param_down = 1. + params['up_down_e_reco_prcs']*(params['e_reco_precision_up']-1.)
+                        # for generating plots, to show its effect, otherwise, as long as e_reco_precision_up =1, e_param_down returns 1 
+                        #e_param_down = params['e_reco_precision_down']         
+                        self.reco_prec_maps_e_down = self.Resolution_e_down.apply_sys(self.reco_prec_maps_e_up, e_param_down)
+                        self.reco_prec_maps_cz_up = self.Resolution_cz_up.apply_sys(self.reco_prec_maps_e_down, params['cz_reco_precision_up'])
+                        # in a fit; only allow e_reco_precision_up and _down to go in the same direction
+                        cz_param_down = 1. + params['up_down_cz_reco_prcs']*(params['cz_reco_precision_up']-1.)    
+                        # for generating plots to show its effect
+                        #cz_param_down = params['cz_reco_precision_down']       
+                        self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 6: Reused from step before...")
@@ -472,7 +505,7 @@ class TemplateMaker:
         if any(step_changed[:7]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, use_atmmu_f=use_atmmu_f, **params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")
