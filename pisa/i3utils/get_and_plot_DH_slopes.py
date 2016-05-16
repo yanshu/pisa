@@ -33,6 +33,9 @@ parser.add_argument('-t','--template_settings',type=str,
 parser.add_argument('-s','--sim',type=str,
                     metavar='simu', required = True,
                     help='''Which simulation, can only be 4digit, 5digit, dima_p1, or dima_p2''')
+parser.add_argument('--name',type=str,
+                    metavar='name', default='10_by_16', help ="name to be added at the end of all files,\
+                    avoid overwriting previous files when doing tests.")
 parser.add_argument('--use_event_PISA',action='store_true',default=False,
                     help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
 parser.add_argument('--IMH',action='store_true',default=False,
@@ -59,7 +62,14 @@ utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots/')
 utils.mkdir(outdir+'/plots/png/')
 utils.mkdir(outdir+'/plots/')
-template_settings = from_json(args.template_settings)
+# if templates already save
+if args.templ_already_saved:
+    output_template = from_json(outdir+ '%s_%s_DomEff_HoleIce_templates_%s.json'% (args.sim, pisa_mode, args.name)) 
+    templates = output_template['templates']
+    MCmaps = output_template['MCmaps']
+    template_settings = output_template['template_settings']
+else:
+    template_settings = from_json(args.template_settings)
 czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
 channel = template_settings['params']['channel']['value']
@@ -123,8 +133,6 @@ else:
     raise ValueError( "sim allowed: ['5digit', '4digit', 'dima_p1', 'dima_p2']")
 
 
-templates = {}
-MCmaps = {}
 if args.sim == '5digit':
     fits_DOMEff = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 1}
     fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.02}
@@ -139,6 +147,8 @@ else:
     print "dima_p2 sets, to do"
 # Get templates and MC events 
 if not args.templ_already_saved:
+    templates = {}
+    MCmaps = {}
     for run_num in run_list:
         DH_template_settings = copy.deepcopy(template_settings)
         MCmaps[str(run_num)] = {'trck':{}, 'cscd':{}}
@@ -168,8 +178,12 @@ if not args.templ_already_saved:
         DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
     
         DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
-        template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
-    
+        if args.use_event_PISA:
+            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=True)
+            #template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=False)
+        else:
+            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
+
         templates[str(run_num)]['trck'] = template['trck']['map']
         templates[str(run_num)]['cscd'] = template['cscd']['map']
         templates[str(run_num)]['dom_eff'] = dict_run[str(run_num)]['dom_eff']
@@ -185,13 +199,8 @@ if not args.templ_already_saved:
     output_template = {'templates' : templates,
                        'MCmaps': MCmaps,
                        'template_settings' : template_settings}
-    to_json(output_template, outdir+'%s_%s_DomEff_HoleIce_templates_10_by_16.json'%(args.sim, pisa_mode))
+    to_json(output_template, outdir+'%s_%s_DomEff_HoleIce_templates_%s.json'%(args.sim, pisa_mode, args.name))
 
-# if templates already saved
-else:
-    output_template = from_json(outdir+ '%s_%s_DomEff_HoleIce_templates_10_by_16.json'% (args.sim, pisa_mode)) 
-    templates = output_template['templates']
-    MCmaps = output_template['MCmaps']
 
 # Do fits (linear and quadratic) for each bin
 for flav in ['trck','cscd']:
@@ -293,8 +302,8 @@ for flav in ['trck','cscd']:
                     plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
                     fig.subplots_adjust(hspace=0)
                     fig.subplots_adjust(wspace=0)
-                    plt.savefig(outdir+ 'plots/'+'%s_fits_domeff_%s.pdf'%(args.sim, flav))
-                    plt.savefig(outdir+ 'plots/png/'+'%s_fits_domeff_%s.png'%(args.sim, flav))
+                    plt.savefig(outdir+ 'plots/'+'%s_fits_domeff_%s_%s.pdf'%(args.sim, flav, args.name))
+                    plt.savefig(outdir+ 'plots/png/'+'%s_fits_domeff_%s_%s.png'%(args.sim, flav, args.name))
                     plt.clf()
 
     fits_DOMEff[flav]['slopes'] = k_DE_linear
@@ -386,8 +395,8 @@ for flav in ['trck','cscd']:
                     plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
                     plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
                     plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
-                    plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s.pdf'%(args.sim, pisa_mode, flav))
-                    plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s.png'%(args.sim, pisa_mode, flav))
+                    plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
+                    plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
                     plt.clf()
 
     fits_HoleIce[flav]['slopes'] = k_HI_linear
@@ -399,6 +408,6 @@ for flav in ['trck','cscd']:
         fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
 #And write to file
-to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_10_by_16.json'% (args.sim, pisa_mode))
-to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_10_by_16.json'% (args.sim, pisa_mode))
+to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_%s.json'% (args.sim, pisa_mode, args.name))
+to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_%s.json'% (args.sim, pisa_mode, args.name))
 
