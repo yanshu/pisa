@@ -29,7 +29,8 @@ class PIDServiceMC(PIDServiceBase):
     def __init__(self, ebins, czbins, pid_events, pid_ver,
                  pid_remove_true_downgoing, pid_spec=None,
                  pid_spec_source=None, compute_error=False,
-                 replace_invalid=False, **kwargs):
+                 #replace_invalid=False, **kwargs):
+                 replace_invalid=True, **kwargs):
         #super(PIDServiceBase, self).__init__(ebins, czbins)
         super(PIDServiceBase, self).__init__()
 
@@ -84,7 +85,6 @@ class PIDServiceMC(PIDServiceBase):
         logging.info('Updating PIDServiceMC PID histograms...')
 
         self.pid_remove_true_downgoing = pid_remove_true_downgoing
-        print "pid_remove_true_downgoing= ", pid_remove_true_downgoing
 
         new_events = False
         if self.events is None or pid_events != self.events_source:
@@ -195,6 +195,8 @@ class PIDServiceMC(PIDServiceBase):
 
             for sig in self.signatures:
                 self.pid_kernels[label][sig] = raw_histo[sig] / total_histo
+                if np.any(total_histo == 0):
+                    self.pid_kernels[label][sig] = np.nan_to_num(self.pid_kernels[label][sig])
 
                 invalid_idx = total_histo == 0
                 valid_idx = 1-invalid_idx
