@@ -11,6 +11,7 @@
 from utils import is_linear, is_logarithmic, get_bin_centers
 import os
 import numpy as np
+import csv
 import matplotlib.pyplot as plt
 
 def show_map(pmap, title=None, cbar = True,
@@ -27,6 +28,8 @@ def show_map(pmap, title=None, cbar = True,
              annotate_no_evts=True,
              annotate_prcs=1,
              counts_size=7,
+             savetxt=False,
+             filename='data.csv',
              **kwargs):
     '''Plot the given map with proper axis labels using matplotlib.
        The axis orientation follows the PINGU convention:
@@ -103,9 +106,15 @@ def show_map(pmap, title=None, cbar = True,
 
     cz_bin_centers = get_bin_centers(pmap['czbins'])
     e_bin_centers = get_bin_centers(pmap['ebins'])
+    cz_centers = []
+    e_centers = []
+    z_values = []
     if annotate_no_evts:
         for i in range(0,len(e_bin_centers)):
             for j in range(0,len(cz_bin_centers)):
+                cz_centers.append(cz_bin_centers[j])
+                e_centers.append(e_bin_centers[i])
+                z_values.append(counts[i,j])
                 if annotate_prcs == 0:
                     plt.annotate('%i'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 1:
@@ -116,6 +125,12 @@ def show_map(pmap, title=None, cbar = True,
                     plt.annotate('%.3f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 4:
                     plt.annotate('%.4f'%(counts[i,j]), xy=(cz_bin_centers[j], e_bin_centers[i]), xycoords=('data', 'data'), xytext=(cz_bin_centers[j], e_bin_centers[i]), textcoords='data', va='top', ha='center', size=counts_size)
+
+    # save to csv
+    if savetxt:
+        output = np.column_stack((e_centers,cz_centers,z_values))
+        # keep (ebin_center, czbin_center, counts)
+        np.savetxt('%s.csv'%filename.split('.png')[0],output,delimiter=',')
 
     #Add nice labels
     #if xlabel == None:
@@ -172,6 +187,8 @@ def show_map_swap(pmap, title=None, cbar = True,
              annotate_no_evts=True,
              annotate_prcs=1,
              counts_size=7,
+             savetxt=False,
+             filename='data.csv',
              **kwargs):
     '''Plot the given map with proper axis labels using matplotlib.
        The axis orientation follows the PINGU convention:
@@ -249,9 +266,15 @@ def show_map_swap(pmap, title=None, cbar = True,
 
     cz_bin_centers = get_bin_centers(pmap['czbins'])
     e_bin_centers = get_bin_centers(pmap['ebins'])
+    cz_centers = []
+    e_centers = []
+    z_values = []
     if annotate_no_evts:
         for i in range(0,len(e_bin_centers)):
             for j in range(0,len(cz_bin_centers)):
+                cz_centers.append(cz_bin_centers[j])
+                e_centers.append(e_bin_centers[i])
+                z_values.append(counts[i,j])
                 if annotate_prcs == 0:
                     plt.annotate('%i'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 1:
@@ -262,6 +285,12 @@ def show_map_swap(pmap, title=None, cbar = True,
                     plt.annotate('%.3f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 4:
                     plt.annotate('%.4f'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
+
+    # save to csv
+    if savetxt:
+        output = np.column_stack((e_centers,cz_centers,z_values))
+        # keep (ebin_center, czbin_center, counts)
+        np.savetxt('%s.csv'%filename.split('.png')[0],output,delimiter=',')
 
     #Add nice labels
     #if xlabel == None:
@@ -304,11 +333,11 @@ def show_map_swap(pmap, title=None, cbar = True,
     #Return axes for further modifications
     return axis
 
-def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=1, cmap='cool', counts_size=7):
+def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=1, cmap='cool', counts_size=7, savetxt=True):
     plt.figure()
-    show_map_swap(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap, counts_size=counts_size)
+    filename = os.path.join(outdir, fig_name + '.png')
+    show_map_swap(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap, counts_size=counts_size, savetxt=savetxt, filename=filename)
     if save:
-        filename = os.path.join(outdir, fig_name + '.png')
         pdf_filename = os.path.join(outdir+'/pdf/', fig_name + '.pdf')
         plt.title(fig_title)
         plt.savefig(filename,dpi=150)
