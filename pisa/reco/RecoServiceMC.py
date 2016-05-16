@@ -68,7 +68,7 @@ class RecoServiceMC(RecoServiceBase):
                 true_coszen = evts[flavor][int_type]['true_coszen']
                 reco_energy = evts[flavor][int_type]['reco_energy']
                 reco_coszen = evts[flavor][int_type]['reco_coszen']
-                weight = evts[flavor][int_type]['weighted_aeff']
+                #weight = evts[flavor][int_type]['weighted_aeff']
                 #weight = evts[flavor][int_type]['mc_weight']
 
                 if e_reco_precision_up != 1:
@@ -97,12 +97,14 @@ class RecoServiceMC(RecoServiceBase):
                 # True binning, reco binning...
                 bins = (self.ebins,self.czbins,self.ebins,self.czbins)
                 data = (true_energy,true_coszen,reco_energy,reco_coszen)
-                kernel,_ = np.histogramdd(data,bins=bins,weights=weight)
+                #kernel,_ = np.histogramdd(data,bins=bins,weights=weight)
+                kernel,_ = np.histogramdd(data,bins=bins)
 
                 # this histo to count all true events for normalization
                 count_bins = (self.ebins,self.czbins)
                 count_data = (true_energy,true_coszen)
-                count_hist,_ = np.histogramdd(count_data,bins=count_bins, weights=weight)
+                #count_hist,_ = np.histogramdd(count_data,bins=count_bins, weights=weight)
+                count_hist,_ = np.histogramdd(count_data,bins=count_bins)
 
                 # This takes into account the correct kernel normalization:
                 k_shape = np.shape(kernel)
