@@ -281,7 +281,7 @@ class TemplateMaker:
                 nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
-        # first definition of spectral index 
+        #  get pivot energy 
         mean_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
         true_e_all = np.array([]) 
         median_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
