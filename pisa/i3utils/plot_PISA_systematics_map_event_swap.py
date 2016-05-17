@@ -205,6 +205,8 @@ settings file. ''')
                         help='Title of the geometry or test in plots')
     parser.add_argument('--save',action='store_true',default=False,
                         help='Save plots in outdir')
+    parser.add_argument('--savecsv',action='store_true',default=False,
+                        help='Save csv files in outdir')
     parser.add_argument('-o','--outdir',metavar='DIR',default='',
                         help='Directory to save the output figures.')
     parser.add_argument('-v', '--verbose', action='count', default=0,
@@ -549,7 +551,7 @@ settings file. ''')
     plot_one_map(delta_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Delta_final_PISA_all_channel', fig_title=r'${\rm Delta \, of \, final \, map (default \, / \, event ) \, cscd \, + \, trck }$', save=args.save,annotate_prcs=3) 
     plt.figure()
     abs_max = np.max(abs(delta_no_pid['map']))
-    show_map_swap(delta_no_pid, vmin= -abs_max, vmax = abs_max, annotate_prcs=3,cmap='RdBu_r')
+    show_map_swap(delta_no_pid, vmin= -abs_max, vmax = abs_max, annotate_prcs=3,cmap='RdBu_r',savetxt=args.savecsv)
     if args.save:
         filename = os.path.join(args.outdir,args.title+ '_Delta_defaultPISA_eventPISA_all_channel_RdBu_r.png')
         filename_pdf = os.path.join(args.outdir+'/pdf/',args.title+ '_Delta_defaultPISA_eventPISA_all_channel_RdBu_r.pdf')
