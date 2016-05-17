@@ -19,15 +19,63 @@
 import os
 import sys
 import numpy as np
+import copy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.analysis.stats.Maps import apply_ratio_scale
-from pisa.flux.HondaFluxService import HondaFluxService, primaries
-from pisa.flux.IPHondaFluxService import IPHondaFluxService
+from pisa.flux.HondaFluxService import HondaFluxService, Honda3DFluxService, primaries
+from pisa.flux.IPHondaFluxService import IPHondaFluxService, IPHonda3DFluxService
 from pisa.utils.jsons import from_json, to_json, json_string
 from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import get_bin_centers
+from pisa.utils.shape import SplineService
+from pisa.utils.params import construct_shape_dict
+
+def apply_shape_mod(flux_maps, ebins, czbins, **params):
+    '''
+    Taking Joakim's shape mod functionality and applying it generally
+    to the flux_maps, regardless of the flux_service used
+    '''
+
+    #make flux_mod_dict and add it to the list of params.
+    Flux_Mod_Dict = construct_shape_dict('flux', params)
+
+    ### make spline service for Barr parameters ###
+    flux_spline_service = SplineService(ebins, dictFile = params['flux_uncertainty_inputs'])
+
+    ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
+    #Now apply all the shape modification for each of the flux uncertainties
+    #Modellling of the uncertainties follows the discussion
+    #in Barr et al. (2006)
+    return_dict = {}
+    return_dict['params'] = flux_maps['params']
+    for prim in primaries:
+        prim_dict = {}
+        prim_dict['ebins'] = flux_maps[prim]['ebins']
+        prim_dict['czbins'] = flux_maps[prim]['czbins']
+        mod_table = np.zeros_like(flux_maps[prim]['map'])
+        #print "for testing purposes, here is flux_hadronic_H: ", flux_hadronic_H
+        # here I want a dictionary named Flux_Mod_Dict containing the mod factors as keys and UNCF_X files as entries, then I can modify the flux by:
+        logging.info("now reaching the flux_mod_dict stage: \n %s"%Flux_Mod_Dict)
+        for entry in Flux_Mod_Dict:
+            if entry == 'fixed': continue
+            logging.info("testing for: %s" %entry)
+            mod_table += flux_spline_service.modify_shape(ebins, czbins, Flux_Mod_Dict[entry], entry).T
+
+        if mod_table[mod_table<0].any():
+            #remember: mod_table contains the 1 sigma modification of the flux squared and multiplied by the modification factor -
+            # - this can of course be negative, but is not unphysical. It just represents the minus part of a +/- uncertainty. As such we should still assign it as an uncertainty, and just need to take the sqrt of the absolute value
+            # - and then remember that this is to be applied in the negative direction, if it was negative.
+            mod_table = -1 * np.sqrt(-1 * mod_table)
+            
+        else:
+            mod_table = np.sqrt(mod_table) # just take the sqrt of the + side of the +/- uncertainty.
+
+        prim_dict['map'] = flux_maps[prim]['map'] * (1 + mod_table) #this is where the actual modification happens
+        return_dict[prim] = prim_dict
+
+    return return_dict
 
 def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
     """
@@ -113,8 +161,16 @@ def get_median_energy(flux_map):
 
     return energy
 
-def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio,
-                  energy_scale, atm_delta_index,**kwargs):
+def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio,
+                  nu_nubar_ratio, energy_scale, atm_delta_index,
+                  flux_hadronic_A, flux_hadronic_B, flux_hadronic_C,
+                  flux_hadronic_D, flux_hadronic_E, flux_hadronic_F,
+                  flux_hadronic_G, flux_hadronic_H, flux_hadronic_I,
+                  flux_hadronic_W, flux_hadronic_X, flux_hadronic_Y,
+                  flux_hadronic_Z, flux_prim_norm_a, flux_prim_exp_norm_b,
+                  flux_prim_exp_factor_c, flux_spectral_index_d,
+                  flux_pion_chargeratio_Chg, flux_uncertainty_inputs,
+                  **kwargs):
     """
     Get a set of flux maps for the different primaries.
 
@@ -131,6 +187,9 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio,
       * energy_scale - factor to scale energy bin centers by
       * atm_delta_index  - change in spectral index from fiducial
     """
+
+    if (atm_delta_index != 0.0 and flux_spectral_index_d != 0.0): 
+        raise ValueError('PISA should not be run both with "flux_spectral_index_d" and "atm_delta_index" != 0.0. Doing so will modify the flux twice. Either run with "atm_delta_index" and disable the other flux parameters, or run with "flux_spectral_index_d" and disable "atm_delta_index". This is done in the settings file by setting the default value to "0.0" and "fixed=true". Do this now and re-run. :)')
 
     # Be verbose on input
     params = get_params()
@@ -163,6 +222,9 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio, nu_nubar_ratio,
     if atm_delta_index != 0.0:
         scaled_maps = apply_delta_index(scaled_maps, atm_delta_index, median_energy)
 
+    #Apply Barr uncertainties
+    scaled_maps = apply_shape_mod(scaled_maps, ebins, czbins, **params)
+    
     return scaled_maps
 
 
@@ -192,6 +254,46 @@ if __name__ == '__main__':
                         default=0.0,help='''Shift in spectral index of numu''')
     parser.add_argument('--energy_scale',metavar='FLOAT',type=float,
                         help='''Factor to scale TRUE energy by''',default=1.0)
+    parser.add_argument('--flux_hadronic_A',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_B',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_C',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_D',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_E',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_F',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_G',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)   
+    parser.add_argument('--flux_hadronic_H',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_I',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+
+    parser.add_argument('--flux_hadronic_W',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_X',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_Y',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_hadronic_Z',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    
+    parser.add_argument('--flux_prim_norm_a',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_prim_exp_norm_b',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_prim_exp_factor_c',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)   
+    parser.add_argument('--flux_spectral_index_d',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_pion_chargeratio_Chg',metavar='FLOAT',type=float,
+                        help='''Factor to scale flux shape by''',default=0)
+    parser.add_argument('--flux_uncertainty_inputs', metavar='DICT', type=str,
+                        help='''Dictionary of files containing the shapes of uncertainties corresponding to the above parameters''')
     parser.add_argument('-o', '--outfile', dest='outfile', metavar='FILE',
                         type=str, action='store', default='flux.json',
                         help='file to store the output')
@@ -209,18 +311,57 @@ if __name__ == '__main__':
 
     #Instantiate a flux model
     logging.info("Defining flux service...")
+
+    if 'aa' in args.flux_file:
     
-    if args.flux_mode.lower() == 'integral-preserving':
-        logging.info("  Using Honda tables with integral-preserving interpolation...")
-        flux_model = IPHondaFluxService(args.flux_file)
+        if args.flux_mode.lower() == 'integral-preserving':
+            logging.info("  Using Honda tables with integral-preserving interpolation...")
+            flux_model = IPHondaFluxService(args.flux_file)
+        else:
+            logging.info("  Using Honda tables with simple cubic interpolation...")
+            flux_model = HondaFluxService(args.flux_file)
+
+        logging.info("  Tables are provided azimuth-averaged.")
+
     else:
-        logging.info("  Using Honda tables with simple bisplrep interpolation...")
-        flux_model = HondaFluxService(args.flux_file)
+
+        if args.flux_mode.lower() == 'integral-preserving':
+            logging.info("  Using Honda tables with integral-preserving interpolation...")
+            flux_model = IPHonda3DFluxService(args.flux_file)
+        else:
+            logging.info("  Using Honda tables with simple cubic interpolation...")
+            flux_model = Honda3DFluxService(args.flux_file)
+
+        logging.info("  Tables are provided with azimuth-dependency, so average is calculated from this.")
 
     #get the flux
-    flux_maps = get_flux_maps(
-        flux_model, args.ebins, args.czbins, args.nue_numu_ratio, args.nu_nubar_ratio,
-        args.energy_scale, args.delta_index)
+    flux_maps = get_flux_maps(flux_model,
+                              args.ebins,
+                              args.czbins,
+                              args.nue_numu_ratio,
+                              args.nu_nubar_ratio,
+                              args.energy_scale,
+                              args.delta_index,
+                              args.flux_hadronic_A,
+                              args.flux_hadronic_B,
+                              args.flux_hadronic_C,
+                              args.flux_hadronic_D,
+                              args.flux_hadronic_E,
+                              args.flux_hadronic_F,
+                              args.flux_hadronic_G,
+                              args.flux_hadronic_H,
+                              args.flux_hadronic_I,
+                              args.flux_hadronic_W,
+                              args.flux_hadronic_X,
+                              args.flux_hadronic_Y,
+                              args.flux_hadronic_Z,
+                              args.flux_prim_norm_a,
+                              args.flux_prim_exp_norm_b,
+                              args.flux_prim_exp_factor_c,
+                              args.flux_spectral_index_d,
+                              args.flux_pion_chargeratio_Chg,
+                              args.flux_uncertainty_inputs,
+                              **kwargs)
 
     #write out to a file
     logging.info("Saving output to: %s"%args.outfile)
