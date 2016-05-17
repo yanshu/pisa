@@ -29,6 +29,8 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import check_binning, get_binning
 from pisa.utils.params import get_values
+from pisa.utils.shape import SplineService
+from pisa.utils.params import construct_genie_dict
 
 from pisa.aeff.AeffServiceMC import AeffServiceMC
 from pisa.aeff.AeffServicePar import AeffServicePar
@@ -111,7 +113,11 @@ def apply_shape_mod(aeff_dict, ebins, czbins, **params):
     return return_dict
 
 def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
-                    aeff_scale=None,nutau_norm=None,**kwargs):
+                    aeff_scale=None,nutau_norm=None,
+                    GENSYS_files=None,
+                    GENSYS_AhtBY=None,GENSYS_BhtBY=None,
+                    GENSYS_CV1uBY=None,GENSYS_CV2uBY=None,
+                    GENSYS_MaCCQE=None,GENSYS_MaRES=None,**kwargs):
     '''
     Main function for this module, which returns the event rate maps
     for each flavor and interaction type, using true energy and zenith
@@ -126,22 +132,25 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
       * aeff_service - the effective area service to use
       * livetime - detector livetime for which to calculate event counts
       * aeff_scale - systematic to be a proxy for the realistic effective area
+      * GENSYS_files - location of files needed for genie systematics
+      * GENSYS_* - Names of genie scaling parameters for shape-dependent modifications
     '''
 
     #Get parameters used here
     params = get_params()
-    report_params(params,units = ['','yrs',''])
+    report_params(params,units = ['','','','','','','','','yrs','',''])
 
-    #Initialize return dict
-    event_rate_maps = {'params': add_params(params,osc_flux_maps['params'])}
+    #Initialize return dict, add 'nutau_norm' parameter to params
+    tmp_params = add_params(params,osc_flux_maps['params'])
+    event_rate_maps = {'params': add_params(tmp_params,{'nutau_norm':nutau_norm})}
 
-    #add 'nutau_norm' parameter to params
-    event_rate_maps = {'params': add_params(params,{'nutau_norm':nutau_norm})}
-
-    #Get effective area
-    aeff_dict = aeff_service.get_aeff()
+    #Get effective area - unmodified
+    aeff_dict_bare = aeff_service.get_aeff()
 
     ebins, czbins = get_binning(osc_flux_maps)
+    
+    #Apply GENIE uncertainties
+    aeff_dict = apply_shape_mod(aeff_dict_bare, ebins, czbins, **params)
 
     # apply the scaling for nu_xsec_scale and nubar_xsec_scale...
     flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']
