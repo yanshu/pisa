@@ -274,7 +274,7 @@ def show_map_swap(pmap, title=None, cbar = True,
             for j in range(0,len(cz_bin_centers)):
                 cz_centers.append(cz_bin_centers[j])
                 e_centers.append(e_bin_centers[i])
-                z_values.append(counts[i,j])
+                z_values.append(counts[j,i])
                 if annotate_prcs == 0:
                     plt.annotate('%i'%(counts[j,i]), xy=(e_bin_centers[i], cz_bin_centers[j]), xycoords=('data', 'data'), xytext=(e_bin_centers[i], cz_bin_centers[j]), textcoords='data', va='top', ha='center', size=counts_size)
                 if annotate_prcs == 1:
