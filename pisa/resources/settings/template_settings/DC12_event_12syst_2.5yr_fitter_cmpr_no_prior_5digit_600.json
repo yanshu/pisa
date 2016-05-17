@@ -569,7 +569,7 @@
       "scale": 1.0, 
       "value": 0.0
     }, 
-    "flux_prim_c": {
+    "flux_prim_exp_factor_c": {
       "fixed": true, 
       "prior": {
         "fiducial": 0.0, 
@@ -583,7 +583,7 @@
       "scale": 1.0, 
       "value": 0.0
     }, 
-    "flux_prim_b": {
+    "flux_prim_exp_norm_b": {
       "fixed": true, 
       "prior": {
         "fiducial": 0.0, 
@@ -597,7 +597,7 @@
       "scale": 1.0, 
       "value": 0.0
     }, 
-    "flux_prim_a": {
+    "flux_prim_norm_a": {
       "fixed": true, 
       "prior": {
         "fiducial": 0.0, 
