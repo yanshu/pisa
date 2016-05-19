@@ -38,6 +38,8 @@ parser.add_argument('--name',type=str,
                     avoid overwriting previous files when doing tests.")
 parser.add_argument('--use_event_PISA',action='store_true',default=False,
                     help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
+parser.add_argument('--no_NC_osc',action='store_true',default=False,
+                    help="Use no oscillation for NC, for cmpr with oscFit.") 
 parser.add_argument('--IMH',action='store_true',default=False,
                     help="Use inverted mass hiearchy.")
 parser.add_argument('--templ_already_saved',action='store_true',default=False,
@@ -110,7 +112,7 @@ elif args.sim == '5digit':
                 '573': {'dom_eff': 1.00, 'hole_ice': 0.0125}}
 
 elif args.sim == 'dima_p1':
-    run_list = [ '600', '601', '603', '604', '606', '608', '610', '611', '612', '613']
+    run_list = [ '600', '601', '603', '604', '605', '606', '608', '610', '611', '612', '613']
     nominal_run = '600'
     hole_ice_nominal = 0.25
     dom_eff_nominal = 1.0 
@@ -118,6 +120,7 @@ elif args.sim == 'dima_p1':
                 '601': {'dom_eff': 0.88, 'hole_ice': 0.25},
                 '603': {'dom_eff': 0.94, 'hole_ice': 0.25},
                 '604': {'dom_eff': 0.97, 'hole_ice': 0.25},
+                '605': {'dom_eff': 1.03, 'hole_ice': 0.25},
                 '606': {'dom_eff': 1.06, 'hole_ice': 0.25},
                 '608': {'dom_eff': 1.12, 'hole_ice': 0.25},
                 '610': {'dom_eff': 1.00, 'hole_ice': 0.15},
@@ -127,8 +130,23 @@ elif args.sim == 'dima_p1':
                 '613': {'dom_eff': 1.00, 'hole_ice': 0.35}}
 
 elif args.sim == 'dima_p2':
-    #TODO    
-    print "dima_p2 sets, to do"
+    run_list = [ '612', '620', '621', '622', '623', '624']
+    nominal_run = '612'
+    hole_ice_nominal = 0.0
+    dom_eff_nominal = 1.0 
+    dict_run = {'612': {'hole_ice_fwd': 0.0},
+                '620': {'hole_ice_fwd': 2.0},
+                '621': {'hole_ice_fwd': -5.0},
+                '622': {'hole_ice_fwd': -3.0},
+                '623': {'hole_ice_fwd': 1.0},
+                '624': {'hole_ice_fwd': -1.0}}
+
+    #dict_run = {'612': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': 0.0},
+    #            '620': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': 2.0},
+    #            '621': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': -5.0},
+    #            '622': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': -3.0},
+    #            '623': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': 1.0},
+    #            '624': {'dom_eff': 1.00, 'hole_ice': 0.30, 'hole_ice_fwd': -1.0}}
 else:
     raise ValueError( "sim allowed: ['5digit', '4digit', 'dima_p1', 'dima_p2']")
 
@@ -143,8 +161,7 @@ elif args.sim == 'dima_p1':
     fits_DOMEff = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 1}
     fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.25}
 else:
-    #TODO
-    print "dima_p2 sets, to do"
+    fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.3}
 # Get templates and MC events 
 if not args.templ_already_saved:
     templates = {}
@@ -170,8 +187,8 @@ if not args.templ_already_saved:
             aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
             reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num, run_num,run_num,run_num,run_num)
         else:
-            #TODO
-            print "to do, dima_p2 sets"
+            aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
+            reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num, run_num,run_num,run_num,run_num)
         DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
         DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
         DH_template_settings['params']['pid_events']['value'] = reco_mc_file    #pid file same as reco_mc file
@@ -179,15 +196,18 @@ if not args.templ_already_saved:
     
         DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
         if args.use_event_PISA:
-            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=True)
-            #template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=False)
+            # for comparison with oscFit: turn off NC oscillation
+            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=args.no_NC_osc)
         else:
             template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
 
         templates[str(run_num)]['trck'] = template['trck']['map']
         templates[str(run_num)]['cscd'] = template['cscd']['map']
-        templates[str(run_num)]['dom_eff'] = dict_run[str(run_num)]['dom_eff']
-        templates[str(run_num)]['hole_ice'] = dict_run[str(run_num)]['hole_ice']
+        if args.sim == 'dima_p2':
+            templates[str(run_num)]['hole_ice_fwd'] = dict_run[str(run_num)]['hole_ice_fwd']
+        else:
+            templates[str(run_num)]['dom_eff'] = dict_run[str(run_num)]['dom_eff']
+            templates[str(run_num)]['hole_ice'] = dict_run[str(run_num)]['hole_ice']
 
         # Get MC events map 
         MCMap = GetMCError(get_values(DH_template_settings['params']), DH_template_settings['binning']['anlys_ebins'], DH_template_settings['binning']['czbins'], reco_mc_file)
@@ -206,7 +226,8 @@ if not args.templ_already_saved:
 for flav in ['trck','cscd']:
     templ_list = []
     templ_err_list = []
-    dom_eff_list = []
+    if args.sim != 'dima_p2':
+        dom_eff_list = []
     hole_ice_list = []
     k_DE_linear = np.empty(np.shape(templates[nominal_run][flav])) 
     k_DE_quad = np.empty(np.shape(templates[nominal_run][flav])) 
@@ -217,12 +238,16 @@ for flav in ['trck','cscd']:
     p_HI_quad = np.empty(np.shape(templates[nominal_run][flav])) 
     k_HI_linear = np.empty(np.shape(templates[nominal_run][flav])) 
     for run_num in run_list: 
-        dom_eff_list.append(templates[str(run_num)]['dom_eff'])
-        hole_ice_list.append(templates[str(run_num)]['hole_ice'])
+        if args.sim != 'dima_p2':
+            dom_eff_list.append(templates[str(run_num)]['dom_eff'])
+            hole_ice_list.append(templates[str(run_num)]['hole_ice'])
+        else:
+            hole_ice_list.append(templates[str(run_num)]['hole_ice_fwd'])
         templ_list.append(templates[str(run_num)][flav])
         templ_err_list.append(templates[str(run_num)][flav]/np.sqrt(MCmaps[str(run_num)][flav]))
    
-    dom_eff = np.array(dom_eff_list)
+    if args.sim != 'dima_p2':
+        dom_eff = np.array(dom_eff_list)
     hole_ice = np.array(hole_ice_list)      # unit: cm-1
     templ = np.array(templ_list)
     templ_err = np.array(templ_err_list)
@@ -235,91 +260,89 @@ for flav in ['trck','cscd']:
     n_czbins = tml_shape[2] 
 
     ############################### DOM efficiency ######################################
-    cut_holeice = hole_ice==hole_ice_nominal        # select elements when hole ice = nominal value, when generating fits for dom_eff
-    for i in range(0,n_ebins):
-        for j in range(0,n_czbins):
-    
-            ########### Get Data ############
-            dom_eff_values = dom_eff[cut_holeice]
-            bin_counts = templ[cut_holeice,i,j]
-            bin_err = templ_err[cut_holeice,i,j]
-            nominal_bin_counts = bin_counts[dom_eff_values==dom_eff_nominal]
-            nominal_bin_err = bin_err[dom_eff_values==dom_eff_nominal]
-            bin_ratio_values = bin_counts/nominal_bin_counts  #divide by the nominal value
-            bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(nominal_bin_err/nominal_bin_counts)+np.square(bin_err/bin_counts))
+    if args.sim != 'dima_p2':
+        cut_holeice = hole_ice==hole_ice_nominal        # select elements when hole ice = nominal value, when generating fits for dom_eff
+        for i in range(0,n_ebins):
+            for j in range(0,n_czbins):
+        
+                ########### Get Data ############
+                dom_eff_values = dom_eff[cut_holeice]
+                bin_counts = templ[cut_holeice,i,j]
+                bin_err = templ_err[cut_holeice,i,j]
+                nominal_bin_counts = bin_counts[dom_eff_values==dom_eff_nominal]
+                nominal_bin_err = bin_err[dom_eff_values==dom_eff_nominal]
+                bin_ratio_values = bin_counts/nominal_bin_counts  #divide by the nominal value
+                bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(nominal_bin_err/nominal_bin_counts)+np.square(bin_err/bin_counts))
 
-            if args.sim == '4digit':
-                # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
-                fixed_r_val = bin_ratio_values[dom_eff_values==0.91]
-                fixed_ratio[i][j]= fixed_r_val
-                exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
-                exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- 0.91) + p*(x- 0.91)**2 + %s'%fixed_r_val)
-            elif args.sim == '5digit' or args.sim == 'dima_p1':
-                exec('def dom_eff_linear_through_point(x, k): return k* (x - %s) + 1.0'%dom_eff_nominal)
-                exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- %s) + p*(x-%s)**2 + 1.0'%(dom_eff_nominal,dom_eff_nominal))
-            else:
-                #TODO
-                print "dima_p2 sets, to do"
+                if args.sim == '4digit':
+                    # line goes through point (0.02, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = 0.02
+                    fixed_r_val = bin_ratio_values[dom_eff_values==0.91]
+                    fixed_ratio[i][j]= fixed_r_val
+                    exec('def dom_eff_linear_through_point(x, k): return k*x + %s - k*0.91'%fixed_r_val)
+                    exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- 0.91) + p*(x- 0.91)**2 + %s'%fixed_r_val)
+                else:
+                    # i.e. when args.sim == '5digit' or args.sim == 'dima_p1':
+                    exec('def dom_eff_linear_through_point(x, k): return k* (x - %s) + 1.0'%dom_eff_nominal)
+                    exec('def dom_eff_quadratic_through_point(x, k, p): return k*(x- %s) + p*(x-%s)**2 + 1.0'%(dom_eff_nominal,dom_eff_nominal))
 
 
-            ########### DOM efficiency Fits #############
+                ########### DOM efficiency Fits #############
 
-            popt_1, pcov_1 = curve_fit(dom_eff_linear_through_point, dom_eff_values, bin_ratio_values)
-            k1 = popt_1[0]
-            k_DE_linear[i][j]= k1
+                popt_1, pcov_1 = curve_fit(dom_eff_linear_through_point, dom_eff_values, bin_ratio_values)
+                k1 = popt_1[0]
+                k_DE_linear[i][j]= k1
    
-            popt_2, pcov_2 = curve_fit(dom_eff_quadratic_through_point, dom_eff_values, bin_ratio_values)
-            k2 = popt_2[0]
-            p2 = popt_2[1]
-            k_DE_quad[i][j]= k2
-            p_DE_quad[i][j]= p2
+                popt_2, pcov_2 = curve_fit(dom_eff_quadratic_through_point, dom_eff_values, bin_ratio_values)
+                k2 = popt_2[0]
+                p2 = popt_2[1]
+                k_DE_quad[i][j]= k2
+                p_DE_quad[i][j]= p2
 
-            if args.plot:
-                fig_num = i * n_czbins+ j
-                if (fig_num == 0 or fig_num == n_czbins * n_ebins):
-                    fig = plt.figure(num=1, figsize=( 4*n_czbins, 4*n_ebins))
-                subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
-                #print 'subplot_idx = ', subplot_idx
-                plt.subplot(n_ebins, n_czbins, subplot_idx)
-                #plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
-                plt.scatter(dom_eff_values, bin_ratio_values, color='blue')
-                plt.errorbar(dom_eff_values, bin_ratio_values, yerr=bin_ratio_err_values,fmt='none')
-                plt.xlim(0.7,1.2)
-                plt.ylim(y_val_min-0.1,y_val_max+0.1)
+                if args.plot:
+                    fig_num = i * n_czbins+ j
+                    if (fig_num == 0 or fig_num == n_czbins * n_ebins):
+                        fig = plt.figure(num=1, figsize=( 4*n_czbins, 4*n_ebins))
+                    subplot_idx = n_czbins*(n_ebins-1-i)+ j + 1
+                    #print 'subplot_idx = ', subplot_idx
+                    plt.subplot(n_ebins, n_czbins, subplot_idx)
+                    #plt.title("CZ:[%s, %s] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                    plt.scatter(dom_eff_values, bin_ratio_values, color='blue')
+                    plt.errorbar(dom_eff_values, bin_ratio_values, yerr=bin_ratio_err_values,fmt='none')
+                    plt.xlim(0.7,1.2)
+                    plt.ylim(y_val_min-0.1,y_val_max+0.1)
 
-                dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
-                dom_func_plot_y_linear = dom_eff_linear_through_point(dom_func_plot_x, k1)
-                dom_func_plot_linear, = plt.plot(dom_func_plot_x, dom_func_plot_y_linear, 'k-')
-                dom_func_plot_y_quad = dom_eff_quadratic_through_point(dom_func_plot_x, k2,p2)
-                dom_func_plot_quad, = plt.plot(dom_func_plot_x, dom_func_plot_y_quad, 'r-')
-                if j > 0:
-                    plt.setp(plt.gca().get_yticklabels(), visible=False)
-                if i > 0:
-                    plt.setp(plt.gca().get_xticklabels(), visible=False)
-                if(fig_num == n_czbins * n_ebins-1):
-                    plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
-                    plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
-                    plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
-                    fig.subplots_adjust(hspace=0)
-                    fig.subplots_adjust(wspace=0)
-                    plt.savefig(outdir+ 'plots/'+'%s_fits_domeff_%s_%s.pdf'%(args.sim, flav, args.name))
-                    plt.savefig(outdir+ 'plots/png/'+'%s_fits_domeff_%s_%s.png'%(args.sim, flav, args.name))
-                    plt.clf()
+                    dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
+                    dom_func_plot_y_linear = dom_eff_linear_through_point(dom_func_plot_x, k1)
+                    dom_func_plot_linear, = plt.plot(dom_func_plot_x, dom_func_plot_y_linear, 'k-')
+                    dom_func_plot_y_quad = dom_eff_quadratic_through_point(dom_func_plot_x, k2,p2)
+                    dom_func_plot_quad, = plt.plot(dom_func_plot_x, dom_func_plot_y_quad, 'r-')
+                    if j > 0:
+                        plt.setp(plt.gca().get_yticklabels(), visible=False)
+                    if i > 0:
+                        plt.setp(plt.gca().get_xticklabels(), visible=False)
+                    if(fig_num == n_czbins * n_ebins-1):
+                        plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
+                        plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
+                        plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
+                        fig.subplots_adjust(hspace=0)
+                        fig.subplots_adjust(wspace=0)
+                        plt.savefig(outdir+ 'plots/'+'%s_fits_domeff_%s_%s.pdf'%(args.sim, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_fits_domeff_%s_%s.png'%(args.sim, flav, args.name))
+                        plt.clf()
 
-    fits_DOMEff[flav]['slopes'] = k_DE_linear
-    fits_DOMEff[flav]['linear'] = k_DE_quad
-    fits_DOMEff[flav]['quadratic'] = p_DE_quad
+        fits_DOMEff[flav]['slopes'] = k_DE_linear
+        fits_DOMEff[flav]['linear'] = k_DE_quad
+        fits_DOMEff[flav]['quadratic'] = p_DE_quad
 
     
-    ############################### DOM efficiency ######################################
+    ############################### Hole Ice ######################################
 
     if args.sim == '4digit':
         cut_domeff = dom_eff== 0.91       # select elements when dom_eff = 1, when generating fits for hole_ice
     elif args.sim == '5digit' or args.sim == 'dima_p1':
         cut_domeff = dom_eff== 1.0        # select elements when dom_eff = 1, when generating fits for hole_ice
     else:
-        #TODO
-        print "dima_p2 sets, to do"
+        cut_domeff = np.ones(len(hole_ice)).astype(bool)    # for dima_p2 sets, all DOM eff values are already nominal value, so no cut
     for i in range(0,n_ebins):
         for j in range(0,n_czbins):
     
@@ -339,12 +362,9 @@ for flav in ['trck','cscd']:
                 # line goes through point (hole_ice_nominal, fixed_r_val), fixed_r_val is the value for dom_eff = 0.91 and hole ice = hole_ice_nominal 
                 exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-%s) + p*(x-%s)**2 + %s'%(hole_ice_nominal, hole_ice_nominal, fixed_r_val))
 
-            elif args.sim == '5digit' or args.sim == 'dima_p1':
+            else:
                 # line goes through point (hole_ice_nominal, 1) 
                 exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-%s) + p*(x-%s)**2 + 1.0'%(hole_ice_nominal, hole_ice_nominal))
-            else:
-                #TODO
-                print "dima_p2 to do"
 
             ########### Hole Ice Fit #############
             popt_1, pcov_1 = curve_fit(hole_ice_linear_through_point, hole_ice_values, bin_ratio_values)
@@ -378,8 +398,8 @@ for flav in ['trck','cscd']:
                     ice_func_plot_x = np.arange(0.12, 0.37 + x_steps, x_steps)
                     plt.xlim(0.12,0.37+x_steps)
                 else:
-                    #TODO
-                    print "dima_p2 sets, to do"
+                    ice_func_plot_x = np.arange(-5.5, 0.25 + x_steps, x_steps)
+                    plt.xlim(-5.5,0.25+x_steps)
                 ice_func_plot_y_linear = hole_ice_linear_through_point(ice_func_plot_x, k1)
                 ice_func_plot_linear, = plt.plot(ice_func_plot_x, ice_func_plot_y_linear, 'k-')
                 ice_func_plot_y_quad = hole_ice_quadratic_through_point(ice_func_plot_x, k2,p2)
@@ -394,9 +414,14 @@ for flav in ['trck','cscd']:
                     fig.subplots_adjust(wspace=0)
                     plt.figtext(0.5, 0.04, 'cos(zen)',fontsize=60,ha='center') 
                     plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
-                    plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
-                    plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
-                    plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
+                    if args.sim != 'dima_p2':
+                        plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
+                    else:
+                        plt.figtext(0.5, 0.95, 'Hole Ice fwd fits %s'%flav,fontsize=60,ha='center')
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_fwd_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_fwd_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
                     plt.clf()
 
     fits_HoleIce[flav]['slopes'] = k_HI_linear
@@ -408,6 +433,9 @@ for flav in ['trck','cscd']:
         fits_HoleIce[flav]['fixed_ratios'] = fixed_ratio
 
 #And write to file
-to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_%s.json'% (args.sim, pisa_mode, args.name))
-to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_%s.json'% (args.sim, pisa_mode, args.name))
+if args.sim != 'dima_p2':
+    to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_%s.json'% (args.sim, pisa_mode, args.name))
+    to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_%s.json'% (args.sim, pisa_mode, args.name))
+else:
+    to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fwd_fits_%s.json'% (args.sim, pisa_mode, args.name))
 
