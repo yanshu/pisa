@@ -161,7 +161,7 @@ elif args.sim == 'dima_p1':
     fits_DOMEff = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 1}
     fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.25}
 else:
-    fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.3}
+    fits_HoleIce = {'trck':{'slopes':{}}, 'cscd':{'slopes':{}}, 'nominal_value': 0.0}
 # Get templates and MC events 
 if not args.templ_already_saved:
     templates = {}
