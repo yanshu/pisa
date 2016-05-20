@@ -57,7 +57,7 @@ class TemplateMaker:
     '''
     def __init__(self, template_settings, ebins, czbins, anlys_ebins,
                  oversample_e=None, oversample_cz=None, actual_oversample_e=None,
-                 actual_oversample_cz=None, sim_ver=None, no_sys_maps=False, **kwargs):
+                 actual_oversample_cz=None, no_sys_maps=False, **kwargs):
         '''
         TemplateMaker class handles all of the setup and calculation of the
         templates for a given binning.
@@ -86,6 +86,7 @@ class TemplateMaker:
         self.reco_mc_wt_file = template_settings['reco_mc_wt_file']
         self.aeff_weight_file = template_settings['aeff_weight_file'] 
         self.params = template_settings
+        self.sim_ver = self.params['sim_ver']
         
         self.ebins = ebins
         self.czbins = czbins
@@ -152,7 +153,7 @@ class TemplateMaker:
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
         )
         # set up pid ( remove pid < pid_remove and separate cscd and trck by pid_bound)
-        if sim_ver == '5digit':
+        if self.sim_ver == '5digit':
             self.pid_remove = -2
         else:
             self.pid_remove = -3
@@ -166,8 +167,12 @@ class TemplateMaker:
         if not no_sys_maps:
             # when we are generating fits (creating the json files)
             # for the first time ( no_sys_maps = True), this can't run 
-            self.HoleIce = HoleIce(template_settings['holeice_slope_file'], sim_ver=sim_ver)
-            self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver=sim_ver)
+            if self.sim_ver == 'dima':
+                # only when using dima sets, do we have holeice_fwd_slope file
+                self.HoleIce = HoleIce(template_settings['holeice_slope_file'], template_settings['holeice_fwd_slope_file'], sim_ver=self.sim_ver)
+            else:
+                self.HoleIce = HoleIce(template_settings['holeice_slope_file'], None, sim_ver=self.sim_ver)
+            self.DomEfficiency = DomEfficiency(template_settings['domeff_slope_file'], sim_ver=self.sim_ver)
             self.Resolution_e_up = Resolution(template_settings['reco_prcs_coeff_file'],'e','up')
             self.Resolution_e_down = Resolution(template_settings['reco_prcs_coeff_file'],'e','down')
             self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
@@ -481,7 +486,11 @@ class TemplateMaker:
                 if no_sys_maps:
                     self.sys_maps = self.event_rate_pid_maps
                 else: 
-                    self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
+                    if self.sim_ver != 'dima':
+                        self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
+                    else:
+                        print "params['hole_ice_fwd'] = ", params['hole_ice_fwd']
+                        self.hole_ice_maps = self.HoleIce.apply_hi_hifwd(self.event_rate_pid_maps, params['hole_ice'], params['hole_ice_fwd'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     #self.domeff_maps = self.event_rate_pid_maps
                     if params['e_reco_precision_up']==1 and params['e_reco_precision_down']==1 and params['cz_reco_precision_up']==1 and params['cz_reco_precision_down']==1:
