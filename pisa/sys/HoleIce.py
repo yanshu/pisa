@@ -11,11 +11,9 @@ class HoleIce(SysBase):
         hi_file = from_json(find_resource(hole_ice_file))
         # nominal hol_ice value
         self.hole_ice_val_nominal = hi_file['nominal_value']
-        print "in HoleIce.__init__, sim_ver = ", sim_ver
         if sim_ver=='dima':
             hifwd_file = from_json(find_resource(hole_ice_fwd_file))
             self.hole_ice_fwd_val_nominal = hifwd_file['nominal_value']
-            print "self.hole_ice_fwd_val_nominal = ", self.hole_ice_fwd_val_nominal
         self.linear = {} 
         self.quadratic = {} 
         self.fixed_ratios = {} 
@@ -26,7 +24,7 @@ class HoleIce(SysBase):
             #self.linear[channel] = hi_file[channel]['linear']
             #self.quadratic[channel] = hi_file[channel]['quadratic']
             self.slope[channel] = hi_file[channel]['slopes']
-            self.hifwd_slope[channel] = hi_file[channel]['slopes']
+            self.hifwd_slope[channel] = hifwd_file[channel]['slopes']
             if self.sim == '4digit':
                 self.fixed_ratios[channel] = hi_file[channel]['fixed_ratios']
 
