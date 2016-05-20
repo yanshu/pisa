@@ -57,7 +57,7 @@
   "params": {
     "sim_ver":{
       "fixed": true,
-      "value": "5digit"
+      "value": "dima"
     },
     "PID_offset": {
       "fixed": true,
@@ -643,6 +643,18 @@
       "scale": 1.0,
       "value": 0.25
     },
+    "hole_ice_fwd": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        -5.2,
+        0.2
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
     "icc_bg_file": {
       "fixed": true,
       "value": "background/Matt_L5b_icc_data_IC86_2_3_4_new_reco.hdf5"
@@ -766,6 +778,10 @@
     "holeice_slope_file": {
       "fixed": true,
       "value": "domeff_holeice/dima_p1_event_HoleIce_fits_fitter_10_by_10.json"
+    },
+    "holeice_fwd_slope_file": {
+      "fixed": true,
+      "value": "domeff_holeice/dima_p2_event_HoleIce_fwd_fits_fitter_10_by_10.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
