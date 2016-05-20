@@ -326,8 +326,8 @@ for flav in ['trck','cscd']:
                         plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
                         fig.subplots_adjust(hspace=0)
                         fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ 'plots/'+'%s_fits_domeff_%s_%s.pdf'%(args.sim, flav, args.name))
-                        plt.savefig(outdir+ 'plots/png/'+'%s_fits_domeff_%s_%s.png'%(args.sim, flav, args.name))
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_domeff_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_domeff_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
                         plt.clf()
 
         fits_DOMEff[flav]['slopes'] = k_DE_linear
