@@ -142,7 +142,7 @@ class PIDServiceMC(PIDServiceBase):
         logging.info("Separating events by PID...")
         self.separated_events = self.pid_spec.applyPID(
             events=self.cut_events,
-            return_fields=['reco_energy', 'reco_coszen'],
+            return_fields=['reco_energy', 'reco_coszen', 'weighted_aeff'],
         )
 
         self.pid_kernels = {'binning': {'ebins': self.ebins,
