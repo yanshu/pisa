@@ -398,8 +398,8 @@ for flav in ['trck','cscd']:
                     ice_func_plot_x = np.arange(0.12, 0.37 + x_steps, x_steps)
                     plt.xlim(0.12,0.37+x_steps)
                 else:
-                    ice_func_plot_x = np.arange(-5.5, 0.25 + x_steps, x_steps)
-                    plt.xlim(-5.5,0.25+x_steps)
+                    ice_func_plot_x = np.arange(-5.5, 2.5 + x_steps, x_steps)
+                    plt.xlim(-5.5,2.5+x_steps)
                 ice_func_plot_y_linear = hole_ice_linear_through_point(ice_func_plot_x, k1)
                 ice_func_plot_linear, = plt.plot(ice_func_plot_x, ice_func_plot_y_linear, 'k-')
                 ice_func_plot_y_quad = hole_ice_quadratic_through_point(ice_func_plot_x, k2,p2)
