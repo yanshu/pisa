@@ -21,7 +21,7 @@ from pisa.background.BackgroundServiceICC import BackgroundServiceICC
 
 
 def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
-                        livetime, atmmu_f, noise_f, use_atmmu_f=False, **kwargs):
+                        livetime, atmmu_f, noise_f, use_atmmu_f, **kwargs):
 
     """
     Primary function for this stage, returns the event map with ICC 

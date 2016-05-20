@@ -137,3 +137,139 @@ class IPHondaFluxService():
         return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
 
         return return_table.T
+
+class IPHonda3DFluxService():
+    """Load a neutrino flux from Honda-styles flux tables in units of
+       [GeV^-1 m^-2 s^-1 sr^-1] and return a 3D spline interpolated
+       function per flavour. This is actually 12 lots of 2D splines
+       (one for each azimuth).
+    """
+
+    def __init__(self, flux_file=None, **params):
+        logging.info("Loading atmospheric flux table %s" %flux_file)
+
+        #Load the data table
+        table = np.loadtxt(open_resource(flux_file)).T
+
+        #columns in Honda files are in the same order
+        cols = ['energy']+primaries
+
+        flux_dict = dict(zip(cols, table))
+        for key in flux_dict.iterkeys():
+
+            #There are 20 lines per zenith range
+            coszenith_lists = np.array(np.split(flux_dict[key], 20))
+            azimuth_lists = []
+            for coszenith_list in coszenith_lists:
+                azimuth_lists.append(np.array(np.split(coszenith_list,12)).T)
+            flux_dict[key] = np.array(azimuth_lists)
+            if not key=='energy':
+                flux_dict[key] = flux_dict[key].T
+
+        #Set the zenith and energy range
+        flux_dict['energy'] = flux_dict['energy'][0].T[0]
+        flux_dict['coszen'] = np.linspace(0.95, -0.95, 20)
+        flux_dict['azimuth'] = np.linspace(15,345,12)
+
+        #Now get a spline representation of the flux table.
+        logging.debug('Make spline representation of flux')
+        logging.debug('Doing this integral-preserving. Will take longer')
+
+        self.spline_dict = {}
+
+        # Do integral-preserving method as in IceCube's NuFlux
+        # This one will be based purely on SciPy rather than ROOT
+        # Stored splines will be 1D in integrated flux over energy
+        int_flux_dict = {}
+        # Energy and CosZenith bins needed for integral-preserving
+        # method must be the edges of those of the normal tables
+        int_flux_dict['logenergy'] = np.linspace(-1.025,4.025,102)
+        int_flux_dict['coszen'] = np.linspace(-1,1,21)
+        for nutype in primaries:
+            # spline_dict now wants to be a set of splines for
+            # every table cosZenith value.
+            # In 3D mode we have a set of these sets for every
+            # table azimuth value.
+            az_splines = {}
+            for az, f in zip(flux_dict['azimuth'],flux_dict[nutype]):
+                splines = {}
+                CZiter = 1
+                for energyfluxlist in f.T:
+                    int_flux = []
+                    tot_flux = 0.0
+                    int_flux.append(tot_flux)
+                    for energyfluxval, energyval in zip(energyfluxlist, flux_dict['energy']):
+                        # Spline works best if you integrate flux * energy
+                        tot_flux += energyfluxval*energyval
+                        int_flux.append(tot_flux)
+
+                    spline = splrep(int_flux_dict['logenergy'],int_flux,s=0)
+                    CZvalue = '%.2f'%(1.05-CZiter*0.1)
+                    splines[CZvalue] = spline
+                    CZiter += 1
+
+                az_splines[az] = splines
+                    
+            self.spline_dict[nutype] = az_splines
+
+    def get_flux(self, ebins, czbins, prim):
+        """Get the flux in units [m^-2 s^-1] for the given
+           bin edges in energy and cos(zenith) and the primary."""
+
+        # Integral-preserving mode is more involved.
+        # Requires evaluating differential of splines at the
+        # chosen energy value for each table cosZen value.
+        # These values are the integrated, splined and the differential
+        # is evaluated at the required cosZen value
+        # For the 3D mode, we do this at every table azimuth value.
+
+        logging.debug('Evaluating the derivatives of the splines for integral-preserving method.')
+            
+        #Evaluate the flux at the bin centers
+        evals = get_bin_centers(ebins)
+        czvals = get_bin_centers(czbins)
+
+        all_az_table = []
+
+        for az in np.linspace(15,345,12):
+
+            all_cz_table = []
+            for energyval in evals:
+                logenergyval = np.log10(energyval)
+                spline_vals = []
+                for czkey in np.linspace(-0.95,0.95,20):
+                    # Have to multiply by bin widths to get correct derivatives
+                    # Here the bin width is in log energy, is 0.05
+                    spline_vals.append(splev(logenergyval,self.spline_dict[prim][az]['%.2f'%czkey],der=1)*0.05)
+                int_spline_vals = []
+                tot_val = 0.0
+                int_spline_vals.append(tot_val)
+                for val in spline_vals:
+                    tot_val += val
+                    int_spline_vals.append(tot_val)
+
+                spline = splrep(np.linspace(-1,1,21),int_spline_vals,s=0)
+                
+                # Have to multiply by bin widths to get correct derivatives
+                # Here the bin width is in cosZenith, is 0.1
+                czfluxes = splev(czvals,spline,der=1)*0.1/energyval
+                all_cz_table.append(czfluxes)
+
+            all_az_table.append(all_cz_table)
+
+        # Integrate along az
+        return_table = np.sum(all_az_table,axis=0)
+        azbin_sizes = np.pi / 6. #15 degrees
+        return_table *= azbin_sizes
+        return_table = return_table.T
+        
+        #Flux is given per sr and GeV, so we need to multiply
+        #by bin width in both dimensions
+        #Get the bin size in both dimensions
+        ebin_sizes = get_bin_sizes(ebins)
+        czbin_sizes = get_bin_sizes(czbins)
+        bin_sizes = np.meshgrid(ebin_sizes, czbin_sizes)
+
+        return_table *= np.abs(bin_sizes[0]*bin_sizes[1])
+
+        return return_table.T

@@ -176,8 +176,8 @@ settings file. ''')
                         default='background/Matt_L5b_icc_data_IC86_2_3_4.hdf5',
                         help='''HDF5 File containing atmospheric background from 3 years'
                         inverted corridor cut data''')
-    parser.add_argument('--sim_version',metavar='str',default='',type=str,
-                        help='''name of the simulation version, can only be '4digit' or '5digit'.''')
+    parser.add_argument('--sim_version',metavar='str',default='dima',type=str,
+                        help='''name of the simulation version, can only be '4digit', '5digit' or 'dima'.''')
     parser.add_argument('--plot_aeff',action='store_true',default=False,
                         help='Plot Aeff stage comparisons between PISA map and I3 map.')
     parser.add_argument('--cmpr_oscfit_pisa',action='store_true',default=False,
@@ -186,7 +186,9 @@ settings file. ''')
                         help='compare oscFit and PISA histograms (true and reco) for grouped flavor')
     parser.add_argument('--no_flux_sys_renorm',action='store_true',default=False,
                         help='Use no flux renormalization when applying flux systematics, only use for event-based PISA.')
-    parser.add_argument('--plot_diff_with_nominal',metavar='str(list)',default="['nutau_norm']",type=str,
+    parser.add_argument('--no_NC_osc',action='store_true',default=False,
+                        help='Use no osc. for NC, for comparison with oscFit.')
+    parser.add_argument('--plot_diff_with_nominal',metavar='str(list)',default="[]",type=str,
                         help='''Give a list of systematics, plot the difference between the nominal map
                         and map at systematic+=delta, delta is defined in the delta_val dict.''')
     parser.add_argument('--plot_aeff_1D',action='store_true',default=False,
@@ -203,6 +205,8 @@ settings file. ''')
                         help='Title of the geometry or test in plots')
     parser.add_argument('--save',action='store_true',default=False,
                         help='Save plots in outdir')
+    parser.add_argument('--savecsv',action='store_true',default=False,
+                        help='Save csv files in outdir')
     parser.add_argument('-o','--outdir',metavar='DIR',default='',
                         help='Directory to save the output figures.')
     parser.add_argument('-v', '--verbose', action='count', default=0,
@@ -219,7 +223,10 @@ settings file. ''')
     template_settings['params']['atmmu_f']['value'] = 0
     livetime = 2.5
     template_settings['params']['livetime']['value'] = livetime
-    template_settings['params']['sim_ver']['value'] = sim_version 
+    print "template_settings['params']['sim_ver']['value'] = ", template_settings['params']['sim_ver']['value']
+    if sim_version!=template_settings['params']['sim_ver']['value']:
+        print "Use sim_version defined here:" , sim_version
+        template_settings['params']['sim_ver']['value'] = sim_version 
 
     ebins = template_settings['binning']['ebins']
     anlys_ebins = template_settings['binning']['anlys_ebins']
@@ -240,11 +247,27 @@ settings file. ''')
     #trck_max = 150
     #all_max = 400
 
+    # systematics' name in oscFit
+    sys_jp_name = {'theta23': 'theta23',
+                 'theta13': 'theta13',
+                 'deltam31': 'dm31',
+                 'aeff_scale': 'norm_nu',
+                 'nutau_norm': 'norm_tau',
+                 'nc_norm': 'norm_nc',
+                 'atmmu_f': 'atmmu_f',
+                 'nue_numu_ratio': 'norm_e',
+                 'atm_delta_index': 'gamma',
+                 'dom_eff': 'domeff',
+                 'hole_ice': 'hole_ice',
+                 'hole_ice_fwd': 'hi_fwd',
+                 'GENSYS_MaCCQE': 'axm_qe',
+                 'GENSYS_MaRES': 'axm_res'
+                 }
+
     # define delta values for systematics:
     delta_val = {'theta23': 0.1,
                  'theta13': 0.008,
                  'deltam31': 0.0002,
-                 #'aeff_scale': 0.3,
                  'aeff_scale': 0.1199999999999999,
                  'nutau_norm': 0.5,
                  'nc_norm': 0.2,
@@ -255,10 +278,35 @@ settings file. ''')
                  'nu_nubar_ratio':0.1,
                  'dom_eff': 0.1,
                  'hole_ice': 0.1,
+                 'hole_ice_fwd': -1.0, 
                  'e_reco_precision_up': 0.05,
                  'cz_reco_precision_up': 0.05,
                  'e_reco_precision_down': 0.05,
                  'cz_reco_precision_down': 0.05,
+                 'GENSYS_MaCCQE': 1,
+                 'GENSYS_MaRES': 1,
+                 'GENSYS_AhtBY': 1,
+                 'GENSYS_BhtBY': 1,
+                 'GENSYS_CV1uBY': 1,
+                 'GENSYS_CV2uBY': 1,
+                 'flux_hadronic_A': 1,
+                 'flux_hadronic_B': 1,
+                 'flux_hadronic_C': 1,
+                 'flux_hadronic_D': 1,
+                 'flux_hadronic_E': 1,
+                 'flux_hadronic_F': 1,
+                 'flux_hadronic_G': 1,
+                 'flux_hadronic_H': 1,
+                 'flux_hadronic_I': 1,
+                 'flux_hadronic_W': 1,
+                 'flux_hadronic_X': 1,
+                 'flux_hadronic_Y': 1,
+                 'flux_hadronic_Z': 1,
+                 'flux_pion_chargeratio_Chg': 1,
+                 'flux_prim_norm_a': 1,
+                 'flux_prim_exp_norm_b': 1,
+                 'flux_prim_exp_factor_c': 1,
+                 'flux_spectral_index_d': 1,
                  }
     list_sys = eval(args.plot_diff_with_nominal)
     print "list_sys = ", list_sys
@@ -266,27 +314,44 @@ settings file. ''')
 
     ##################### Get Maps from PISA #######################
 
-    nominal_template_settings = copy.deepcopy(template_settings)
+    nominal_template_settings_default = copy.deepcopy(template_settings)
+    if args.no_NC_osc:
+        sys_file_name_end = 'fitter_10_by_10_no_NC_osc'
+    else:
+        sys_file_name_end = 'fitter_10_by_10'
+    nominal_template_settings_event = copy.deepcopy(template_settings)
+    nominal_template_settings_event['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_event_DomEff_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_event_HoleIce_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_event_HoleIce_fwd_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
+    # for default, right now can't turn off only NC
+    sys_file_name_end_with_osc = 'fitter_10_by_10'
+    nominal_template_settings_default['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_hist_DomEff_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_hist_HoleIce_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_hist_HoleIce_fwd_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_hist_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
 
     with Timer() as t:
-        nominal_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings['params'],True,1.0))
-        nominal_no_nutau_params = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings['params'],True,0.0))
+        nominal_nutau_params_default = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_default['params'],True,1.0))
+        nominal_no_nutau_params_default = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_default['params'],True,0.0))
+        nominal_nutau_params_event = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_event['params'],True,1.0))
+        nominal_no_nutau_params_event = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_event['params'],True,0.0))
 
-        nominal_template_maker_default = TemplateMaker_default(get_values(nominal_nutau_params), **nominal_template_settings['binning'])
-        nominal_template_maker_event = TemplateMaker_event(get_values(nominal_nutau_params), **nominal_template_settings['binning'])
+        nominal_template_maker_default = TemplateMaker_default(get_values(nominal_nutau_params_default), **nominal_template_settings_default['binning'])
+        print "get_values(nominal_nutau_params_default) = ", get_values(nominal_nutau_params_default)
+        nominal_template_maker_event = TemplateMaker_event(get_values(nominal_nutau_params_event), **nominal_template_settings_event['binning'])
 
-        no_nutau_nominal_template_maker_default = TemplateMaker_default(get_values(nominal_no_nutau_params), **nominal_template_settings['binning'])
-        no_nutau_nominal_template_maker_event = TemplateMaker_event(get_values(nominal_no_nutau_params), **nominal_template_settings['binning'])
+        no_nutau_nominal_template_maker_default = TemplateMaker_default(get_values(nominal_no_nutau_params_default), **nominal_template_settings_default['binning'])
+        no_nutau_nominal_template_maker_event = TemplateMaker_event(get_values(nominal_no_nutau_params_event), **nominal_template_settings_event['binning'])
 
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
 
     # Make nutau template:
     with Timer(verbose=False) as t:
-        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params),return_stages=True, no_sys_maps=True)
+        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params_default),return_stages=True, no_sys_maps=True)
     profile.info('==> elapsed time to get NUTAU template (default PISA): %s sec'%t.secs)
-
-    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params),return_stages=True, no_sys_maps=True)
+    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params_default),return_stages=True, no_sys_maps=True)
     flux_map_nominal_nutau = nominal_nutau_all_stages[0]
     osc_flux_map_nominal_nutau = nominal_nutau_all_stages[1]
     evt_rate_map_nominal_nutau = nominal_nutau_all_stages[2]
@@ -297,12 +362,12 @@ settings file. ''')
     nominal_no_nutau = nominal_no_nutau_all_stages[5]
 
     with Timer(verbose=False) as t:
-        #nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm))
-        nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm))
+        nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), turn_off_osc_NC=args.no_NC_osc)
+        #nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=True, flux_sys_renorm=not(args.no_flux_sys_renorm), turn_off_osc_NC=args.no_NC_osc)
     profile.info('==> elapsed time to get NUTAU template (event-by-event PISA): %s sec'%t.secs)
     with Timer(verbose=False) as t:
-        nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params),return_stages=True, no_sys_maps=True, use_cut_on_trueE=True, flux_sys_renorm=not(args.no_flux_sys_renorm))
-        #nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm))
+        nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), turn_off_osc_NC=args.no_NC_osc)
+        #nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=True, flux_sys_renorm=not(args.no_flux_sys_renorm), turn_off_osc_NC=args.no_NC_osc)
     profile.info('==> elapsed time to get NUTAU template (event-by-event PISA): %s sec'%t.secs)
     evt_rate_map_nominal_nutau_event = nominal_nutau_event_all_stages[1]
     evt_rate_map_nominal_no_nutau_event = nominal_no_nutau_event_all_stages[1]
@@ -314,37 +379,41 @@ settings file. ''')
     true_nominal_nutau_event_grouped = nominal_nutau_event_all_stages[6]
 
     # COMPARE nominal maps and maps at sys = nominal sys + delta:
-    if args.plot_diff_with_nominal:
+    if args.plot_diff_with_nominal and list_sys!=[]:
         print "Plotting diff plots with systematics += delta"
         for sys in list_sys:
-            one_sigma_template_settings = copy.deepcopy(template_settings)
+            one_sigma_template_settings_default = copy.deepcopy(nominal_template_settings_default)
+            one_sigma_template_settings_event = copy.deepcopy(nominal_template_settings_event)
             if sys == 'theta23' or sys=='deltam31':
-                one_sigma_template_settings['params'][sys+'_nh']['value'] += delta_val[sys]
+                one_sigma_template_settings_default['params'][sys+'_nh']['value'] += delta_val[sys]
+                one_sigma_template_settings_event['params'][sys+'_nh']['value'] += delta_val[sys]
             else:
-                one_sigma_template_settings['params'][sys]['value'] += delta_val[sys]
+                one_sigma_template_settings_default['params'][sys]['value'] += delta_val[sys]
+                one_sigma_template_settings_event['params'][sys]['value'] += delta_val[sys]
 
-            one_sigma_params = copy.deepcopy(select_hierarchy(one_sigma_template_settings['params'],True))
-            sys_val = one_sigma_params[sys]['value']
+            one_sigma_params_default = copy.deepcopy(select_hierarchy(one_sigma_template_settings_default['params'],True))
+            one_sigma_params_event = copy.deepcopy(select_hierarchy(one_sigma_template_settings_event['params'],True))
+            sys_val = one_sigma_params_default[sys]['value']
             print sys , " sys_val is : ", sys_val
 
             # for some systematics, need different settings
             if sys== 'atmmu_f':
                 compare_atmmu_f = True
                 print "in atmmu_f>>>>"
-                nominal_nutau_event = nominal_template_maker_event.get_template(get_values(nominal_nutau_params),return_stages=False, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f)
+                nominal_nutau_event = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),return_stages=False, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f, turn_off_osc_NC=args.no_NC_osc)
             else:
                 compare_atmmu_f = False
 
-            if sys not in ['hole_ice', 'dom_eff', 'cz_reco_precision_down', 'cz_reco_precision_up', 'e_reco_precision_down', 'e_reco_precision_up']:
-                one_sigma_template_maker_default = TemplateMaker_default(get_values(one_sigma_params), no_sys_maps=True, **one_sigma_template_settings['binning'])
-                one_sigma_template_maker_event = TemplateMaker_event(get_values(one_sigma_params), no_sys_maps=True, **one_sigma_template_settings['binning'])
-                one_sigma_maps_default_all_stages = one_sigma_template_maker_default.get_template(get_values(one_sigma_params),return_stages=True, no_sys_maps=True, use_atmmu_f=compare_atmmu_f)
-                one_sigma_maps_event_all_stages = one_sigma_template_maker_event.get_template(get_values(one_sigma_params),return_stages=True, no_sys_maps=True,use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f)
+            if sys not in ['hole_ice', 'hole_ice_fwd', 'dom_eff', 'cz_reco_precision_down', 'cz_reco_precision_up', 'e_reco_precision_down', 'e_reco_precision_up']:
+                one_sigma_template_maker_default = TemplateMaker_default(get_values(one_sigma_params_default), no_sys_maps=True, **one_sigma_template_settings_default['binning'])
+                one_sigma_template_maker_event = TemplateMaker_event(get_values(one_sigma_params_event), no_sys_maps=True, **one_sigma_template_settings_event['binning'])
+                one_sigma_maps_default_all_stages = one_sigma_template_maker_default.get_template(get_values(one_sigma_params_default),return_stages=True, no_sys_maps=True, use_atmmu_f=compare_atmmu_f)
+                one_sigma_maps_event_all_stages = one_sigma_template_maker_event.get_template(get_values(one_sigma_params_event),return_stages=True, no_sys_maps=True,use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f, turn_off_osc_NC=args.no_NC_osc)
             else:
-                one_sigma_template_maker_default = TemplateMaker_default(get_values(one_sigma_params), no_sys_maps=False, **one_sigma_template_settings['binning'])
-                one_sigma_template_maker_event = TemplateMaker_event(get_values(one_sigma_params), no_sys_maps=False, **one_sigma_template_settings['binning'])
-                one_sigma_maps_default_all_stages = one_sigma_template_maker_default.get_template(get_values(one_sigma_params),return_stages=True, no_sys_maps=False, use_atmmu_f=compare_atmmu_f)
-                one_sigma_maps_event_all_stages = one_sigma_template_maker_event.get_template(get_values(one_sigma_params),return_stages=True, no_sys_maps=False, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f)
+                one_sigma_template_maker_default = TemplateMaker_default(get_values(one_sigma_params_default), no_sys_maps=False, **one_sigma_template_settings_default['binning'])
+                one_sigma_template_maker_event = TemplateMaker_event(get_values(one_sigma_params_event), no_sys_maps=False, **one_sigma_template_settings_event['binning'])
+                one_sigma_maps_default_all_stages = one_sigma_template_maker_default.get_template(get_values(one_sigma_params_default),return_stages=True, no_sys_maps=False, use_atmmu_f=compare_atmmu_f)
+                one_sigma_maps_event_all_stages = one_sigma_template_maker_event.get_template(get_values(one_sigma_params_event),return_stages=True, no_sys_maps=False, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm), use_atmmu_f=compare_atmmu_f, turn_off_osc_NC=args.no_NC_osc)
             one_sigma_map_event = one_sigma_maps_event_all_stages[4]
             one_sigma_map_default = one_sigma_maps_default_all_stages[5]
 
@@ -354,10 +423,35 @@ settings file. ''')
                 plot_one_map(one_sigma_map_event[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_PISA_event_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, event \, PISA \, %s \, (%s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(sys_val), np.sum(one_sigma_map_event[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
                 plot_one_map(diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_PISA_event_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, event \, PISA \, %s \, map \, diff \, (\Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(diff_map['map'])), save=args.save)
 
-                diff_hist = (one_sigma_map_default[channel]['map'] - nominal_nutau[channel]['map']) #/nominal_nutau[channel]['map']
-                diff_map = {'map' : diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                diff_hist_default = (one_sigma_map_default[channel]['map'] - nominal_nutau[channel]['map']) #/nominal_nutau[channel]['map']
+                diff_map_default = {'map' : diff_hist_default, 'ebins': anlys_ebins, 'czbins': czbins}
                 plot_one_map(one_sigma_map_default[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_PISA_default_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, default \, PISA \, %s \, (%s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(sys_val), np.sum(one_sigma_map_default[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
-                plot_one_map(diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_PISA_default_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, default \, PISA \, %s \, map \, diff \, (\Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(diff_map['map'])), save=args.save)
+                plot_one_map(diff_map_default, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_PISA_default_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, default \, PISA \, %s \, map \, diff \, (\Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(diff_map_default['map'])), save=args.save)
+
+            # get data from JP's csv file
+                channel_jp = 'cascade' if channel=='cscd' else 'track'
+                file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                oscFit_data = pd.read_csv(file_name, sep=',',header=None)
+                oscFit_data_x = oscFit_data[0].values
+                oscFit_data_y = oscFit_data[1].values
+                oscFit_data_z = oscFit_data[2].values
+                oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
+                print "sum of oscFit_hist = ", np.sum(oscFit_hist)
+                oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                perc_diff_hist = (oscFit_hist - diff_map['map'])/diff_map['map']
+                perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
+                ratio_hist = oscFit_hist/diff_map['map']
+                ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
+                plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
+
+                abs_max = np.max(abs(perc_diff_map['map']))
+                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
+                #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
+
+
 
     #############  Compare Aeff Stage Template ############
     if args.plot_aeff:
@@ -382,42 +476,40 @@ settings file. ''')
     #############  Compare PID Template for grouped flavors ############
 
     for channel in ['cscd','trck']:
+
         if args.cmpr_oscfit_pisa:
             # get data from JP's csv file
-            if channel == 'cscd':
-                flav = 'cascade'
-            else:
-                flav = 'track'
-            #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_reco/sample_baseline_%s_histo.csv'%flav
-            #oscFit_data = pd.read_csv(file_name, sep=',',header=None)
-            #oscFit_data_x = oscFit_data[0].values
-            #oscFit_data_y = oscFit_data[1].values
-            #oscFit_data_z = oscFit_data[2].values
-            #oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
-            #oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+            flav = 'cascade' if channel=='cscd' else 'track'
+            file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_reco/sample_baseline_%s_histo.csv'%flav
+            oscFit_data = pd.read_csv(file_name, sep=',',header=None)
+            oscFit_data_x = oscFit_data[0].values
+            oscFit_data_y = oscFit_data[1].values
+            oscFit_data_z = oscFit_data[2].values
+            oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
+            oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            #perc_diff_hist = (oscFit_hist - nominal_nutau_event[channel]['map'])/nominal_nutau_event[channel]['map']
-            #perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+            perc_diff_hist = (oscFit_hist - nominal_nutau_event[channel]['map'])/nominal_nutau_event[channel]['map']
+            perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            #ratio_hist = oscFit_hist/nominal_nutau_event[channel]['map']
-            #ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+            ratio_hist = oscFit_hist/nominal_nutau_event[channel]['map']
+            ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            plot_one_map(nominal_nutau_event[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(nominal_nutau_event[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
+            plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, (true \, Nevts: \, %.1f) }$'%(livetime, channel, np.sum(oscFit_map['map'])), save=args.save)
 
-            #plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, (true \, Nevts: \, %.1f) }$'%(livetime, channel, np.sum(oscFit_map['map'])), save=args.save)
+            abs_max = np.max(abs(perc_diff_map['map']))
+            plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
+            #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+            plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_Ratio'% (channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s }$'%(livetime, channel), save=args.save,annotate_prcs=3)
 
-            #abs_max = np.max(abs(perc_diff_map['map']))
-            ##plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_true_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
-            #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_true_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-            #plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_true_info_event_final_%s_Ratio'% (channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s }$'%(livetime, channel), save=args.save,annotate_prcs=3)
-
-
-
+        # plot nominal map from event-based and hist-based PISA
         plot_one_map(nominal_nutau[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_default_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, default \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(nominal_nutau[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
+
+        plot_one_map(nominal_nutau_event[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(nominal_nutau_event[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
 
         # Plot Ratio of PID map (from PISA) to PID map (from event by event PISA)
         ratio_pid_default_event = ratio_map(nominal_nutau[channel], nominal_nutau_event[channel])
         plot_one_map(ratio_pid_default_event, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Ratio_default_event_final_map_%s'% (channel), fig_title=r'${\rm Ratio \, of \, (default \, / \, event ) \, %s }$'%(channel), save=args.save,annotate_prcs=3) 
+
         delta_pid_default_event = delta_map(nominal_nutau[channel], nominal_nutau_event[channel])
         plot_one_map(delta_pid_default_event, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Delta_default_event_final_map_%s'% (channel), fig_title=r'${\rm Delta \, of \, (default \, - \, event ) \, %s }$'%(channel), save=args.save) 
 
@@ -449,10 +541,7 @@ settings file. ''')
                 flav = group.split('_')[0]
                 if group == 'nuall_nc':
                     flav = 'nc'
-                if channel == 'cscd':
-                    channel_jp = 'cascade'
-                else:
-                    channel_jp = 'track'
+                channel_jp = 'cascade' if channel=='cscd' else 'track'
                 file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_reco/sample_baseline_%s_%s_histo.csv'%(channel_jp, flav)
                 oscFit_data = pd.read_csv(file_name, sep=',',header=None)
                 oscFit_data_x = oscFit_data[0].values
@@ -462,6 +551,7 @@ settings file. ''')
                 oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
                 perc_diff_hist = (oscFit_hist - nominal_nutau_event_grouped[channel][group]['map'])/nominal_nutau_event_grouped[channel][group]['map']
+                #perc_diff_hist = np.nan_to_num(perc_diff_hist)
                 perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
                 ratio_hist = oscFit_hist/nominal_nutau_event_grouped[channel][group]['map']
@@ -476,7 +566,6 @@ settings file. ''')
                 plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_PercentDifference'% (group, channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s \, %s \, }$'%(livetime, group.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
                 plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_Ratio'% (group, channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s \, %s }$'%(livetime, group.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
                 print "no of evts in ", group, " ", channel, " (reco E and CZ) =  ", np.sum(nominal_nutau_event_grouped[channel][group]['map'])
-                #print "         perc_diff_hist  = ", perc_diff_hist
         print "\n"
 
 
@@ -485,10 +574,7 @@ settings file. ''')
                 flav = group.split('_')[0]
                 if group == 'nuall_nc':
                     flav = 'nc'
-                if channel == 'cscd':
-                    channel_jp = 'cascade'
-                else:
-                    channel_jp = 'track'
+                channel_jp = 'cascade' if channel=='cscd' else 'track'
                 #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_truth/sample_baseline_%s_%s_histo.csv'%(channel_jp, flav)
                 #oscFit_data = pd.read_csv(file_name, sep=',',header=None)
                 #oscFit_data_x = oscFit_data[0].values
@@ -525,15 +611,17 @@ settings file. ''')
     plot_one_map(nominal_nutau_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_default_final_NutauCCNorm_1_all_channel', fig_title=r'${\rm %s \, yr \, PISA \, map \, cscd \, + \, trck \, map \, (Nevts: \, %.1f) }$'%(livetime, np.sum(nominal_nutau_no_pid['map'])), save=args.save, max=all_max)
     plot_one_map(nominal_nutau_event_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_final_NutauCCNorm_1_all_channel', fig_title=r'${\rm %s \, yr \, event \, PISA \, cscd \, + \, trck \, map \, (Nevts: \, %.1f) }$'%(livetime, np.sum(nominal_nutau_event_no_pid['map'])), save=args.save, max=all_max)
     plot_one_map(ratio_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Ratio_final_PISA_all_channel', fig_title=r'${\rm Ratio \, of \, final \, map (default \, / \, event ) \, cscd \, + \, trck }$', save=args.save,annotate_prcs=3) 
-    #    plt.title('Ratio of PID map (PISA/ event) cscd + trck')
-    #plt.figure()
-    #abs_max = np.max(abs(delta_no_pid['map']))
-    #show_map_swap(delta_no_pid, min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
-    #if args.save:
-    #    filename = os.path.join(args.outdir,args.title+ '_Delta_defaultPISA_eventPISA_all_channel.png')
-    #    plt.title('Delta of PID map (default - event) cscd + trck')
-    #    plt.savefig(filename,dpi=150)
-    #    plt.clf()
+    plot_one_map(delta_no_pid, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Delta_final_PISA_all_channel', fig_title=r'${\rm Delta \, of \, final \, map (default \, / \, event ) \, cscd \, + \, trck }$', save=args.save,annotate_prcs=3) 
+    plt.figure()
+    abs_max = np.max(abs(delta_no_pid['map']))
+    show_map_swap(delta_no_pid, vmin= -abs_max, vmax = abs_max, annotate_prcs=3,cmap='RdBu_r',savetxt=args.savecsv)
+    if args.save:
+        filename = os.path.join(args.outdir,args.title+ '_Delta_defaultPISA_eventPISA_all_channel_RdBu_r.png')
+        filename_pdf = os.path.join(args.outdir+'/pdf/',args.title+ '_Delta_defaultPISA_eventPISA_all_channel_RdBu_r.pdf')
+        plt.title('Delta of PID map (default - event) cscd + trck')
+        plt.savefig(filename,dpi=150)
+        plt.savefig(filename_pdf,dpi=150)
+        plt.clf()
 
 
     if not args.save: plt.show()

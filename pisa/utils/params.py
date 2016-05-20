@@ -18,6 +18,7 @@ from copy import deepcopy
 from pisa.utils.log import logging
 import pisa.utils.fileio as fileio
 import pisa.resources.resources as resources
+from pisa.utils.jsons import from_json
 
 class Prior(object):
     def __init__(self, **kwargs):
@@ -231,6 +232,60 @@ def get_values(params):
     """
     return deepcopy({ key: param['value'] for key, param in sorted(params.items()) })
 
+def construct_shape_dict(keyword, kwargs): #at the moment (2016-03-01) only called in flux modification not in the genie case
+    flux_mod_dict = {}
+    logging.info('constructing shape dict for: %s'%keyword)
+    logging.info('keys we are getting in: %s'%sorted(kwargs.keys()))
+    #logging.info("params: %s "%params)
+    #logging.info( "params type: %s "%type(params))
+    if keyword == 'flux':
+        flux_unc_dict = from_json(resources.find_resource(kwargs['flux_uncertainty_inputs']))
+        par_names = flux_unc_dict.keys()
+    logging.info( "\n the par names are: %s "%par_names)
+    for entry in kwargs:
+        logging.info( "going for : %s"%entry)
+        #logging.info( "can we access it? %s "%kwargs['params'][entry])
+        if entry in par_names:
+            flux_mod_dict[entry] = kwargs[entry]
+            logging.info( "adding to flux_mod_dict: %s "%entry)
+            #logging.info( '\n flux mod dict: %s '%flux_mod_dict)
+    logging.info("flux_mod_dict, keys: %s "%sorted(flux_mod_dict.keys()))
+    #flux_mod_dict['fixed'] = {'fixed':'true'}
+    return flux_mod_dict
+
+def construct_genie_dict(params):
+    ### make dict of genie params ###
+    GENSYS = {}
+    if not "GENSYS_AhtBY" in params:
+        print "setting to zero: GENSYS_AhtBY"
+        GENSYS["AhtBY"] = 0.0
+    else: GENSYS["AhtBY"] = params["GENSYS_AhtBY"]
+        
+    if not "GENSYS_BhtBY" in params:
+        GENSYS["BhtBY"] = 0.0
+        print "setting to zero: GENSYS_BhtBY"
+    else: GENSYS["BhtBY"] = params["GENSYS_BhtBY"]
+        
+    if not "GENSYS_CV1uBY" in params:
+        GENSYS["CV1uBY"] = 0.0
+        print "setting to zero GENSYS_CV1uBY"
+    else: GENSYS["CV1uBY"] = params["GENSYS_CV1uBY"]
+        
+    if not "GENSYS_CV2uBY" in params:
+        GENSYS["CV2uBY"] = 0.0
+        print "setting to zero GENSYS_CV2uBY"
+    else: GENSYS["CV2uBY"] = params["GENSYS_CV2uBY"]
+        
+    if not "GENSYS_MaCCQE" in params:
+        GENSYS["MaCCQE"] = 0.0
+        print "setting to zero GENSYS_MaCCQE"
+    else: GENSYS["MaCCQE"] = params["GENSYS_MaCCQE"]
+        
+    if not "GENSYS_MaRES" in params:
+        GENSYS["MaRES"] = 0.0
+        print "setting to zero GENSYS_MaRES"
+    else: GENSYS["MaRES"] = params["GENSYS_MaRES"]
+    return GENSYS
 
 def select_hierarchy(params, normal_hierarchy):
     """

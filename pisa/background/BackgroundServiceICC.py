@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,sim_ver,icc_bg_file=None,**kwargs):
+    def __init__(self,ebins,czbins,sim_ver,use_def1=False,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
@@ -35,8 +35,13 @@ class BackgroundServiceICC:
         santa_doms = bg_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
         l3 = bg_file['IC86_Dunkman_L3']['value']
         l4 = bg_file['IC86_Dunkman_L4']['result']
+        l4_invVICH = bg_file['IC86_Dunkman_L4']['result_invertedVICH']
         l5 = bg_file['IC86_Dunkman_L5']['bdt_score']
-        assert(np.all(santa_doms>=3) and np.all(l3 == 1) and np.all(l4 == 1) and np.all(l5 >= 0.1))
+        if use_def1==True:
+            assert(np.all(santa_doms>=3) and np.all(l3 == 1) and np.all(l4 == 1) and np.all(l5 >= 0.1))
+        else:
+            l4_pass = np.all(np.logical_or(l4==1, l4_invVICH==1))
+            assert(np.all(santa_doms>=3) and np.all(l3 == 1) and l4_pass and np.all(l5 >= 0.1))
         l6 = bg_file['IC86_Dunkman_L6']
         corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
         inverted_corridor_cut = corridor_doms_over_threshold > 1
@@ -51,7 +56,7 @@ class BackgroundServiceICC:
             reco_coszen_all = reco_coszen_all[dLLH>=-3]
             dLLH = dLLH[dLLH>=-3]
             pid_cut = 3.0       # this cut value 3.0 is from MSU, might need to be optimized
-        elif sim_ver == '5digit':
+        elif sim_ver == '5digit' or 'dima':
             reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['energy'])
             reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['zenith']))
             # throw away delta LLH < -2:
@@ -60,7 +65,7 @@ class BackgroundServiceICC:
             #dLLH = dLLH[dLLH>=-2]
             pid_cut = 3.0       # this cut value 3.0 is from MSU, might need to be optimized
         else:
-            raise ValueError('Only allow sim_ver  4digit or 5 digit!')
+            raise ValueError('Only allow sim_ver  4digit, 5 digit or dima!')
 
         # split in half for testing:
         #the commented out section was just a test for using subsets of the MC files
