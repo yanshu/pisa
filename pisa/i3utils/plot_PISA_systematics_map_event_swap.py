@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-#
+#! /usr/bin/env python# #
 # author: Timothy C. Arlen
 #         Feifei Huang
 #
@@ -337,12 +336,12 @@ settings file. ''')
         nominal_nutau_params_event = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_event['params'],True,1.0))
         nominal_no_nutau_params_event = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_event['params'],True,0.0))
 
-        nominal_template_maker_default = TemplateMaker_default(get_values(nominal_nutau_params_default), **nominal_template_settings_default['binning'])
+        nominal_template_maker_default = TemplateMaker_default(get_values(nominal_nutau_params_default), no_sys_maps=True, **nominal_template_settings_default['binning'])
         print "get_values(nominal_nutau_params_default) = ", get_values(nominal_nutau_params_default)
-        nominal_template_maker_event = TemplateMaker_event(get_values(nominal_nutau_params_event), **nominal_template_settings_event['binning'])
+        nominal_template_maker_event = TemplateMaker_event(get_values(nominal_nutau_params_event), no_sys_maps=True, **nominal_template_settings_event['binning'])
 
-        no_nutau_nominal_template_maker_default = TemplateMaker_default(get_values(nominal_no_nutau_params_default), **nominal_template_settings_default['binning'])
-        no_nutau_nominal_template_maker_event = TemplateMaker_event(get_values(nominal_no_nutau_params_event), **nominal_template_settings_event['binning'])
+        no_nutau_nominal_template_maker_default = TemplateMaker_default(get_values(nominal_no_nutau_params_default), no_sys_maps=True, **nominal_template_settings_default['binning'])
+        no_nutau_nominal_template_maker_event = TemplateMaker_event(get_values(nominal_no_nutau_params_event), no_sys_maps=True, **nominal_template_settings_event['binning'])
 
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
@@ -430,7 +429,9 @@ settings file. ''')
 
             # get data from JP's csv file
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
-                file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                if sys == 'atm_delta_index':
+                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
                 oscFit_data = pd.read_csv(file_name, sep=',',header=None)
                 oscFit_data_x = oscFit_data[0].values
                 oscFit_data_y = oscFit_data[1].values
