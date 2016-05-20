@@ -7,8 +7,6 @@ file_name_list = []
 run_list = [ '600', '601', '603', '604', '605', '606', '608', '610', '611', '612', '613', '620', '621', '622', '623', '624']
 for run_num in run_list: 
     file_name_list.append("make_events_file_output_with_weight/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5" % (run_num,run_num,run_num,run_num,run_num,run_num))
-    #file_name_list.append("make_events_file_output_with_weight/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_weights.hdf5" % (run_num,run_num,run_num,run_num,run_num,run_num))
-    #file_name_list.append("make_events_file_output_combined/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_weights.hdf5" % (run_num,run_num,run_num,run_num,run_num,run_num))
 
 
 Emax = 79.43282347
