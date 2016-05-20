@@ -194,7 +194,7 @@ if not args.templ_already_saved:
         DH_template_settings['params']['pid_events']['value'] = reco_mc_file    #pid file same as reco_mc file
         DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
     
-        DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), **DH_template_settings['binning'])
+        DH_template_maker = TemplateMaker(get_values(DH_template_settings['params']), no_sys_maps=True,**DH_template_settings['binning'])
         if args.use_event_PISA:
             # for comparison with oscFit: turn off NC oscillation
             template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True,use_cut_on_trueE=False,turn_off_osc_NC=args.no_NC_osc)
