@@ -387,7 +387,6 @@ class TemplateMaker:
                     if self.sim_ver != 'dima':
                         self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
                     else:
-                        print "params['hole_ice_fwd'] = ", params['hole_ice_fwd']
                         self.hole_ice_maps = self.HoleIce.apply_hi_hifwd(self.event_rate_pid_maps, params['hole_ice'], params['hole_ice_fwd'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     #self.domeff_maps = self.event_rate_pid_maps

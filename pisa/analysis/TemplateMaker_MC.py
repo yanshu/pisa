@@ -17,7 +17,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import year
 import h5py
 
-from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index
+from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index, apply_GENIE_mod#, apply_Barr_mod
 
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
@@ -351,16 +351,22 @@ class TemplateMaker:
                 # get flux from self.fluxes
                 nue_flux = self.fluxes[prim][int_type]['nue']
                 numu_flux = self.fluxes[prim][int_type]['numu']
-                # apply spectral index
+
+                # apply spectral index (first)
                 #nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
                 # second way, group nue+nuebar cc, numu+numubar cc, nutau+nutaubar cc, nuall nc
-                if int_type=='nc':
-                    egy_pivot = mean_true_e['nuall_nc']
-                else:
-                    flav = prim if 'bar' not in prim else prim.split('_bar')[0]
-                    egy_pivot = mean_true_e[flav+'_cc']
+                #if int_type=='nc':
+                #    egy_pivot = mean_true_e['nuall_nc']
+                #else:
+                #    flav = prim if 'bar' not in prim else prim.split('_bar')[0]
+                #    egy_pivot = mean_true_e[flav+'_cc']
+
+                # apply spectral index, use one pivot energy for all flavors
                 egy_pivot = mean_true_e_all
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
+
+                # apply Barr systematics
+                #aeff_weights = apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, aeff_weights, **params)
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:
@@ -373,6 +379,9 @@ class TemplateMaker:
                     pid = pid[cut]
                     nue_flux = nue_flux[cut]
                     numu_flux = numu_flux[cut]
+
+                # apply GENIE systematics (on aeff weight)
+                aeff_weights = apply_GENIE_mod(prim, int_type, true_e, true_cz, aeff_weights, **params)
 
                 # when generating fits for reco prcs, change reco_e and reco_cz:
                 if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
@@ -489,7 +498,6 @@ class TemplateMaker:
                     if self.sim_ver != 'dima':
                         self.hole_ice_maps = self.HoleIce.apply_sys(self.event_rate_pid_maps, params['hole_ice'])
                     else:
-                        print "params['hole_ice_fwd'] = ", params['hole_ice_fwd']
                         self.hole_ice_maps = self.HoleIce.apply_hi_hifwd(self.event_rate_pid_maps, params['hole_ice'], params['hole_ice_fwd'])
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     #self.domeff_maps = self.event_rate_pid_maps

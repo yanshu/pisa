@@ -324,7 +324,8 @@ settings file. ''')
     nominal_template_settings_event['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_event_HoleIce_fwd_fits_%s.json" % sys_file_name_end
     nominal_template_settings_event['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
     # for default, right now can't turn off only NC
-    sys_file_name_end_with_osc = 'fitter_10_by_10'
+    #sys_file_name_end_with_osc = 'fitter_10_by_10'   # right now, fitter_10_by_10_no_NC_osc and fitter_10_by_10 are the same; will change the name
+    sys_file_name_end_with_osc = 'fitter_10_by_10_no_NC_osc'
     nominal_template_settings_default['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_hist_DomEff_fits_%s.json" % sys_file_name_end_with_osc
     nominal_template_settings_default['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_hist_HoleIce_fits_%s.json" % sys_file_name_end_with_osc
     nominal_template_settings_default['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_hist_HoleIce_fwd_fits_%s.json" % sys_file_name_end_with_osc
@@ -337,7 +338,6 @@ settings file. ''')
         nominal_no_nutau_params_event = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_event['params'],True,0.0))
 
         nominal_template_maker_default = TemplateMaker_default(get_values(nominal_nutau_params_default), no_sys_maps=True, **nominal_template_settings_default['binning'])
-        print "get_values(nominal_nutau_params_default) = ", get_values(nominal_nutau_params_default)
         nominal_template_maker_event = TemplateMaker_event(get_values(nominal_nutau_params_event), no_sys_maps=True, **nominal_template_settings_event['binning'])
 
         no_nutau_nominal_template_maker_default = TemplateMaker_default(get_values(nominal_no_nutau_params_default), no_sys_maps=True, **nominal_template_settings_default['binning'])
