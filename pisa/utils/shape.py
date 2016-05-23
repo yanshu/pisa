@@ -23,7 +23,7 @@ from pisa.resources.resources import open_resource, find_resource
 import inspect
 
 class SplineService():
-    def data_spliner(self, filename, ebins): #take filename, return spline
+    def data_spliner(self, filename, ebins, event_by_event=False): #take filename, return spline
         en = (np.array(filename.keys())).astype(np.float)
         dat = (np.array(filename.values())).astype(np.float)
         #ensure sorting
@@ -38,10 +38,12 @@ class SplineService():
         spline = InterpolatedUnivariateSpline(en, dat, k=1)
         return spline
 
-    def __init__(self, ebins, dictFile=None):
+    def __init__(self, ebins, dictFile=None, event_by_event=False):
         self.SplineDict = {}
         self.DictWSplines = {}
         evals = get_bin_centers(ebins)
+        if event_by_event:
+            evals = ebins
         self.SplineVals = []
         self.SplineVals = np.array(self.SplineVals)
         datadict = from_json(find_resource(dictFile))
@@ -62,17 +64,20 @@ class SplineService():
             self.SplineVals=[]
             
 
-    def modify_shape(self, ebins, czbins, factor, fname):
+    def modify_shape(self, ebins, czbins, factor, fname, event_by_event=False):
         '''
         Calculate the contribution to the shape modification for a given uncertainty provided in file fname 
         with a factor (given in percent) 
         '''
         evals = get_bin_centers(ebins)
         czvals = get_bin_centers(czbins)
+        if event_by_event:
+            evals = ebins
+            czvals = czbins
 
         logging.info("\n keys in spline dict: %s " %self.SplineDict.keys())
         logging.info("vs fname: %s \n" %fname)
-	splines = self.SplineDict[fname]
+        splines = self.SplineDict[fname]
         
         #Calculate the return table
         if factor < 0:
