@@ -5,6 +5,11 @@
 # Functions used for TemplateMaker_MC.py
 
 import numpy as np
+from pisa.utils.shape import SplineService
+from pisa.utils.params import construct_genie_dict
+from pisa.utils.log import physics, profile, set_verbosity, logging
+from pisa.utils.utils import Timer
+#import systematicFunctions as sf
 
 def apply_ratio_scale(flux1, flux2, ratio_scale, sum_const):
     if sum_const:
@@ -63,7 +68,7 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins, turn_off_o
                 true_cz = true_cz[cut]
             osc_probs[prim][int_type] = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
             if turn_off_osc_NC and int_type=='nc':
-                print "NOO OSC FOR NC"
+                print "NO OSC FOR NC"
                 if prim in ['nutau', 'nutau_bar']:
                     osc_probs[prim][int_type]['nue_maps'] = np.zeros(np.shape(osc_probs[prim][int_type]['nue_maps']))
                     osc_probs[prim][int_type]['numu_maps'] = np.zeros(np.shape(osc_probs[prim][int_type]['numu_maps']))
@@ -93,6 +98,10 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
             _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
         nue_flux = scaled_nue_flux
         numu_flux = scaled_numu_flux
+
+    #if params['Barr_nu_nubar_ratio']!=0:
+    #    scale = sf.modRatioNuEBar(nue_cc, params['Barr_nu_nubar_ratio'], params['Barr_nu_nubar_ratio'])*\
+    #            sf.modRatioUpHor_NuE(nue_cc, params['Barr_uphor_ratio'])
     return nue_flux, numu_flux
 
 def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm):
@@ -127,3 +136,58 @@ def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, p
             scaled_numu_flux = numu_flux*scale
             numu_flux = scaled_numu_flux
     return nue_flux, numu_flux
+
+#def apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, aeff_weights, **params):
+
+
+def apply_GENIE_mod(prim, int_type, true_e, true_cz, aeff_weights, **params):
+
+    # code modified from Ste's apply_shape_mod() in Aeff.py
+
+    with Timer(verbose=False) as t:
+        ### make dict of genie parameters ###
+        GENSYS = construct_genie_dict(params)
+    print("==> time construct_genie_dict() : %s sec"%t.secs)
+
+    #print "GENSYS = ", GENSYS
+    if np.all([GENSYS[key] == 0 for key in GENSYS.keys()]):
+        return aeff_weights
+
+    ### make spline service for genie parameters ###
+    with Timer(verbose=False) as t:
+        genie_spline_service = SplineService(true_e, dictFile = params['GENSYS_files'], event_by_event=True)
+    print("==> time initialize SplineService : %s sec"%t.secs)
+        
+    logging.debug("Working on adding GENIE syst. on %s aeff_weights"% prim)
+
+    mod_table = np.zeros(len(true_e))
+
+    # FILL THE SHAPE MODIFICATION TABLES
+    with Timer(verbose=False) as t:
+        for entry in GENSYS:
+            if GENSYS[entry] != 0.0:
+                #print "we are now passing onto modify shape: ", GENSYS[entry]
+                if entry == "MaCCQE" and int_type=='nc': continue
+                mod_table += genie_spline_service.modify_shape(true_e, true_cz, GENSYS[entry], str(entry)+"_"+str(prim), event_by_event=True)
+    print("==> time genie_spline_service.modify_shape : %s sec"%t.secs)
+
+    ### THIS FOLLOWING SECTION HAS DELIBERATE BEEN MADE THIS COMPLICATED - THE ASIMOV METHOD BREAKS THINGS OTHERWISE (ask me about it if interested) ###
+    with Timer(verbose=False) as t:
+        if mod_table[mod_table<0].any():
+            for i in range(len(mod_table)):
+                if mod_table[i] < 0.0:
+                    mod_table[i] = -1.0 * (np.sqrt(-1.0 * mod_table[i]))
+                else:
+                    mod_table[i] = np.sqrt(mod_table[i])
+        else:
+            mod_table = np.sqrt(mod_table)
+        
+        modified_aeff_weights = aeff_weights * ( mod_table + 1.0)
+        
+        #TEST FOR 0 AND OR NEGATIVE VALEUS #
+        if modified_aeff_weights[modified_aeff_weights == 0.0].any():
+            raise ValueError("Modified aeff_weights must have all bins > 0")
+    print("==> time rest : %s sec"%t.secs)
+        
+    return modified_aeff_weights
+
