@@ -381,7 +381,7 @@ class TemplateMaker:
                     numu_flux = numu_flux[cut]
 
                 # apply GENIE systematics (on aeff weight)
-                aeff_weights = apply_GENIE_mod(prim, int_type, true_e, true_cz, aeff_weights, **params)
+                aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, **params)
 
                 # when generating fits for reco prcs, change reco_e and reco_cz:
                 if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
