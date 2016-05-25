@@ -429,7 +429,14 @@ settings file. ''')
 
             # get data from JP's csv file
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
-                file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                if sys in ['dom_eff', 'hole_ice', 'hole_ice_fwd']:
+                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing_detailedSystematics/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                elif sys in ['atmmu_f']:
+                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newDataForIC/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                else:
+                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
                 if sys == 'atm_delta_index':
                     file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
                 oscFit_data = pd.read_csv(file_name, sep=',',header=None)
@@ -445,12 +452,16 @@ settings file. ''')
                 ratio_hist = oscFit_hist/diff_map['map']
                 ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
+                delta_hist = oscFit_hist-diff_map['map']
+                delta_diff_map = {'map' : delta_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
                 plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
 
                 abs_max = np.max(abs(perc_diff_map['map']))
                 plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
                 #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
                 plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
+                plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=3, cmap='RdBu_r')
 
 
 

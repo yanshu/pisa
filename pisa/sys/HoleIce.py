@@ -24,7 +24,8 @@ class HoleIce(SysBase):
             #self.linear[channel] = hi_file[channel]['linear']
             #self.quadratic[channel] = hi_file[channel]['quadratic']
             self.slope[channel] = hi_file[channel]['slopes']
-            self.hifwd_slope[channel] = hifwd_file[channel]['slopes']
+            if sim_ver=='dima':
+                self.hifwd_slope[channel] = hifwd_file[channel]['slopes']
             if self.sim == '4digit':
                 self.fixed_ratios[channel] = hi_file[channel]['fixed_ratios']
 

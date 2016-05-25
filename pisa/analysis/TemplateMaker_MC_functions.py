@@ -5,7 +5,7 @@
 # Functions used for TemplateMaker_MC.py
 
 import numpy as np
-from pisa.utils.shape import SplineService
+from pisa.utils.shape_mc import SplineService
 from pisa.utils.params import construct_genie_dict
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.utils.utils import Timer
@@ -140,25 +140,21 @@ def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, p
 #def apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, aeff_weights, **params):
 
 
-def apply_GENIE_mod(prim, int_type, true_e, true_cz, aeff_weights, **params):
+def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, **params):
 
     # code modified from Ste's apply_shape_mod() in Aeff.py
 
-    with Timer(verbose=False) as t:
-        ### make dict of genie parameters ###
-        GENSYS = construct_genie_dict(params)
-    print("==> time construct_genie_dict() : %s sec"%t.secs)
+    print "apply_GENIE_mod for ", prim , " ", int_type
+    ### make dict of genie parameters ###
+    GENSYS = construct_genie_dict(params)
 
-    #print "GENSYS = ", GENSYS
     if np.all([GENSYS[key] == 0 for key in GENSYS.keys()]):
         return aeff_weights
 
     ### make spline service for genie parameters ###
     with Timer(verbose=False) as t:
-        genie_spline_service = SplineService(true_e, dictFile = params['GENSYS_files'], event_by_event=True)
+        genie_spline_service = SplineService(ebins=ebins, evals=true_e, dictFile = params['GENSYS_files'])
     print("==> time initialize SplineService : %s sec"%t.secs)
-        
-    logging.debug("Working on adding GENIE syst. on %s aeff_weights"% prim)
 
     mod_table = np.zeros(len(true_e))
 
@@ -187,7 +183,6 @@ def apply_GENIE_mod(prim, int_type, true_e, true_cz, aeff_weights, **params):
         #TEST FOR 0 AND OR NEGATIVE VALEUS #
         if modified_aeff_weights[modified_aeff_weights == 0.0].any():
             raise ValueError("Modified aeff_weights must have all bins > 0")
-    print("==> time rest : %s sec"%t.secs)
-        
+    print("==> time for the rest process : %s sec"%t.secs)
     return modified_aeff_weights
 
