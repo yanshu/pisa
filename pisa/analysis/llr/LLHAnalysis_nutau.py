@@ -76,7 +76,7 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
 
     return
 
-def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
+def find_max_llh_bfgs(blind_fit, params_keep_blind, fmap, template_maker, params, bfgs_settings,
                       save_steps=False, normal_hierarchy=None,
                       check_octant=False, no_optimize=False):
     """
@@ -131,12 +131,13 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
 
-    string = ''
-    msg = '\n{}'.format(string.ljust(18))
-    for name in names:
-        msg += ' | {}'.format(name[:9].ljust(9))
-    #physics.info(msg)
-    print msg
+    if not blind_fit:
+        string = ''
+        msg = '\n{}'.format(string.ljust(18))
+        for name in names:
+            msg += ' | {}'.format(name[:9].ljust(9))
+        physics.info(msg)
+        print msg
 
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
@@ -146,7 +147,7 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
 
     # If needed, run optimizer again, checking for second octant solution:
     if check_octant and ('theta23' in free_params.keys()):
-        physics.info("Checking alternative octant solution")
+        #physics.info("Checking alternative octant solution")
         old_th23_val = free_params['theta23']['value']
         delta = np.pi/4 - old_th23_val
         free_params['theta23']['value'] = np.pi/4 + delta
@@ -186,15 +187,20 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
     best_fit_params = { name: value for name, value in zip(names, best_fit_vals) }
 
     # Report best fit
-    physics.info('Found best LLH = %.2f in %d calls at:'
-        %(llh, dict_flags['funcalls']))
-    for name, val in best_fit_params.items():
-        physics.info('  %20s = %6.4f'%(name,val))
+    if not blind_fit:
+        physics.info('Found best LLH = %.2f in %d calls at:'
+                %(llh, dict_flags['funcalls']))
+        for name, val in best_fit_params.items():
+            physics.info('  %20s = %6.4f'%(name,val))
 
     # Report any warnings if there are
     lvl = logging.WARN if (dict_flags['warnflag'] != 0) else logging.DEBUG
     for name, val in dict_flags.items():
-        physics.log(lvl," %s : %s"%(name,val))
+        if blind_fit and name in params_keep_blind:
+            # still show the warning, but not the value for the params_keep_blind
+            physics.log(lvl," %s : value not shown"%(name))
+        else:
+            physics.log(lvl," %s : %s"%(name,val))
 
     if not save_steps:
         # Do not store the extra history of opt steps:
@@ -202,12 +208,18 @@ def find_max_llh_bfgs(fmap, template_maker, params, bfgs_settings,
             opt_steps_dict[key] = [opt_steps_dict[key][-1]]
             del opt_steps_dict[key][:-1]
 
+    if blind_fit:
+        # remove params_keep_blind from the output result
+        for key in params_keep_blind:
+            if key in opt_steps_dict.keys():
+                del opt_steps_dict[key]
+
     #print "final result = ", opt_steps_dict
     return opt_steps_dict
 
 
 def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
-             opt_steps_dict, priors):
+        opt_steps_dict, priors):
 
     '''
     Function that the bfgs algorithm tries to minimize: wraps get_template()
@@ -283,15 +295,16 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
         opt_steps_dict[key].append(template_params[key])
     opt_steps_dict['llh'].append(neg_llh)
 
-    string = 'LLH at %.2f'%neg_llh
-    msg = '{}'.format(string.ljust(18))
-    for val in opt_vals:
-        string = '%2.5f'%(val)
-        msg += ' | {}'.format(string.ljust(9))
+    # comment these lines if using blind_fit:
+    #string = 'LLH at %.2f'%neg_llh
+    #msg = '{}'.format(string.ljust(18))
+    #for val in opt_vals:
+    #    string = '%2.5f'%(val)
+    #    msg += ' | {}'.format(string.ljust(9))
     #physics.info(msg)
-    sys.stdout.write(msg)
-    sys.stdout.flush()
-    sys.stdout.write("\b" * len(msg))
+    #sys.stdout.write(msg)
+    #sys.stdout.flush()
+    #sys.stdout.write("\b" * len(msg))
 
     return neg_llh
 

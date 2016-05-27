@@ -31,7 +31,7 @@ from pisa.utils.log import logging, profile, physics, set_verbosity
 from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
-from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample, get_true_template, get_stat_fluct_map
+from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample_maps, get_true_template, get_stat_fluct_map
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings
 
@@ -51,6 +51,10 @@ parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
 parser.add_argument('-bs','--burn_sample_file',metavar='FILE',type=str, dest='bs',
                     default='', help='HDF5 File containing burn sample.')
+parser.add_argument('--blind_fit',action='store_true', default=False, help='Do blind fit.')
+parser.add_argument('--params_keep_blind',metavar='str(list)',
+                    default="['hole_ice','theta23','deltam31','nutau_norm','theta13']",
+                    help='''Params to be kept blind.''')
 parser.add_argument('-n','--ntrials',type=int, default = 1,
                     help="Number of trials to run")
 parser.add_argument('-s','--save-steps',action='store_true',default=False,
@@ -98,6 +102,8 @@ ebins = template_settings['binning']['ebins']
 anlys_ebins = template_settings['binning']['anlys_ebins']
 czbins = template_settings['binning']['czbins']
 anlys_bins = (anlys_ebins, czbins)
+blind_fit = args.blind_fit
+params_keep_blind = eval(args.params_keep_blind)
 
 pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
 template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
@@ -187,7 +193,7 @@ for itrial in xrange(1,args.ntrials+1):
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
         physics.info('Running on real data! (%s)'%args.bs)
-        fmap = get_burn_sample(burn_sample_file=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel)
+        fmap = get_burn_sample_maps(file_name=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel)
     # Randomly sampled (poisson) data
     else:
         if args.seed:
@@ -254,7 +260,7 @@ for itrial in xrange(1,args.ntrials+1):
                     largs[2] = change_settings(largs[2],fix_param_scan_name,fix_param_scan_val,True)
 
             
-            res = find_max_llh_bfgs(*largs, **kwargs)
+            res = find_max_llh_bfgs(blind_fit, params_keep_blind, *largs, **kwargs)
             # execute optimizer
             if len(fit_results) == 0:
                 fit_results.append(res)
@@ -284,7 +290,7 @@ for itrial in xrange(1,args.ntrials+1):
             #    kwargs['no_optimize']=True
 
             # execute optimizer
-            fit_results.append(find_max_llh_bfgs(*largs, **kwargs))
+            fit_results.append(find_max_llh_bfgs(blind_fit, params_keep_blind, *largs, **kwargs))
             profile.info("stop optimizer")
 
         del largs
