@@ -319,9 +319,9 @@ settings file. ''')
     else:
         sys_file_name_end = 'fitter_10_by_10'
     nominal_template_settings_event = copy.deepcopy(template_settings)
-    nominal_template_settings_event['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_event_DomEff_fits_%s.json" % sys_file_name_end
-    nominal_template_settings_event['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_event_HoleIce_fits_%s.json" % sys_file_name_end
-    nominal_template_settings_event['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_event_HoleIce_fwd_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_event_polyfit_bin_count_DomEff_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_event_polyfit_bin_count_HoleIce_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_%s.json" % sys_file_name_end
     nominal_template_settings_event['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
     # for default, right now can't turn off only NC
     #sys_file_name_end_with_osc = 'fitter_10_by_10'   # right now, fitter_10_by_10_no_NC_osc and fitter_10_by_10 are the same; will change the name
@@ -455,13 +455,16 @@ settings file. ''')
                 delta_hist = oscFit_hist-diff_map['map']
                 delta_diff_map = {'map' : delta_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
+                relative_diff_to_baseline = ratio_map(delta_diff_map, nominal_nutau_event[channel])
+                plot_one_map(relative_diff_to_baseline, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_one_sigma_OscFit_PISA_event_cmpr__%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, = \, %s \, plot \, (OscFit\, - \, PISA) \, / \,baseline \, %s }$'%(livetime, sys.replace('_', '\, '), sys_val, channel), save=args.save,annotate_prcs=4) 
+
                 plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
 
                 abs_max = np.max(abs(perc_diff_map['map']))
-                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
+                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=4,cmap='RdBu_r')
                 #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
-                plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=3, cmap='RdBu_r')
+                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4)
+                plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4, cmap='RdBu_r')
 
 
 
