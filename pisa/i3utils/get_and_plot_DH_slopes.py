@@ -44,6 +44,13 @@ parser.add_argument('--IMH',action='store_true',default=False,
                     help="Use inverted mass hiearchy.")
 parser.add_argument('--templ_already_saved',action='store_true',default=False,
                     help="Read templates from already saved file; saves time when only need plotting.")
+parser.add_argument('--use_curvefit_bin_ratio',action='store_true',default=False,
+                    help="Use np.curve_fit on bin ratio. Force it go througth the baseline point.")
+parser.add_argument('--use_polyfit_bin_ratio',action='store_true',default=False,
+                    help="Use np.polyfit on bin ratio. Force it go througth the baseline point.")
+parser.add_argument('--use_polyfit_bin_count',action='store_true',default=False,
+                    help="Use np.polyfit on bin count. Force it go througth the baseline point.\
+                          The slope is divided by baseline bin count and saved to json file.")
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('-o','--outdir',type=str,
@@ -60,6 +67,17 @@ if args.use_event_PISA:
 else:
     from pisa.analysis.TemplateMaker_nutau import TemplateMaker
     pisa_mode = 'hist'
+
+if not(args.use_curvefit_bin_ratio or args.use_polyfit_bin_ratio or args.use_polyfit_bin_count):
+    parser.error('Please choose the fitting mode (for linear fit): use_curvefit_bin_ratio, use_polyfit_bin_ratio or use_polyfit_bin_count!')
+
+if args.use_curvefit_bin_ratio:
+    fitting_mode = 'curvefit_bin_ratio'
+if args.use_polyfit_bin_ratio:
+    fitting_mode = 'polyfit_bin_ratio'
+if args.use_polyfit_bin_count:
+    fitting_mode = 'polyfit_bin_count'
+
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots/')
 utils.mkdir(outdir+'/plots/png/')
@@ -201,8 +219,10 @@ if not args.templ_already_saved:
         else:
             template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
 
-        templates[str(run_num)]['trck'] = template['trck']['map']
-        templates[str(run_num)]['cscd'] = template['cscd']['map']
+        templates[str(run_num)]['trck']['map'] = template['trck']['map']
+        templates[str(run_num)]['cscd']['map'] = template['cscd']['map']
+        templates[str(run_num)]['trck']['sumw2_nu'] = template['trck']['sumw2_nu'] 
+        templates[str(run_num)]['cscd']['sumw2_nu'] = template['cscd']['sumw2_nu'] 
         if args.sim == 'dima_p2':
             templates[str(run_num)]['hole_ice_fwd'] = dict_run[str(run_num)]['hole_ice_fwd']
         else:
@@ -229,22 +249,22 @@ for flav in ['trck','cscd']:
     if args.sim != 'dima_p2':
         dom_eff_list = []
     hole_ice_list = []
-    k_DE_linear = np.empty(np.shape(templates[nominal_run][flav])) 
-    k_DE_quad = np.empty(np.shape(templates[nominal_run][flav])) 
-    p_DE_quad = np.empty(np.shape(templates[nominal_run][flav])) 
+    k_DE_linear = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
+    k_DE_quad = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
+    p_DE_quad = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
     if args.sim == '4digit':
-        fixed_ratio = np.empty(np.shape(templates[nominal_run][flav])) 
-    k_HI_quad = np.empty(np.shape(templates[nominal_run][flav])) 
-    p_HI_quad = np.empty(np.shape(templates[nominal_run][flav])) 
-    k_HI_linear = np.empty(np.shape(templates[nominal_run][flav])) 
+        fixed_ratio = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
+    k_HI_quad = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
+    p_HI_quad = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
+    k_HI_linear = np.empty(np.shape(templates[nominal_run][flav]['map'])) 
     for run_num in run_list: 
         if args.sim != 'dima_p2':
             dom_eff_list.append(templates[str(run_num)]['dom_eff'])
             hole_ice_list.append(templates[str(run_num)]['hole_ice'])
         else:
             hole_ice_list.append(templates[str(run_num)]['hole_ice_fwd'])
-        templ_list.append(templates[str(run_num)][flav])
-        templ_err_list.append(templates[str(run_num)][flav]/np.sqrt(MCmaps[str(run_num)][flav]))
+        templ_list.append(templates[str(run_num)][flav]['map'])
+        templ_err_list.append(np.sqrt(templates[str(run_num)][flav]['sumw2_nu']))
    
     if args.sim != 'dima_p2':
         dom_eff = np.array(dom_eff_list)
@@ -252,8 +272,8 @@ for flav in ['trck','cscd']:
     templ = np.array(templ_list)
     templ_err = np.array(templ_err_list)
 
-    y_val_max = np.max(np.divide(templ, templates[nominal_run][flav]))
-    y_val_min = np.min(np.divide(templ, templates[nominal_run][flav]))
+    y_val_max = np.max(np.divide(templ, templates[nominal_run][flav]['map']))
+    y_val_min = np.min(np.divide(templ, templates[nominal_run][flav]['map']))
 
     tml_shape = np.shape(templ)
     n_ebins = tml_shape[1] 
@@ -288,11 +308,33 @@ for flav in ['trck','cscd']:
 
                 ########### DOM efficiency Fits #############
 
-                popt_1, pcov_1 = curve_fit(dom_eff_linear_through_point, dom_eff_values, bin_ratio_values)
-                k1 = popt_1[0]
+                # fit bin ratio using polyfit:
+                if args.use_polyfit_bin_ratio:
+                    sigma = copy.deepcopy(bin_ratio_err_values)
+                    sigma[dom_eff_values==dom_eff_nominal] *= 1.0e-10
+                    fit_output = np.polyfit(dom_eff_values, bin_ratio_values, deg = 1, rcond = None, w = 1./sigma)
+                    fit_func_1 = np.poly1d(fit_output)
+                    k1 = fit_output[0]
+                    b1 = fit_output[1]
+
+                # fit bin count using polyfit:
+                if args.use_polyfit_bin_count:
+                    sigma = copy.deepcopy(bin_err)
+                    sigma[dom_eff_values==dom_eff_nominal] *= 1.0e-10
+                    fit_bin_count_output = np.polyfit(dom_eff_values, bin_counts, deg = 1, rcond = None, w = 1./sigma)
+                    fit_func_1 = np.poly1d(fit_bin_count_output/nominal_bin_counts)
+                    k1 = fit_bin_count_output[0]/nominal_bin_counts
+                    b1 = fit_bin_count_output[1]/nominal_bin_counts
+
+                # fit bin ratio using curve_fit:
+                if args.use_curvefit_bin_ratio:
+                    sigma = copy.deepcopy(bin_ratio_err_values)
+                    popt_1, pcov_1 = curve_fit(dom_eff_linear_through_point, dom_eff_values, bin_ratio_values, sigma=sigma)
+                    k1 = popt_1[0]
+
                 k_DE_linear[i][j]= k1
    
-                popt_2, pcov_2 = curve_fit(dom_eff_quadratic_through_point, dom_eff_values, bin_ratio_values)
+                popt_2, pcov_2 = curve_fit(dom_eff_quadratic_through_point, dom_eff_values, bin_ratio_values, sigma=bin_ratio_err_values)
                 k2 = popt_2[0]
                 p2 = popt_2[1]
                 k_DE_quad[i][j]= k2
@@ -312,7 +354,10 @@ for flav in ['trck','cscd']:
                     plt.ylim(y_val_min-0.1,y_val_max+0.1)
 
                     dom_func_plot_x = np.arange(0.8 - x_steps, 1.2 + x_steps, x_steps)
-                    dom_func_plot_y_linear = dom_eff_linear_through_point(dom_func_plot_x, k1)
+                    if args.use_curvefit_bin_ratio:
+                        dom_func_plot_y_linear = dom_eff_linear_through_point(dom_func_plot_x, k1)
+                    else:
+                        dom_func_plot_y_linear = fit_func_1(dom_func_plot_x) 
                     dom_func_plot_linear, = plt.plot(dom_func_plot_x, dom_func_plot_y_linear, 'k-')
                     dom_func_plot_y_quad = dom_eff_quadratic_through_point(dom_func_plot_x, k2,p2)
                     dom_func_plot_quad, = plt.plot(dom_func_plot_x, dom_func_plot_y_quad, 'r-')
@@ -326,8 +371,8 @@ for flav in ['trck','cscd']:
                         plt.figtext(0.5, 0.95, 'DOM eff. slopes %s'%flav, fontsize=60,ha='center')
                         fig.subplots_adjust(hspace=0)
                         fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_domeff_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
-                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_domeff_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_%s_fits_domeff_%s_%s.pdf'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_%s_fits_domeff_%s_%s.png'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
                         plt.clf()
 
         fits_DOMEff[flav]['slopes'] = k_DE_linear
@@ -367,11 +412,32 @@ for flav in ['trck','cscd']:
                 exec('def hole_ice_quadratic_through_point(x, k, p): return k*(x-%s) + p*(x-%s)**2 + 1.0'%(hole_ice_nominal, hole_ice_nominal))
 
             ########### Hole Ice Fit #############
-            popt_1, pcov_1 = curve_fit(hole_ice_linear_through_point, hole_ice_values, bin_ratio_values)
-            k1 = popt_1[0]
+            # fit bin ratio using polyfit:
+            if args.use_polyfit_bin_ratio:
+                sigma = copy.deepcopy(bin_ratio_err_values)
+                sigma[hole_ice_values==hole_ice_nominal] *= 1.0e-10
+                fit_output = np.polyfit(hole_ice_values, bin_ratio_values, deg = 1, rcond = None, w = 1./sigma)
+                fit_func_2 = np.poly1d(fit_output)
+                k1 = fit_output[0]
+                b1 = fit_output[1]
+
+            # fit bin count using polyfit:
+            if args.use_polyfit_bin_count:
+                sigma = copy.deepcopy(bin_err)
+                sigma[hole_ice_values==hole_ice_nominal] *= 1.0e-10
+                fit_bin_count_output = np.polyfit(hole_ice_values, bin_counts, deg = 1, rcond = None, w = 1./sigma)
+                fit_func_2 = np.poly1d(fit_bin_count_output/nominal_bin_counts)
+                k1 = fit_bin_count_output[0]/nominal_bin_counts
+                b1 = fit_bin_count_output[1]/nominal_bin_counts
+
+            # fit bin ratio using curve_fit:
+            if args.use_curvefit_bin_ratio:
+                sigma = copy.deepcopy(bin_ratio_err_values)
+                popt_1, pcov_1 = curve_fit(hole_ice_linear_through_point, hole_ice_values, bin_ratio_values, sigma=sigma)
+                k1 = popt_1[0]
             k_HI_linear[i][j]= k1
 
-            popt_2, pcov_2 = curve_fit(hole_ice_quadratic_through_point, hole_ice_values, bin_ratio_values)
+            popt_2, pcov_2 = curve_fit(hole_ice_quadratic_through_point, hole_ice_values, bin_ratio_values, sigma=bin_ratio_err_values)
             k2 = popt_2[0]
             p2 = popt_2[1]
             k_HI_quad[i][j]= k2
@@ -400,7 +466,10 @@ for flav in ['trck','cscd']:
                 else:
                     ice_func_plot_x = np.arange(-5.5, 2.5 + x_steps, x_steps)
                     plt.xlim(-5.5,2.5+x_steps)
-                ice_func_plot_y_linear = hole_ice_linear_through_point(ice_func_plot_x, k1)
+                if args.use_curvefit_bin_ratio:
+                    ice_func_plot_y_linear = hole_ice_linear_through_point(ice_func_plot_x, k1)
+                else:
+                    ice_func_plot_y_linear = fit_func_2(ice_func_plot_x) 
                 ice_func_plot_linear, = plt.plot(ice_func_plot_x, ice_func_plot_y_linear, 'k-')
                 ice_func_plot_y_quad = hole_ice_quadratic_through_point(ice_func_plot_x, k2,p2)
                 ice_func_plot_quad, = plt.plot(ice_func_plot_x, ice_func_plot_y_quad, 'r-')
@@ -416,12 +485,12 @@ for flav in ['trck','cscd']:
                     plt.figtext(0.09, 0.5, 'energy',rotation=90,fontsize=60,ha='center') 
                     if args.sim != 'dima_p2':
                         plt.figtext(0.5, 0.95, 'Hole Ice fits %s'%flav,fontsize=60,ha='center')
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
-                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_%s_fits_holeice_%s_%s.pdf'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_%s_fits_holeice_%s_%s.png'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
                     else:
                         plt.figtext(0.5, 0.95, 'Hole Ice fwd fits %s'%flav,fontsize=60,ha='center')
-                        plt.savefig(outdir+ 'plots/'+'%s_%s_fits_holeice_fwd_%s_%s.pdf'%(args.sim, pisa_mode, flav, args.name))
-                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_fits_holeice_fwd_%s_%s.png'%(args.sim, pisa_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/'+'%s_%s_%s_fits_holeice_fwd_%s_%s.pdf'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
+                        plt.savefig(outdir+ 'plots/png/'+'%s_%s_%s_fits_holeice_fwd_%s_%s.png'%(args.sim, pisa_mode, fitting_mode, flav, args.name))
                     plt.clf()
 
     fits_HoleIce[flav]['slopes'] = k_HI_linear
@@ -434,8 +503,8 @@ for flav in ['trck','cscd']:
 
 #And write to file
 if args.sim != 'dima_p2':
-    to_json(fits_DOMEff,outdir+'%s_%s_DomEff_fits_%s.json'% (args.sim, pisa_mode, args.name))
-    to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fits_%s.json'% (args.sim, pisa_mode, args.name))
+    to_json(fits_DOMEff,outdir+'%s_%s_%s_DomEff_fits_%s.json'% (args.sim, pisa_mode, fitting_mode, args.name))
+    to_json(fits_HoleIce,outdir+'%s_%s_%s_HoleIce_fits_%s.json'% (args.sim, pisa_mode, fitting_mode, args.name))
 else:
-    to_json(fits_HoleIce,outdir+'%s_%s_HoleIce_fwd_fits_%s.json'% (args.sim, pisa_mode, args.name))
+    to_json(fits_HoleIce,outdir+'%s_%s_%s_HoleIce_fwd_fits_%s.json'% (args.sim, pisa_mode, fitting_mode, args.name))
 
