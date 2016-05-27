@@ -198,38 +198,80 @@ class TemplateMaker:
 
 
     def calc_mc_errors(self):
-        logging.info('Opening file: %s'%(self.reco_mc_wt_file))
+        logging.info('Opening file: %s'%(self.aeff_weight_file))
         try:
-            evts = events.Events(self.reco_mc_wt_file)
+            evts = events.Events(self.aeff_weight_file)
         except IOError,e:
             logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
             sys.exit(1)
-        all_flavors_dict = {}
-        for flavor in ['nue', 'numu','nutau']:
-            flavor_dict = {}
-            logging.debug("Working on %s "%flavor)
+        # This only gets raw MC events, rel_error is not 1/sqrt(N_mc), they have to be weighted
+        #all_flavors_dict = {}
+        #for flavor in ['nue', 'numu','nutau']:
+        #    flavor_dict = {}
+        #    logging.debug("Working on %s "%flavor)
+        #    for int_type in ['cc','nc']:
+        #        bins = (self.anlys_ebins,self.czbins)
+        #        nu_hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy'], evts[flavor][int_type]['reco_coszen'],bins=bins)
+        #        nubar_hist_2d,_,_ = np.histogram2d(evts[flavor+'_bar'][int_type]['reco_energy'], evts[flavor +'_bar'][int_type]['reco_coszen'],bins=bins)
+        #        flavor_dict[int_type] = nu_hist_2d + nubar_hist_2d
+        #    all_flavors_dict[flavor] = flavor_dict
+        #numu_cc_map = all_flavors_dict['numu']['cc']
+        #nue_cc_map = all_flavors_dict['nue']['cc']
+        #nutau_cc_map = all_flavors_dict['nutau']['cc']
+        #nuall_nc_map = all_flavors_dict['numu']['nc']
+
+        ##print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
+        #mc_event_maps = {'params':self.params}
+        #mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
+        #mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
+        #mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
+        #mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
+        #final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
+
+        use_cut_on_trueE = True
+        turn_off_osc_NC = False
+        osc_probs = get_osc_probs(evts, self.params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
+        all_reco_e = np.array([])
+        all_reco_cz = np.array([])
+        all_weight = np.array([])
+        all_pid = np.array([])
+        for prim in ['nue', 'numu','nutau', 'nue_bar', 'numu_bar', 'nutau_bar']:
             for int_type in ['cc','nc']:
-                bins = (self.anlys_ebins,self.czbins)
-                hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy']+evts[flavor+'_bar'][int_type]['reco_energy'],evts[flavor][int_type]['reco_coszen']+evts[flavor +'_bar_'][int_type]['reco_coszen'],bins=bins)
-                flavor_dict[int_type] = hist_2d
-            all_flavors_dict[flavor] = flavor_dict
-        numu_cc_map = all_flavors_dict['numu']['cc']
-        nue_cc_map = all_flavors_dict['nue']['cc']
-        nutau_cc_map = all_flavors_dict['nutau']['cc']
-        nuall_nc_map = all_flavors_dict['numu']['nc']
+                true_e = evts[prim][int_type]['true_energy']
+                reco_e = evts[prim][int_type]['reco_energy']
+                reco_cz = evts[prim][int_type]['reco_coszen']
+                aeff_weights = evts[prim][int_type]['weighted_aeff']
+                pid = evts[prim][int_type]['pid']
+                nue_flux = evts[prim][int_type]['neutrino_nue_flux']
+                numu_flux = evts[prim][int_type]['neutrino_numu_flux']
+                if use_cut_on_trueE:
+                    cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
+                    true_e = true_e[cut]
+                    reco_e = reco_e[cut]
+                    reco_cz = reco_cz[cut]
+                    aeff_weights = aeff_weights[cut]
+                    pid = pid[cut]
+                    nue_flux = nue_flux[cut]
+                    numu_flux = numu_flux[cut]
+                osc_flux = nue_flux*osc_probs[prim][int_type]['nue_maps']+ numu_flux*osc_probs[prim][int_type]['numu_maps']
+                final_weight = osc_flux * aeff_weights
+                # get all reco_e, reco_cz, pid, weight:
+                all_reco_e = np.append(all_reco_e, reco_e)
+                all_reco_cz = np.append(all_reco_cz, reco_cz)
+                all_pid = np.append(all_pid, pid)
+                all_weight = np.append(all_weight, final_weight)
 
-        #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
-        mc_event_maps = {'params':self.params}
-        mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
-        mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
-        mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
-        mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
-
-        final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
+        bins = (self.anlys_ebins,self.czbins)
         self.rel_error = {}
-        self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
-        self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
+        #self.mc_error = {}
+        for channel in ['cscd', 'trck']:
+            pid_cut = all_pid>=3.0 if channel=='trck' else all_pid<3.0
+            hist_w,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut])
+            hist_w2,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut]**2)
+            hist_sqrt_w2 = np.sqrt(hist_w2)
+            self.rel_error[channel]= hist_sqrt_w2/hist_w
+            #self.mc_error[channel]= hist_sqrt_w2
 
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=True, use_atmmu_f=False, turn_off_osc_NC=False):
@@ -282,29 +324,21 @@ class TemplateMaker:
                 oppo_nue_flux = evts[prim][int_type]['neutrino_oppo_nue_flux']
                 oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                 true_e = evts[prim][int_type]['true_energy']
-                # apply flux systematics (nue_numu_ratio, nu_nubar_ratio, numu_spectral_index)
+                # apply flux systematics (nue_numu_ratio, nu_nubar_ratio)
                 nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
+
         #  get pivot energy 
-        mean_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
+        #  note: this definition is only for testing, MC events need to be weighted:
         true_e_all = np.array([]) 
-        median_true_e = {'nue_cc':[], 'numu_cc':[], 'nutau_cc':[], 'nuall_nc':[]}
-        nuall_nc = np.array([])
         for prim in ['nue', 'numu', 'nutau']:
             nu_true_e = evts[prim]['cc']['true_energy']
             nubar_true_e = evts[prim+'_bar']['cc']['true_energy']
             nu_true_e_group_nu_nubar_cc = np.append(nu_true_e, nubar_true_e)
             nu_true_e_group_nu_nubar_nc = np.append(evts[prim]['nc']['true_energy'], evts[prim+'_bar']['nc']['true_energy'])
             true_e_all = np.append(true_e_all, np.append(nu_true_e_group_nu_nubar_cc, nu_true_e_group_nu_nubar_nc))
-            mean_true_e[prim+'_cc'] = np.mean(nu_true_e_group_nu_nubar_cc)
-            median_true_e[prim+'_cc'] = np.median(nu_true_e_group_nu_nubar_cc)
-            nuall_nc = np.append(nuall_nc, nu_true_e_group_nu_nubar_nc)
-        mean_true_e['nuall_nc'] = np.mean(nuall_nc)
-        median_true_e['nuall_nc'] = np.median(nuall_nc)
         mean_true_e_all = np.mean(true_e_all)
-        print "mean_true_e = ", mean_true_e
-        print "median_true_e = ", median_true_e
         print "mean_true_e_all = ", mean_true_e_all
 
         # Get osc probability maps
@@ -318,10 +352,10 @@ class TemplateMaker:
 
         self.flux_maps = {}
         self.event_rate_maps = {'params':params}
-        sum_event_rate_cscd = 0
-        sum_event_rate_trck = 0
         tmp_event_rate_reco_maps = {}
         tmp_event_rate_cscd = {}
+        tmp_wgt2_cscd = {}
+        tmp_wgt2_trck = {}
         true_tmp_event_rate_cscd = {}
         tmp_event_rate_trck = {}
         true_tmp_event_rate_trck = {}
@@ -330,6 +364,8 @@ class TemplateMaker:
             tmp_event_rate_reco_maps[prim] = {}
             self.event_rate_maps[prim] = {}
             tmp_event_rate_cscd[prim] = {}
+            tmp_wgt2_cscd[prim] = {}
+            tmp_wgt2_trck[prim] = {}
             tmp_event_rate_trck[prim] = {}
             true_tmp_event_rate_cscd[prim] = {}
             true_tmp_event_rate_trck[prim] = {}
@@ -351,15 +387,6 @@ class TemplateMaker:
                 # get flux from self.fluxes
                 nue_flux = self.fluxes[prim][int_type]['nue']
                 numu_flux = self.fluxes[prim][int_type]['numu']
-
-                # apply spectral index (first)
-                #nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
-                # second way, group nue+nuebar cc, numu+numubar cc, nutau+nutaubar cc, nuall nc
-                #if int_type=='nc':
-                #    egy_pivot = mean_true_e['nuall_nc']
-                #else:
-                #    flav = prim if 'bar' not in prim else prim.split('_bar')[0]
-                #    egy_pivot = mean_true_e[flav+'_cc']
 
                 # apply spectral index, use one pivot energy for all flavors
                 egy_pivot = mean_true_e_all
@@ -410,33 +437,35 @@ class TemplateMaker:
                     osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
 
                 # Get event_rate(true) maps
-                weights = osc_flux * aeff_weights
-                weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= osc_flux * aeff_weights, bins=bins)
+                final_weights = osc_flux * aeff_weights
+                weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= final_weights, bins=bins)
                 self.event_rate_maps[prim][int_type] = {}
                 self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 self.event_rate_maps[prim][int_type]['ebins']=self.ebins
                 self.event_rate_maps[prim][int_type]['czbins']=self.czbins
 
                 # Get event_rate_reco maps (step1, tmp maps in 12 flavs)
-                weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= osc_flux * aeff_weights, bins=anlys_bins)
+                weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= final_weights, bins=anlys_bins)
                 tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
                 # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
                 #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
                 pid_cscd =  pid < self.pid_bound
                 pid_trck =  pid >= self.pid_bound
-                weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
-                weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
+                weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
+                weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
+                wgt2_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (final_weights[pid_cscd])**2, bins=anlys_bins)
+                wgt2_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (final_weights[pid_trck])**2, bins=anlys_bins)
+                tmp_wgt2_cscd[prim][int_type] = wgt2_hist_cscd * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
+                tmp_wgt2_trck[prim][int_type] = wgt2_hist_trck * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
                 tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
-                true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= (osc_flux[pid_cscd]* aeff_weights[pid_cscd]), bins=anlys_bins)
-                true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= (osc_flux[pid_trck]* aeff_weights[pid_trck]), bins=anlys_bins)
+                # Get event_rate_pid maps in true e vs true cz (step1, tmp maps in 12 flavs)
+                true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
+                true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
                 true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
                 true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
-                sum_event_rate_cscd += np.sum(tmp_event_rate_cscd[prim][int_type])
-                sum_event_rate_trck += np.sum(tmp_event_rate_trck[prim][int_type])
-        total_nu = sum_event_rate_cscd + sum_event_rate_trck
 
         # Get event_rate_reco maps (step2, combine nu and nubar for cc, and all flavs for nc)
         self.event_rate_reco_maps = {'params': params}
@@ -458,6 +487,14 @@ class TemplateMaker:
                 event_rate_pid_map_trck += tmp_event_rate_trck[prim][int_type]
         self.event_rate_pid_maps['cscd'] = {'map': event_rate_pid_map_cscd, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
         self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+
+        # getting wgt2_hist
+        wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
+        wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
+        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+            for int_type in ['cc', 'nc']:
+                wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
+                wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
 
         # Get event_rate_pid maps in nue+nuebar cc; numu+numubar cc; nutau+nutaubar cc and nuall_nc ( this is only for testing)
         event_rate_pid_map_grouped = {'params': params, 'cscd': {}, 'trck': {}}
@@ -527,8 +564,12 @@ class TemplateMaker:
         else:
             profile.debug("STAGE 7: Reused from step before...")
 
-        self.final_event_rate['cscd']['sumw2_nu'] = self.final_event_rate['cscd']['map_nu']**2 * self.rel_error['cscd']
-        self.final_event_rate['trck']['sumw2_nu'] = self.final_event_rate['trck']['map_nu']**2 * self.rel_error['trck']
+        # Calculate the sum_w2, method 1: sum_w2 is calculated at baseline histogram
+        self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2    
+        self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
+        # Calculate the sum_w2, method 2: sum_w2 get updated every time get_template() is called
+        #self.final_event_rate['cscd']['sumw2_nu'] = wgt2_pid_map_cscd     
+        #self.final_event_rate['trck']['sumw2_nu'] = wgt2_pid_map_trck
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
 
