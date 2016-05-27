@@ -238,13 +238,20 @@ settings file. ''')
 
     nominal_template_settings = copy.deepcopy(template_settings)
     nominal_template_settings_default = copy.deepcopy(template_settings)
-    nominal_template_settings_default['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_hist_DomEff_fits_fitter_10_by_10.json"
-    nominal_template_settings_default['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_hist_HoleIce_fits_fitter_10_by_10.json"
-    nominal_template_settings_default['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_hist_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
+    sys_file_name_end = 'fitter_10_by_10'
+    sys_file_name_end = 'fitter_10_by_10_no_NC_osc'
     nominal_template_settings_event = copy.deepcopy(template_settings)
-    nominal_template_settings_event['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_event_DomEff_fits_fitter_10_by_10.json"
-    nominal_template_settings_event['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_event_HoleIce_fits_fitter_10_by_10.json"
+    nominal_template_settings_event['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_event_polyfit_bin_count_DomEff_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_event_polyfit_bin_count_HoleIce_fits_%s.json" % sys_file_name_end
+    nominal_template_settings_event['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_%s.json" % sys_file_name_end
     nominal_template_settings_event['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
+    # for default, right now can't turn off only NC
+    sys_file_name_end_with_osc = 'fitter_10_by_10'   # right now, fitter_10_by_10_no_NC_osc and fitter_10_by_10 are the same because histPISA can't use no osc for NC 
+    #sys_file_name_end_with_osc = 'fitter_10_by_10_no_NC_osc'
+    nominal_template_settings_default['params']['domeff_slope_file']['value'] = "domeff_holeice/dima_p1_hist_DomEff_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['holeice_slope_file']['value'] = "domeff_holeice/dima_p1_hist_HoleIce_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['holeice_fwd_slope_file']['value'] = "domeff_holeice/dima_p2_hist_HoleIce_fwd_fits_%s.json" % sys_file_name_end_with_osc
+    nominal_template_settings_default['params']['reco_prcs_coeff_file']['value'] = "reco_prcs/dima_p1_hist_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
 
     with Timer() as t:
         nominal_nutau_params_default = copy.deepcopy(select_hierarchy_and_nutau_norm( nominal_template_settings_default['params'],True,1.0))
