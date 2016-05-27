@@ -250,6 +250,9 @@ class TemplateMaker:
             for int_type in ['cc','nc']:
                 bins = (self.anlys_ebins,self.czbins)
                 hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy']+evts[flavor+'_bar'][int_type]['reco_energy'],evts[flavor][int_type]['reco_coszen']+evts[flavor +'_bar_'][int_type]['reco_coszen'],bins=bins)
+                #nu_hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy'], evts[flavor][int_type]['reco_coszen'],bins=bins)
+                #nubar_hist_2d,_,_ = np.histogram2d(evts[flavor+'_bar'][int_type]['reco_energy'], evts[flavor +'_bar'][int_type]['reco_coszen'],bins=bins)
+                #flavor_dict[int_type] = nu_hist_2d + nubar_hist_2d
                 flavor_dict[int_type] = hist_2d
             all_flavors_dict[flavor] = flavor_dict
         numu_cc_map = all_flavors_dict['numu']['cc']
@@ -416,8 +419,8 @@ class TemplateMaker:
         else:
             profile.debug("STAGE 7: Reused from step before...")
 
-        self.final_event_rate['cscd']['sumw2_nu'] = self.final_event_rate['cscd']['map_nu']**2 * self.rel_error['cscd']
-        self.final_event_rate['trck']['sumw2_nu'] = self.final_event_rate['trck']['map_nu']**2 * self.rel_error['trck']
+        self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2
+        self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
 
