@@ -52,7 +52,6 @@ class SplineService():
         
     def add_splines(self, evals):
         print "start getting all splines for evals..."
-        print "     datadict.keys() = ", self.datadict.keys()
         for entry in self.datadict:
             logging.info('Splining for parameter: %s '%(entry))
             self.SplineDict[entry] = self.splines[entry](evals) 
@@ -60,7 +59,7 @@ class SplineService():
         print "finished getting all splines for evals"
             
 
-    def modify_shape(self, ebins, czbins, factor, fname, event_by_event=False):
+    def modify_shape(self, ebins, czbins, factor, fname, event_by_event=False, pre_saved_splines=None):
         '''
         Calculate the contribution to the shape modification for a given uncertainty provided in file fname 
         with a factor (given in percent) 
@@ -73,7 +72,10 @@ class SplineService():
 
         logging.info("\n keys in spline dict: %s " %self.SplineDict.keys())
         logging.info("vs fname: %s \n" %fname)
-        self.add_splines(evals)
+        if pre_saved_splines == None:
+            self.add_splines(evals)
+        else:
+            self.SplineDict = pre_saved_splines
         splines = self.SplineDict[fname]
         
         #Calculate the return table
@@ -81,7 +83,6 @@ class SplineService():
         datatable = np.zeros_like(evals) + sign * factor * factor * splines * splines#np.multiply(factor, np.array(self.spline))#(evals)
         if not event_by_event:
             datatable = np.tile(datatable,(len(czvals),1))
-        print " shape datatable = ", np.shape(datatable)
         
         return datatable  #amap*datatable
 

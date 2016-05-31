@@ -383,6 +383,7 @@ class TemplateMaker:
                 reco_e = evts[prim][int_type]['reco_energy']
                 reco_cz = evts[prim][int_type]['reco_coszen']
                 aeff_weights = evts[prim][int_type]['weighted_aeff']
+                gensys_splines = evts[prim][int_type]['GENSYS_splines']
                 pid = evts[prim][int_type]['pid']
                 # get flux from self.fluxes
                 nue_flux = self.fluxes[prim][int_type]['nue']
@@ -403,12 +404,13 @@ class TemplateMaker:
                     reco_e = reco_e[cut]
                     reco_cz = reco_cz[cut]
                     aeff_weights = aeff_weights[cut]
+                    gensys_splines = gensys_splines[cut]
                     pid = pid[cut]
                     nue_flux = nue_flux[cut]
                     numu_flux = numu_flux[cut]
 
                 # apply GENIE systematics (on aeff weight)
-                aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, **params)
+                aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
 
                 # when generating fits for reco prcs, change reco_e and reco_cz:
                 if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
