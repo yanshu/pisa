@@ -101,7 +101,7 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
             _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
     return scaled_nue_flux, scaled_numu_flux
 
-def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, true_cz, params):
+def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
     #params['nu_nubar']
     params_nu_nubar = 1.0
     scale = 1.0
