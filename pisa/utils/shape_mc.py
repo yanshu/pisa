@@ -86,8 +86,12 @@ class SplineService():
         
         return datatable  #amap*datatable
 
-    def get_spline(self, type, flav):
+    def get_genie_spline(self, type, flav):
         assert(type in ['MaCCQE', 'MaRES', 'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY'])
         assert(flav in ['nue', 'numu', 'nutau', 'nue_bar', 'numu_bar', 'nutau_bar', 'nuall_nc', 'nuallbar_nc'])
         key = type+'_'+flav
+        return self.splines[key](self.evals)
+
+    def get_barr_spline(self, key):
+        assert(key in ['MaCCQE', 'MaRES', 'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY'])
         return self.splines[key](self.evals)
