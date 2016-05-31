@@ -9,7 +9,7 @@ from pisa.oscillations.Prob3OscillationServiceMC_merge import Prob3OscillationSe
 #from pisa.utils.shape import SplineService
 from pisa.utils.shape_mc import SplineService
 from pisa.utils.params import construct_genie_dict
-from pisa.utils.params import construct_shape_dict                                      |                                                                                       
+from pisa.utils.params import construct_shape_dict
 from pisa.utils.log import set_verbosity,logging
 from pisa.utils.params import get_values, select_hierarchy
 from pisa.utils.jsons import from_json
@@ -62,7 +62,7 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                         print "add GENIE splines for ", prim , " ", int_type
                         ### make dict of genie parameters ###
                         GENSYS = construct_genie_dict(phys_params)
-                        Flux_Mod_Dict = construct_shape_dict('flux', params)
+                        Flux_Mod_Dict = construct_shape_dict('flux', phys_params)
 
                         ### make spline service for genie parameters ###
                         with Timer(verbose=False) as t:
@@ -71,6 +71,7 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                         print("==> time initialize SplineService : %s sec"%t.secs)
 
                         genie_splines = {} 
+                        barr_splines = {}
                         with Timer(verbose=False) as t:
                             for entry in GENSYS.keys():
                                 if entry == "MaCCQE" and int_type=='nc': continue
@@ -79,8 +80,9 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                                     genie_spline = genie_spline_service.get_genie_spline(entry, flav)
                                 else:
                                     genie_spline = genie_spline_service.get_genie_spline(entry, prim)
-                                barr_spline = barr_spline_service.get_barr_spline(entry)
                                 genie_splines[entry] = genie_spline
+                            for entry in Flux_Mod_Dict.keys():
+                                barr_spline = barr_spline_service.get_barr_spline(entry)
                                 barr_splines[entry] = barr_spline
 
                             data_file[prim][int_type]['GENSYS_splines'] = genie_splines
