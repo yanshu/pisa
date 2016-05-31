@@ -7,6 +7,7 @@
 import numpy as np
 from pisa.utils.shape_mc import SplineService
 from pisa.utils.params import construct_genie_dict
+from pisa.utils.params import construct_shape_dict
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.utils.utils import Timer
 #import systematicFunctions as sf
@@ -137,7 +138,48 @@ def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, p
             numu_flux = scaled_numu_flux
     return nue_flux, numu_flux
 
-#def apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, aeff_weights, **params):
+def apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params):
+    '''
+    Taking Joakim's shape mod functionality and applying it generally
+    to the flux_maps, regardless of the flux_service used
+    '''
+
+    #make flux_mod_dict and add it to the list of params.
+    Flux_Mod_Dict = construct_shape_dict('flux', params)
+
+    if np.all([Flux_Mod_Dict[key] == 0 for key in Flux_Mod_Dict.keys()]):
+        return nue_flux, numu_flux 
+
+    ### make spline service for Barr parameters ###
+    flux_spline_service = SplineService(ebins=ebins, evals=true_e, dictFile = params['flux_uncertainty_inputs'])
+
+    ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
+    #Now apply all the shape modification for each of the flux uncertainties
+    #Modellling of the uncertainties follows the discussion
+    #in Barr et al. (2006)
+    mod_table = np.zeros(len(true_e))
+    #print "for testing purposes, here is flux_hadronic_H: ", flux_hadronic_H
+    # here I want a dictionary named Flux_Mod_Dict containing the mod factors as keys and UNCF_X files as entries, then I can modify the flux by:
+    logging.info("now reaching the flux_mod_dict stage: \n %s"%Flux_Mod_Dict)
+    with Timer(verbose=False) as t:
+        for entry in Flux_Mod_Dict:
+            if entry == 'fixed': continue
+            logging.info("testing for: %s" %entry)
+            if Flux_Mod_Dict[entry] != 0.0:
+                mod_table += flux_spline_service.modify_shape(true_e, true_cz, Flux_Mod_Dict[entry], entry, event_by_event=True, pre_saved_splines=barr_splines)
+    print("==> time barr_spline_service.modify_shape : %s sec"%t.secs)
+
+    if mod_table[mod_table<0].any():
+        #remember: mod_table contains the 1 sigma modification of the flux squared and multiplied by the modification factor -
+        # - this can of course be negative, but is not unphysical. It just represents the minus part of a +/- uncertainty. As such we should still assign it as an uncertainty, and just need to take the sqrt of the absolute value
+        # - and then remember that this is to be applied in the negative direction, if it was negative.
+        mod_table = -1 * np.sqrt(-1 * mod_table)
+    else:
+        mod_table = np.sqrt(mod_table) # just take the sqrt of the + side of the +/- uncertainty.
+
+    modified_nue_flux = nue_flux * (1 + mod_table) #this is where the actual modification happens
+    modified_numu_flux = numu_flux * (1 + mod_table) #this is where the actual modification happens
+    return modified_nue_flux, modified_numu_flux
 
 
 def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys_splines, **params):

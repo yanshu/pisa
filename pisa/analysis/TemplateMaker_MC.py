@@ -17,7 +17,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import year
 import h5py
 
-from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index, apply_GENIE_mod#, apply_Barr_mod
+from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index, apply_GENIE_mod, apply_Barr_mod
 
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
@@ -384,6 +384,7 @@ class TemplateMaker:
                 reco_cz = evts[prim][int_type]['reco_coszen']
                 aeff_weights = evts[prim][int_type]['weighted_aeff']
                 gensys_splines = evts[prim][int_type]['GENSYS_splines']
+                barr_splines = evts[prim][int_type]['BARR_splines']
                 pid = evts[prim][int_type]['pid']
                 # get flux from self.fluxes
                 nue_flux = self.fluxes[prim][int_type]['nue']
@@ -394,7 +395,7 @@ class TemplateMaker:
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # apply Barr systematics
-                #aeff_weights = apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, aeff_weights, **params)
+                nue_flux, numu_flux = apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:
