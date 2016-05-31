@@ -260,7 +260,9 @@ settings file. ''')
                  'hole_ice': 'hole_ice',
                  'hole_ice_fwd': 'hi_fwd',
                  'GENSYS_MaCCQE': 'axm_qe',
-                 'GENSYS_MaRES': 'axm_res'
+                 'GENSYS_MaRES': 'axm_res',
+                 'Barr_nu_nubar_ratio': 'nubar_ratio',
+                 'Barr_uphor_ratio': 'uphor_ratio'
                  }
 
     # define delta values for systematics:
@@ -306,6 +308,8 @@ settings file. ''')
                  'flux_prim_exp_norm_b': 1,
                  'flux_prim_exp_factor_c': 1,
                  'flux_spectral_index_d': 1,
+                 'Barr_nu_nubar_ratio': 1,
+                 'Barr_uphor_ratio': 1
                  }
     list_sys = eval(args.plot_diff_with_nominal)
     print "list_sys = ", list_sys
