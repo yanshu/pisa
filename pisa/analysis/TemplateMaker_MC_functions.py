@@ -10,7 +10,7 @@ from pisa.utils.params import construct_genie_dict
 from pisa.utils.params import construct_shape_dict
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.utils.utils import Timer
-import systematicFunctions as sf
+import pisa.utils.systematicFunctions as sf
 
 def apply_ratio_scale(flux1, flux2, ratio_scale, sum_const):
     if sum_const:
