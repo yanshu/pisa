@@ -17,7 +17,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from scipy.constants import year
 import h5py
 
-from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index, apply_GENIE_mod, apply_Barr_mod
+from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index,
+from pisa.analysis.TemplateMaker_MC_functions import apply_GENIE_mod, apply_Barr_mod, apply_Barr_flux_ratio
 
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
@@ -395,7 +396,8 @@ class TemplateMaker:
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # apply Barr systematics
-                nue_flux, numu_flux = apply_Barr_mod(prim, int_type, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, true_cz, **params):
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:

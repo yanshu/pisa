@@ -10,7 +10,7 @@ from pisa.utils.params import construct_genie_dict
 from pisa.utils.params import construct_shape_dict
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.utils.utils import Timer
-#import systematicFunctions as sf
+import systematicFunctions as sf
 
 def apply_ratio_scale(flux1, flux2, ratio_scale, sum_const):
     if sum_const:
@@ -82,11 +82,13 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins, turn_off_o
     return osc_probs
 
 def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params, flux_sys_renorm):
+
+    if params['nue_numu_ratio']==1 and params['nu_nubar_ratio']==1:
+        return nue_flux, numu_flux
+
     # nue_numu_ratio
     if params['nue_numu_ratio'] != 1:
         scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=flux_sys_renorm)
-        nue_flux = scaled_nue_flux
-        numu_flux = scaled_numu_flux
 
     # nu_nubar_ratio
     if params['nu_nubar_ratio'] != 1:
@@ -97,13 +99,19 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
             #nue(mu)_flux is actually nue(mu)_bar because prim has '_bar' in it
             _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
             _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
-        nue_flux = scaled_nue_flux
-        numu_flux = scaled_numu_flux
+    return scaled_nue_flux, scaled_numu_flux
 
-    #if params['Barr_nu_nubar_ratio']!=0:
-    #    scale = sf.modRatioNuEBar(nue_cc, params['Barr_nu_nubar_ratio'], params['Barr_nu_nubar_ratio'])*\
-    #            sf.modRatioUpHor_NuE(nue_cc, params['Barr_uphor_ratio'])
-    return nue_flux, numu_flux
+def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, true_cz, params):
+    #params['nu_nubar']
+    params_nu_nubar = 1.0
+    scale = 1.0
+    if params['Barr_nu_nubar_ratio']!= 0:
+        scale *= sf.modRatioNuBar(prim, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
+    if params['Barr_uphor_ratio']!= 0:
+        scale *= sf.modRatioUpHor(prim, true_e, true_cz, params['Barr_uphor_ratio'])
+    modified_nue_flux = scale * nue_flux
+    modified_numu_flux = scale * numu_flux
+    return modified_nue_flux, modified_numu_flux
 
 def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm):
     if params['atm_delta_index'] != 0:
@@ -138,7 +146,7 @@ def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, p
             numu_flux = scaled_numu_flux
     return nue_flux, numu_flux
 
-def apply_Barr_mod(prim, int_type, ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params):
+def apply_Barr_mod(prim, ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params):
     '''
     Taking Joakim's shape mod functionality and applying it generally
     to the flux_maps, regardless of the flux_service used
@@ -185,8 +193,8 @@ def apply_Barr_mod(prim, int_type, ebins, nue_flux, numu_flux, true_e, true_cz, 
 def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys_splines, **params):
 
     # code modified from Ste's apply_shape_mod() in Aeff.py
-
     print "apply_GENIE_mod for ", prim , " ", int_type
+
     ### make dict of genie parameters ###
     GENSYS = construct_genie_dict(params)
 
