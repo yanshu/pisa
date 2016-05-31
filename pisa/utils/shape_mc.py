@@ -51,13 +51,9 @@ class SplineService():
             self.splines[entry] = spline 
         
     def add_splines(self, evals):
-        print "start getting all splines for evals..."
         for entry in self.datadict:
             logging.info('Splining for parameter: %s '%(entry))
             self.SplineDict[entry] = self.splines[entry](evals) 
-            print "     len self.SplineDict[", entry, "] = ", len(self.SplineDict[entry])
-        print "finished getting all splines for evals"
-            
 
     def modify_shape(self, ebins, czbins, factor, fname, event_by_event=False, pre_saved_splines=None):
         '''
