@@ -93,5 +93,9 @@ class SplineService():
         return self.splines[key](self.evals)
 
     def get_barr_spline(self, key):
-        assert(key in ['MaCCQE', 'MaRES', 'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY'])
+        assert(key in [ 'flux_hadronic_A', 'flux_hadronic_B', 'flux_hadronic_C', 'flux_hadronic_D',
+                 'flux_hadronic_E', 'flux_hadronic_F', 'flux_hadronic_G', 'flux_hadronic_H',
+                 'flux_hadronic_I', 'flux_hadronic_W', 'flux_hadronic_X', 'flux_hadronic_Y',
+                 'flux_hadronic_Z', 'flux_pion_chargeratio_Chg', 'flux_prim_norm_a',
+                 'flux_prim_exp_norm_b', 'flux_prim_exp_factor_c', 'flux_spectral_index_d'])
         return self.splines[key](self.evals)
