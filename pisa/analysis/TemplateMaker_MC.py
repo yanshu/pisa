@@ -395,7 +395,7 @@ class TemplateMaker:
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # apply Barr systematics
-                nue_flux, numu_flux = apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                nue_flux, numu_flux = apply_Barr_mod(prim, int_type, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
 
                 # use cut on trueE ( b/c PISA has a cut on true E)
                 if use_cut_on_trueE:

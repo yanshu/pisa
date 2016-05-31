@@ -138,7 +138,7 @@ def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, p
             numu_flux = scaled_numu_flux
     return nue_flux, numu_flux
 
-def apply_Barr_mod(prim, int_type, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params):
+def apply_Barr_mod(prim, int_type, ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params):
     '''
     Taking Joakim's shape mod functionality and applying it generally
     to the flux_maps, regardless of the flux_service used
