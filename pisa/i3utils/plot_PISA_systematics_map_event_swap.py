@@ -429,24 +429,23 @@ settings file. ''')
 
             # get data from JP's csv file
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
-                if sys in ['dom_eff', 'hole_ice', 'hole_ice_fwd']:
-                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                    # correct one:
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing_detailedSystematics/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                elif sys in ['atmmu_f']:
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newDataForIC/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                else:
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                if sys == 'atm_delta_index':
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                if os.path.isfile(file_name):
+                if sys in sys_jp_name.keys():
+                    if sys in ['dom_eff', 'hole_ice', 'hole_ice_fwd']:
+                        #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                        #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                        # correct one:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing_detailedSystematics/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    elif sys in ['atmmu_f']:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newDataForIC/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    else:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    if sys == 'atm_delta_index':
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
                     oscFit_data = pd.read_csv(file_name, sep=',',header=None)
                     oscFit_data_x = oscFit_data[0].values
                     oscFit_data_y = oscFit_data[1].values
                     oscFit_data_z = oscFit_data[2].values
                     oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
-                    print "sum of oscFit_hist = ", np.sum(oscFit_hist)
                     oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
                     perc_diff_hist = (oscFit_hist - diff_map['map'])/diff_map['map']
                     perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
