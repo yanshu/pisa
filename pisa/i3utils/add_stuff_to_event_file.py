@@ -9,6 +9,7 @@ from pisa.oscillations.Prob3OscillationServiceMC_merge import Prob3OscillationSe
 #from pisa.utils.shape import SplineService
 from pisa.utils.shape_mc import SplineService
 from pisa.utils.params import construct_genie_dict
+from pisa.utils.params import construct_shape_dict                                      |                                                                                       
 from pisa.utils.log import set_verbosity,logging
 from pisa.utils.params import get_values, select_hierarchy
 from pisa.utils.jsons import from_json
