@@ -102,15 +102,18 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
     return scaled_nue_flux, scaled_numu_flux
 
 def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
-    #params['nu_nubar']
     params_nu_nubar = 1.0
-    scale = 1.0
+    is_bar = '_bar' if 'bar' in prim else ''
+    scale_nue = 1.0
+    scale_numu = 1.0
     if params['Barr_nu_nubar_ratio']!= 0:
-        scale *= sf.modRatioNuBar(prim, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
+        scale_nue *= sf.modRatioNuBar('nue'+isbar, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
+        scale_numu *= sf.modRatioNuBar('numu'+isbar, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
+    scale_uphor_ratio = 1.0
     if params['Barr_uphor_ratio']!= 0:
-        scale *= sf.modRatioUpHor(prim, true_e, true_cz, params['Barr_uphor_ratio'])
-    modified_nue_flux = scale * nue_flux
-    modified_numu_flux = scale * numu_flux
+        scale_uphor_ratio = sf.modRatioUpHor(prim, true_e, true_cz, params['Barr_uphor_ratio'])
+    modified_nue_flux = nue_flux * scale_nue * scale_uphor_ratio
+    modified_numu_flux = numu_flux * scale_numu * scale_uphor_ratio 
     return modified_nue_flux, modified_numu_flux
 
 def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm):
