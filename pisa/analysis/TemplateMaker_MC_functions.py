@@ -103,7 +103,7 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
 
 def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
     params_nu_nubar = 1.0
-    is_bar = '_bar' if 'bar' in prim else ''
+    isbar = '_bar' if 'bar' in prim else ''
     scale_nue = 1.0
     scale_numu = 1.0
     if params['Barr_nu_nubar_ratio']!= 0:
