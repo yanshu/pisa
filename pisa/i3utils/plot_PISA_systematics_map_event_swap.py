@@ -260,7 +260,9 @@ settings file. ''')
                  'hole_ice': 'hole_ice',
                  'hole_ice_fwd': 'hi_fwd',
                  'GENSYS_MaCCQE': 'axm_qe',
-                 'GENSYS_MaRES': 'axm_res'
+                 'GENSYS_MaRES': 'axm_res',
+                 'Barr_nu_nubar_ratio': 'nubar_ratio',
+                 'Barr_uphor_ratio': 'uphor_ratio'
                  }
 
     # define delta values for systematics:
@@ -306,6 +308,8 @@ settings file. ''')
                  'flux_prim_exp_norm_b': 1,
                  'flux_prim_exp_factor_c': 1,
                  'flux_spectral_index_d': 1,
+                 'Barr_nu_nubar_ratio': 1,
+                 'Barr_uphor_ratio': 1
                  }
     list_sys = eval(args.plot_diff_with_nominal)
     print "list_sys = ", list_sys
@@ -429,42 +433,45 @@ settings file. ''')
 
             # get data from JP's csv file
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
-                if sys in ['dom_eff', 'hole_ice', 'hole_ice_fwd']:
-                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                    #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing_detailedSystematics/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                elif sys in ['atmmu_f']:
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newDataForIC/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                if sys in sys_jp_name.keys():
+                    if sys in ['dom_eff', 'hole_ice', 'hole_ice_fwd']:
+                        #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                        #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                        # correct one:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newmc_forceBaselineCrossing_detailedSystematics/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    elif sys in ['atmmu_f']:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_newDataForIC/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    else:
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    if sys == 'atm_delta_index':
+                        file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
+                    oscFit_data = pd.read_csv(file_name, sep=',',header=None)
+                    oscFit_data_x = oscFit_data[0].values
+                    oscFit_data_y = oscFit_data[1].values
+                    oscFit_data_z = oscFit_data[2].values
+                    oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
+                    oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                    perc_diff_hist = (oscFit_hist - diff_map['map'])/diff_map['map']
+                    perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
+                    ratio_hist = oscFit_hist/diff_map['map']
+                    ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
+                    delta_hist = oscFit_hist-diff_map['map']
+                    delta_diff_map = {'map' : delta_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+
+                    relative_diff_to_baseline = ratio_map(delta_diff_map, nominal_nutau_event[channel])
+                    plot_one_map(relative_diff_to_baseline, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_one_sigma_OscFit_PISA_event_cmpr__%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, = \, %s \, plot \, (OscFit\, - \, PISA) \, / \,baseline \, %s }$'%(livetime, sys.replace('_', '\, '), sys_val, channel), save=args.save,annotate_prcs=4) 
+
+                    plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
+
+                    abs_max = np.max(abs(perc_diff_map['map']))
+                    plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=4,cmap='RdBu_r')
+                    #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+                    plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4)
+                    plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4, cmap='RdBu_r')
                 else:
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_diff_csv/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                if sys == 'atm_delta_index':
-                    file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_SI_pivotE27.2602103972/diff_%s_baseline_%s.csv'% (sys_jp_name[sys], channel_jp)
-                oscFit_data = pd.read_csv(file_name, sep=',',header=None)
-                oscFit_data_x = oscFit_data[0].values
-                oscFit_data_y = oscFit_data[1].values
-                oscFit_data_z = oscFit_data[2].values
-                oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
-                print "sum of oscFit_hist = ", np.sum(oscFit_hist)
-                oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
-                perc_diff_hist = (oscFit_hist - diff_map['map'])/diff_map['map']
-                perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
-
-                ratio_hist = oscFit_hist/diff_map['map']
-                ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
-
-                delta_hist = oscFit_hist-diff_map['map']
-                delta_diff_map = {'map' : delta_hist, 'ebins': anlys_ebins, 'czbins': czbins}
-
-                relative_diff_to_baseline = ratio_map(delta_diff_map, nominal_nutau_event[channel])
-                plot_one_map(relative_diff_to_baseline, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_one_sigma_OscFit_PISA_event_cmpr__%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, = \, %s \, plot \, (OscFit\, - \, PISA) \, / \,baseline \, %s }$'%(livetime, sys.replace('_', '\, '), sys_val, channel), save=args.save,annotate_prcs=4) 
-
-                plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
-
-                abs_max = np.max(abs(perc_diff_map['map']))
-                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=4,cmap='RdBu_r')
-                #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4)
-                plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4, cmap='RdBu_r')
+                    print "csv file %s for %s from OscFit does not exist, can not compare PISA with OscFit." % (filename, sys)
 
 
 
@@ -496,25 +503,28 @@ settings file. ''')
             # get data from JP's csv file
             flav = 'cascade' if channel=='cscd' else 'track'
             file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_reco/sample_baseline_%s_histo.csv'%flav
-            oscFit_data = pd.read_csv(file_name, sep=',',header=None)
-            oscFit_data_x = oscFit_data[0].values
-            oscFit_data_y = oscFit_data[1].values
-            oscFit_data_z = oscFit_data[2].values
-            oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
-            oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+            if os.path.isfile(file_name):
+                oscFit_data = pd.read_csv(file_name, sep=',',header=None)
+                oscFit_data_x = oscFit_data[0].values
+                oscFit_data_y = oscFit_data[1].values
+                oscFit_data_z = oscFit_data[2].values
+                oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
+                oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            perc_diff_hist = (oscFit_hist - nominal_nutau_event[channel]['map'])/nominal_nutau_event[channel]['map']
-            perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                perc_diff_hist = (oscFit_hist - nominal_nutau_event[channel]['map'])/nominal_nutau_event[channel]['map']
+                perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            ratio_hist = oscFit_hist/nominal_nutau_event[channel]['map']
-            ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                ratio_hist = oscFit_hist/nominal_nutau_event[channel]['map']
+                ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-            plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, (true \, Nevts: \, %.1f) }$'%(livetime, channel, np.sum(oscFit_map['map'])), save=args.save)
+                plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, (true \, Nevts: \, %.1f) }$'%(livetime, channel, np.sum(oscFit_map['map'])), save=args.save)
 
-            abs_max = np.max(abs(perc_diff_map['map']))
-            plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
-            #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-            plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_Ratio'% (channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s }$'%(livetime, channel), save=args.save,annotate_prcs=3)
+                abs_max = np.max(abs(perc_diff_map['map']))
+                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
+                #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_PercentDifference'% (channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_reco_info_event_final_%s_Ratio'% (channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s }$'%(livetime, channel), save=args.save,annotate_prcs=3)
+            else:
+                print "csv file %s for %s from OscFit does not exist, can not compare PISA with OscFit." % (filename, sys)
 
         # plot nominal map from event-based and hist-based PISA
         plot_one_map(nominal_nutau[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_default_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, default \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(nominal_nutau[channel]['map'])), save=args.save, max=cscd_max if channel=='cscd' else trck_max)
@@ -558,30 +568,33 @@ settings file. ''')
                     flav = 'nc'
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
                 file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_reco/sample_baseline_%s_%s_histo.csv'%(channel_jp, flav)
-                oscFit_data = pd.read_csv(file_name, sep=',',header=None)
-                oscFit_data_x = oscFit_data[0].values
-                oscFit_data_y = oscFit_data[1].values
-                oscFit_data_z = oscFit_data[2].values
-                oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
-                oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                if os.path.isfile(file_name):
+                    oscFit_data = pd.read_csv(file_name, sep=',',header=None)
+                    oscFit_data_x = oscFit_data[0].values
+                    oscFit_data_y = oscFit_data[1].values
+                    oscFit_data_z = oscFit_data[2].values
+                    oscFit_hist, x_edges, y_edges = np.histogram2d(oscFit_data_x, oscFit_data_y, weights = oscFit_data_z)
+                    oscFit_map = {'map' : oscFit_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-                perc_diff_hist = (oscFit_hist - nominal_nutau_event_grouped[channel][group]['map'])/nominal_nutau_event_grouped[channel][group]['map']
-                #perc_diff_hist = np.nan_to_num(perc_diff_hist)
-                perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                    perc_diff_hist = (oscFit_hist - nominal_nutau_event_grouped[channel][group]['map'])/nominal_nutau_event_grouped[channel][group]['map']
+                    #perc_diff_hist = np.nan_to_num(perc_diff_hist)
+                    perc_diff_map = {'map' : perc_diff_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-                ratio_hist = oscFit_hist/nominal_nutau_event_grouped[channel][group]['map']
-                ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
+                    ratio_hist = oscFit_hist/nominal_nutau_event_grouped[channel][group]['map']
+                    ratio_diff_map = {'map' : ratio_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
-                plot_one_map(nominal_nutau_event_grouped[channel][group], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_NutauCCNorm_1_%s'% (group, channel), fig_title=r'${\rm %s \, yr \, event \, PISA \, map \, %s \, %s \, (Nevts: \, %.1f) }$'%(livetime, group.replace('_', '\, '), channel, np.sum(nominal_nutau_event_grouped[channel][group]['map'])), save=args.save)
+                    plot_one_map(nominal_nutau_event_grouped[channel][group], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_NutauCCNorm_1_%s'% (group, channel), fig_title=r'${\rm %s \, yr \, event \, PISA \, map \, %s \, %s \, (Nevts: \, %.1f) }$'%(livetime, group.replace('_', '\, '), channel, np.sum(nominal_nutau_event_grouped[channel][group]['map'])), save=args.save)
 
-                plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_grouped_%s_NutauCCNorm_1_%s'% (group, channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, %s \, (Nevts: \, %.1f) }$'%(livetime, group.replace('_', '\, '), channel, np.sum(oscFit_map['map'])), save=args.save)
+                    plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_OscFit_event_grouped_%s_NutauCCNorm_1_%s'% (group, channel), fig_title=r'${\rm %s \, yr \, event \, OscFit \, map \, %s \, %s \, (Nevts: \, %.1f) }$'%(livetime, group.replace('_', '\, '), channel, np.sum(oscFit_map['map'])), save=args.save)
 
-                abs_max = np.max(abs(perc_diff_map['map']))
-                #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_PercentDifference'% (group, channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s \, %s \, }$'%(livetime, group.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
-                plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_PercentDifference'% (group, channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s \, %s \, }$'%(livetime, group.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-                plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_Ratio'% (group, channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s \, %s }$'%(livetime, group.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
-                print "no of evts in ", group, " ", channel, " (reco E and CZ) =  ", np.sum(nominal_nutau_event_grouped[channel][group]['map'])
-        print "\n"
+                    abs_max = np.max(abs(perc_diff_map['map']))
+                    #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_PercentDifference'% (group, channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s \, %s \, }$'%(livetime, group.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=3,cmap='RdBu_r')
+                    plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_PercentDifference'% (group, channel), fig_title=r'${\rm %s \, yr \, (OscFit\, - \, PISA) \, / \,PISA \, %s \, %s \, }$'%(livetime, group.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+                    plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_event_grouped_%s_%s_Ratio'% (group, channel), fig_title=r'${\rm %s \, yr \, OscFit \, / \, PISA \, %s \, %s }$'%(livetime, group.replace('_', '\, '), channel), save=args.save,annotate_prcs=3)
+                    print "no of evts in ", group, " ", channel, " (reco E and CZ) =  ", np.sum(nominal_nutau_event_grouped[channel][group]['map'])
+                print "\n"
+            else:
+                print "csv file %s for %s from OscFit does not exist, can not compare PISA with OscFit." % (filename, sys)
 
 
         for channel in ['cscd','trck']:

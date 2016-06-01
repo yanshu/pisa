@@ -51,13 +51,9 @@ class SplineService():
             self.splines[entry] = spline 
         
     def add_splines(self, evals):
-        print "start getting all splines for evals..."
         for entry in self.datadict:
             logging.info('Splining for parameter: %s '%(entry))
             self.SplineDict[entry] = self.splines[entry](evals) 
-            print "     len self.SplineDict[", entry, "] = ", len(self.SplineDict[entry])
-        print "finished getting all splines for evals"
-            
 
     def modify_shape(self, ebins, czbins, factor, fname, event_by_event=False, pre_saved_splines=None):
         '''
@@ -86,8 +82,16 @@ class SplineService():
         
         return datatable  #amap*datatable
 
-    def get_spline(self, type, flav):
+    def get_genie_spline(self, type, flav):
         assert(type in ['MaCCQE', 'MaRES', 'AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY'])
         assert(flav in ['nue', 'numu', 'nutau', 'nue_bar', 'numu_bar', 'nutau_bar', 'nuall_nc', 'nuallbar_nc'])
         key = type+'_'+flav
+        return self.splines[key](self.evals)
+
+    def get_barr_spline(self, key):
+        assert(key in [ 'flux_hadronic_A', 'flux_hadronic_B', 'flux_hadronic_C', 'flux_hadronic_D',
+                 'flux_hadronic_E', 'flux_hadronic_F', 'flux_hadronic_G', 'flux_hadronic_H',
+                 'flux_hadronic_I', 'flux_hadronic_W', 'flux_hadronic_X', 'flux_hadronic_Y',
+                 'flux_hadronic_Z', 'flux_pion_chargeratio_Chg', 'flux_prim_norm_a',
+                 'flux_prim_exp_norm_b', 'flux_prim_exp_factor_c', 'flux_spectral_index_d'])
         return self.splines[key](self.evals)

@@ -663,6 +663,28 @@
       "fixed": true,
       "value": 2.5
     },
+    "Barr_uphor_ratio":{
+        "value": 0.0,
+        "range": [-3.0,3.0],
+        "fixed": false,
+        "scale": 1.0,
+        "prior": {
+            "fiducial": 0.0,
+            "kind": "gaussian",
+            "sigma": 1.0
+            }
+    },
+    "Barr_nu_nubar_ratio":{
+        "value": 0.0,
+        "range": [-3.0,3.0],
+        "fixed": false,
+        "scale": 1.0,
+        "prior": {
+            "fiducial": 0.0,
+            "kind": "gaussian",
+            "sigma": 1.0
+            }
+    },
     "nu_nubar_ratio": {
       "fixed": false,
       "prior": {
