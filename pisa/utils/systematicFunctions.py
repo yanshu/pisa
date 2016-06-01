@@ -200,7 +200,7 @@ def modRatioNuBar(prim, true_e, true_cz, nu_nubar, nubar_sys):
         modfactor = nubar_sys * ModNuMuFlux(true_e, true_cz,
                             1.0, 1.0,1.0,1.0)
     else:
-        raise ValueError('Function modRatioUpHor not valid for %s '% prim)
+        raise ValueError('Function modRatioNuBar not valid for %s '% prim)
 
     #weightmod = 1. + modfactor*nu_nubar
     #antineutrinos = particle_list['ptype']<0
