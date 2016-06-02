@@ -1,4 +1,30 @@
 {
+  "DeepCore":{
+    "IC86":{
+      "msu_4digit":{
+        "mn8d-mn7d": {
+          "field_map":{
+              "pid": "IC86_Dunkman_L6/delta_LLH"
+          },
+          "criteria": {
+              "cscd" : "(pid >= -3) & (pid <= 3)",
+              "trck" : "pid >3"
+          }
+        }
+      },
+      "msu_5digit":{
+        "mn8d-mn7d": {
+          "field_map":{
+              "pid": "IC86_Dunkman_L6/delta_LLH"
+          },
+          "criteria": {
+              "cscd" : "(pid >= -2) & (pid <= 3)",
+              "trck" : "pid >3"
+          }
+        }
+      }
+    }
+  },
   "PINGU": {
     "V36": {
       "V5": {
