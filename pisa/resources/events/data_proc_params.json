@@ -116,7 +116,7 @@
          "event": "I3EventHeader/Event",
          "genie_weight": "I3MCWeightDict/GENIEWeight",
          "genie_AhtBY": "GENIE_SystematicsReweight/AhtBY",
-         "genie_BhtBY": "GENIE_SystematicsReweight/AhtBY",
+         "genie_BhtBY": "GENIE_SystematicsReweight/BhtBY",
          "genie_CV1uBY": "GENIE_SystematicsReweight/CV1uBY",
          "genie_CV2uBY": "GENIE_SystematicsReweight/CV2uBY",
          "genie_MaCCQE": "GENIE_SystematicsReweight/MaCCQE",
