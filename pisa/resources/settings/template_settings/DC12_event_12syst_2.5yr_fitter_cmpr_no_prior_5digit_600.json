@@ -958,6 +958,28 @@
 	      "kind": "gaussian",
 	      "sigma": 1.0
 	  }
+      },
+      "axm_qe":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": false,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+      "axm_res":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": false,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
       }
   }
 }
