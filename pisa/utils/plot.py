@@ -13,6 +13,12 @@ import os
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+def fmt(x, pos):
+    a, b = '{:.2e}'.format(x).split('e')
+    b = int(b)
+    return r'${} \times 10^{{{}}}$'.format(a, b)
 
 def show_map(pmap, title=None, cbar = True,
              vmin=None, vmax=None,
@@ -166,7 +172,8 @@ def show_map(pmap, title=None, cbar = True,
 
     #Show the colorbar
     if cbar:
-        col_bar = plt.colorbar(format=r'$10^{%.1f}$') if log else plt.colorbar()
+        #col_bar = plt.colorbar(format=r'$10^{%.1f}$') if log else plt.colorbar()
+        col_bar = plt.colorbar(format=ticker.FuncFormatter(fmt)) if log else plt.colorbar()
         if zlabel:
             col_bar.set_label(zlabel,fontsize=fontsize)
         col_bar.ax.tick_params(labelsize=fontsize)
@@ -326,7 +333,8 @@ def show_map_swap(pmap, title=None, cbar = True,
 
     #Show the colorbar
     if cbar:
-        col_bar = plt.colorbar(format=r'$10^{%.1f}$') if log else plt.colorbar()
+        #col_bar = plt.colorbar(format=r'$10^{%.1f}$') if log else plt.colorbar()
+        col_bar = plt.colorbar(format=ticker.FuncFormatter(fmt)) if log else plt.colorbar()
         if zlabel:
             col_bar.set_label(zlabel,fontsize=fontsize)
         col_bar.ax.tick_params(labelsize=fontsize)
