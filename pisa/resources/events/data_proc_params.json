@@ -114,6 +114,7 @@
        "field_map":{
          "run": "I3EventHeader/Run",
          "event": "I3EventHeader/Event",
+         "genie_weight": "I3MCWeightDict/GENIEWeight",
          "genie_AhtBY": "GENIE_SystematicsReweight/AhtBY",
          "genie_BhtBY": "GENIE_SystematicsReweight/AhtBY",
          "genie_CV1uBY": "GENIE_SystematicsReweight/CV1uBY",
