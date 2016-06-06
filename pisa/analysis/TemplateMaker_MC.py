@@ -18,7 +18,7 @@ from scipy.constants import year
 import h5py
 
 from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index
-from pisa.analysis.TemplateMaker_MC_functions import apply_GENIE_mod, apply_Barr_mod, apply_Barr_flux_ratio
+from pisa.analysis.TemplateMaker_MC_functions import apply_GENIE_mod, apply_Barr_mod, apply_Barr_flux_ratio, apply_GENIE_mod_oscFit
 
 from pisa.utils.log import physics, profile, set_verbosity, logging
 from pisa.resources.resources import find_resource
