@@ -382,6 +382,12 @@ class TemplateMaker:
                 true_e = evts[prim][int_type]['true_energy']
                 true_cz = evts[prim][int_type]['true_coszen']
                 reco_e = evts[prim][int_type]['reco_energy']
+                linear_coeff_MaCCQE = evts[prim][int_type]['linear_fit_MaCCQE']
+                linear_coeff_MaCCRES = evts[prim][int_type]['linear_fit_MaCCRES']
+                linear_coeff_MaNCRES = evts[prim][int_type]['linear_fit_MaNCRES']
+                quad_coeff_MaCCQE = evts[prim][int_type]['quad_fit_MaCCQE']
+                quad_coeff_MaCCRES = evts[prim][int_type]['quad_fit_MaCCRES']
+                quad_coeff_MaNCRES = evts[prim][int_type]['quad_fit_MaNCRES']
                 reco_cz = evts[prim][int_type]['reco_coszen']
                 aeff_weights = evts[prim][int_type]['weighted_aeff']
                 gensys_splines = evts[prim][int_type]['GENSYS_splines']
@@ -407,6 +413,12 @@ class TemplateMaker:
                     true_cz = true_cz[cut]
                     reco_e = reco_e[cut]
                     reco_cz = reco_cz[cut]
+                    linear_coeff_MaCCQE = linear_coeff_MaCCQE[cut]
+                    linear_coeff_MaCCRES = linear_coeff_MaCCRES[cut]
+                    linear_coeff_MaNCRES = linear_coeff_MaNCRES[cut]
+                    quad_coeff_MaCCQE = quad_coeff_MaCCQE[cut]
+                    quad_coeff_MaCCRES = quad_coeff_MaCCRES[cut]
+                    quad_coeff_MaNCRES = quad_coeff_MaNCRES[cut]
                     aeff_weights = aeff_weights[cut]
                     gensys_splines = gensys_splines[cut]
                     pid = pid[cut]
@@ -415,6 +427,9 @@ class TemplateMaker:
 
                 # apply GENIE systematics (on aeff weight)
                 aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
+                # apply axm_qe and axm_res (oscFit-way)
+                aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe']):
+                aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res']):
 
                 # when generating fits for reco prcs, change reco_e and reco_cz:
                 if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
