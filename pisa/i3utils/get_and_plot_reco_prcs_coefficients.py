@@ -46,6 +46,8 @@ parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('--use_event_PISA',action='store_true',default=False,
                     help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
+parser.add_argument('--no_NC_osc',action='store_true',default=False,
+                    help="Use no oscillation for NC, for cmpr with oscFit.") 
 parser.add_argument('--use_mask',action='store_true',default=False,
                     help="Mask the right corner when setting the y_val_max.") 
 parser.add_argument('--IMH',action='store_true',default=False,
@@ -202,9 +204,11 @@ if not args.templ_already_saved:
             template_settings_Reco = copy.deepcopy(template_settings)
             template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True)
-            tmaps[precision_tag][str(reco_prcs_val)]['trck'] = tmap['trck']['map']
-            tmaps[precision_tag][str(reco_prcs_val)]['cscd'] = tmap['cscd']['map']
+            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True, turn_off_osc_NC=args.no_NC_osc)
+            tmaps[precision_tag][str(reco_prcs_val)]['trck']['map'] = tmap['trck']['map']
+            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['map'] = tmap['cscd']['map']
+            tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = template['trck']['sumw2_nu'] 
+            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['sumw2_nu'] = template['cscd']['sumw2_nu'] 
     
             MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings_Reco['binning']['anlys_ebins'], template_settings_Reco['binning']['czbins'], reco_mc_file)
             tmap_MC = MCMap.get_mc_events_map(True, get_values(template_settings_Reco['params']), reco_mc_file)
@@ -223,7 +227,6 @@ if not args.templ_already_saved:
 
 #print "nominal MCmaps = ", MCmaps['e_reco_precision_up']['1.0']['cscd']
 for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_precision_up', 'cz_reco_precision_down']:
-    templ_list = []
     coeffs[precision_tag] = {'trck':{},
                              'cscd':{}}
     for flav in ['trck','cscd']:
@@ -231,23 +234,15 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         templ_MC = []
         templ_err = []
         for reco_prcs_val in reco_prcs_vals:
-            templ.append(tmaps[precision_tag][str(reco_prcs_val)][flav])  
+            templ.append(tmaps[precision_tag][str(reco_prcs_val)][flav]['map'])  
             templ_MC.append(MCmaps[precision_tag][str(reco_prcs_val)][flav])  
+            templ_err.append(np.sqrt(tmaps[precision_tag][str(reco_prcs_val)][flav]['sumw2_nu']))
 
-            ## Get template error (either standard deviation or standard error):
-            # standard deviation: sqrt(n_event_rate):
-            #templ_err.append(np.sqrt(tmapsprecision_tag][str(reco_prcs_val)]))
-
-            # standard error: sqrt(n_event_rate)/sqrt(N_mc):
-            templ_err.append(np.sqrt(tmaps[precision_tag][str(reco_prcs_val)][flav])/np.sqrt(MCmaps[precision_tag][str(reco_prcs_val)][flav]))  
-
-        templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
-        templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav])/np.sqrt(MCmaps[precision_tag]['1.0'][flav]))
         templ = np.array(templ)
         templ_MC = np.array(templ_MC)
         templ_err = np.array(templ_err)
-        templ_nominal = np.array(templ_nominal)
-        templ_nominal_err = np.array(templ_nominal_err)
+        templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
+        templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav]['sumw2_nu']))
 
         tml_shape = np.shape(templ)
         n_ebins = tml_shape[1] 
@@ -273,6 +268,9 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         for i in range(0, n_ebins):
             for j in range(0, n_czbins):
                 bin_counts = templ[:,i,j]
+                bin_err = templ_err[:,i,j]
+                nominal_bin_counts = templ_nominal[i,j]
+                nominal_bin_err = templ_nominal_err[i,j] 
 
                 # if use bin value ratio (to nominal bin value) as y axis
                 bin_ratio_values = templ[:,i,j]/templ_nominal[i,j]  #divide by the nominal value
@@ -280,10 +278,11 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                     print "templ_nominal[i,j]  == 0: "
 
                 # standard error of ratio n1/n2: (n1/n2)*sqrt((SE1/n1)^2 + (SE2/n2)^2) 
-                bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(templ_nominal_err[i,j]/templ_nominal[i,j])+np.square(templ_err[:,i,j]/templ[:,i,j]))
+                bin_ratio_err_values = bin_ratio_values * np.sqrt(np.square(nominal_bin_err/nominal_bin_counts)+np.square(bin_err/bin_counts))
     
                 ## Cubic Fit  (through (1, 1) point)
-                popt, pcov = curve_fit(func_cubic_through_nominal, reco_prcs_vals, bin_ratio_values)
+                sigma = copy.deepcopy(bin_ratio_err_values)
+                popt, pcov = curve_fit(func_cubic_through_nominal, reco_prcs_vals, bin_ratio_values, sigma=sigma)
                 a = popt[0]
                 b = popt[1]
                 c = popt[2]

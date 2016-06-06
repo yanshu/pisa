@@ -795,15 +795,15 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_DomEff_fits_fitter_10_by_10.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_DomEff_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_HoleIce_fits_fitter_10_by_10.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_HoleIce_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "holeice_fwd_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p2_event_HoleIce_fwd_fits_fitter_10_by_10.json"
+      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
