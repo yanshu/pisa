@@ -101,6 +101,14 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
             _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
     return scaled_nue_flux, scaled_numu_flux
 
+# apply Barr flux ratios ( oscFit way)
+def apply_GENIE_mod_oscFit(aeff_weights, linear_coeffs, quad_coeffs, param_value):
+    coeffs = np.array([quad_coeffs, linear_coeffs])
+    coeffs = coeffs.transpose()
+    print "shape coeffs = ", np.shape(coeffs)
+    aeff_weights *= sf.axialMassVar(coeff = coeffs, Ma = param_value)
+    return aeff_weights
+
 def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
     params_nu_nubar = 1.0
     isbar = '_bar' if 'bar' in prim else ''
