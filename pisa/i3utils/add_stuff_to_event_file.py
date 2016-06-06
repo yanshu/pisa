@@ -17,7 +17,29 @@ from pisa.utils.hdf import from_hdf, to_hdf
 import pisa.utils.utils as utils
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pisa.utils.utils import Timer, oversample_binning
+from numpy.polynomial.polynomial import polyfit
 CMSQ_TO_MSQ = 1.0e-4
+
+def fitMa(in_yvalues_array, genie_weight_array):
+    rw_xvalues  = np.array([-2,-1,0,1,2])
+    output_coeff_linear_array = []
+    output_coeff_quad_array = []
+    for i in range(0,len(genie_weight_array)):
+        in_yvalues = in_yvalues_array[i]
+        genie_weight = genie_weight_array[i]
+        if sum(in_yvalues) == 4.0:
+            output_coeff_quad_array.append(0)
+            output_coeff_linear_array.append(0)
+        else:
+            yvalues = np.concatenate((in_yvalues[:2]/genie_weight, [1.], in_yvalues[2:]/genie_weight))
+            #print "yvalues", yvalues
+            fitcoeff = polyfit(rw_xvalues, yvalues, deg = 2)[::-1]
+            output_coeff_quad_array.append(fitcoeff[0])
+            output_coeff_linear_array.append(fitcoeff[1])
+            #print "fit values", fitcoeff
+    output_coeff_linear_array = np.array(output_coeff_linear_array)
+    output_coeff_quad_array = np.array(output_coeff_quad_array)
+    return output_coeff_linear_array, output_coeff_quad_array 
 
 #@profile
 def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_service, osc_service, neutrino_weight_name, outdir, add_fluxes, add_weights, add_GENIE_Barr):
@@ -88,6 +110,16 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                             data_file[prim][int_type]['GENSYS_splines'] = genie_splines
                             data_file[prim][int_type]['BARR_splines'] = barr_splines
                         print("==> time getting genie_splines : %s sec"%t.secs)
+
+                        # add quadratic fit of gensys (from oscFit)
+                        for key in ['AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'MaCCQE', 'MaCCRES', 'MaCOHpi', 'MaNCEL', 'MaNCRES']:
+                            in_array=np.zeros((len(data_file[prim][int_type]['true_energy']),4))
+                            for i in range(0,4):
+                                in_array[:,i] = data_file[prim][int_type]['genie_'+key+'_%i'%i]
+                            output_coeff_linear_array, output_coeff_quad_array = fitMa(in_array,data_file[prim][int_type]['genie_weight'])
+                            data_file[prim][int_type]['quad_fit_'+key] = output_coeff_quad_array
+                            data_file[prim][int_type]['linear_fit_'+key] = output_coeff_linear_array
+
 
             to_hdf(data_file, output_file_name, attrs=attrs, overwrite=True)
         else:
