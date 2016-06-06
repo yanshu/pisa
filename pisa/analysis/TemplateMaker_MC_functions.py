@@ -217,7 +217,7 @@ def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys
             if GENSYS[entry] != 0.0:
                 #print "we are now passing onto modify shape: ", GENSYS[entry]
                 if entry == "MaCCQE" and int_type=='nc': continue
-                mod_table += genie_spline_service.modify_shape(true_e, true_cz, GENSYS[entry], str(entry)+"_"+str(prim), event_by_event=True, pre_saved_splines=gensys_splines)
+                mod_table += genie_spline_service.modify_shape(true_e, true_cz, GENSYS[entry], str(entry), event_by_event=True, pre_saved_splines=gensys_splines)
     print("==> time genie_spline_service.modify_shape : %s sec"%t.secs)
 
     ### THIS FOLLOWING SECTION HAS DELIBERATE BEEN MADE THIS COMPLICATED - THE ASIMOV METHOD BREAKS THINGS OTHERWISE (ask me about it if interested) ###
