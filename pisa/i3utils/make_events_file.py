@@ -45,6 +45,15 @@ EXTRACT_FIELDS = (
     'reco_coszen',
     'one_weight',
     'pid',
+    'genie_AhtBY',
+    'genie_BhtBY',
+    'genie_CV1uBY',
+    'genie_CV2uBY',
+    'genie_MaCCQE',
+    'genie_MaCCRES',
+    'genie_MaCOHpi',
+    'genie_MaNCEL',
+    'genie_MaNCRES'
 )
 
 # Default fields to output to destination PISA events HDF5 file
@@ -66,6 +75,15 @@ OUTPUT_FIELDS = (
     'reco_coszen',
     'weighted_aeff',
     'pid',
+    'genie_AhtBY',
+    'genie_BhtBY',
+    'genie_CV1uBY',
+    'genie_CV2uBY',
+    'genie_MaCCQE',
+    'genie_MaCCRES',
+    'genie_MaCOHpi',
+    'genie_MaNCEL',
+    'genie_MaNCRES'
 )
 
 
