@@ -207,8 +207,8 @@ if not args.templ_already_saved:
             tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True, turn_off_osc_NC=args.no_NC_osc)
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['map'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd']['map'] = tmap['cscd']['map']
-            tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = template['trck']['sumw2_nu'] 
-            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['sumw2_nu'] = template['cscd']['sumw2_nu'] 
+            tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = tmap['trck']['sumw2_nu'] 
+            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['sumw2_nu'] = tmap['cscd']['sumw2_nu'] 
     
             MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings_Reco['binning']['anlys_ebins'], template_settings_Reco['binning']['czbins'], reco_mc_file)
             tmap_MC = MCMap.get_mc_events_map(True, get_values(template_settings_Reco['params']), reco_mc_file)
