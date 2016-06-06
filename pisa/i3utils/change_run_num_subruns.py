@@ -59,17 +59,3 @@ for aFile in dirListing:
             run[i] = run_num_3 
     hdf_file['I3EventHeader']['Run'] = run
     hdf_file.close()
-
-    hdf_file, attrs = from_hdf(resources.find_resource(data_file), return_attrs = True)
-    genie_dict = {}
-    for name in ['AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'MaCCQE', 'MaCCRES', 'MaCOHpi', 'MaNCEL', 'MaNCRES']:
-        if name == 'vector_index':
-            continue
-        idx = hdf_file['GENIE_SystematicsReweight']['vector_index']
-        if name in ['AhtBY', 'BhtBY', 'CV1uBY', 'CV2uBY', 'MaCCQE', 'MaCCRES', 'MaCOHpi', 'MaNCEL', 'MaNCRES']:
-            for i in range(0,4):
-                cut = idx%4==i
-                genie_dict['rw_'+name+'_%i'%i] = hdf_file['GENIE_SystematicsReweight'][name][cut]
-    hdf_file['GENIE_SystematicsReweight_Split'] = genie_dict 
-    to_hdf(hdf_file, aFile, attrs=attrs, overwrite=True)
-
