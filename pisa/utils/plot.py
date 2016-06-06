@@ -333,10 +333,10 @@ def show_map_swap(pmap, title=None, cbar = True,
     #Return axes for further modifications
     return axis
 
-def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, max=None, min=None, annotate_prcs=1, cmap='cool', counts_size=7, savetxt=True):
+def plot_one_map(map_to_plot, outdir, logE, fig_title, fig_name, save, logz=False, max=None, min=None, annotate_prcs=1, cmap='cool', counts_size=7, savetxt=True):
     plt.figure()
     filename = os.path.join(outdir, fig_name + '.png')
-    show_map_swap(map_to_plot, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap, counts_size=counts_size, savetxt=savetxt, filename=filename)
+    show_map_swap(map_to_plot, log=logz, vmin= min if min!=None else np.min(map_to_plot['map']), vmax= max if max!=None else np.max(map_to_plot['map']),annotate_prcs=annotate_prcs, logE=logE, cmap=cmap, counts_size=counts_size, savetxt=savetxt, filename=filename)
     if save:
         pdf_filename = os.path.join(outdir+'/pdf/', fig_name + '.pdf')
         plt.title(fig_title)
