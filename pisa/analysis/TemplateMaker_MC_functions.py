@@ -105,7 +105,6 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
 def apply_GENIE_mod_oscFit(aeff_weights, linear_coeffs, quad_coeffs, param_value):
     coeffs = np.array([quad_coeffs, linear_coeffs])
     coeffs = coeffs.transpose()
-    print "shape coeffs = ", np.shape(coeffs)
     aeff_weights *= sf.axialMassVar(coeff = coeffs, Ma = param_value)
     return aeff_weights
 
