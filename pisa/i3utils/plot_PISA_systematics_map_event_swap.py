@@ -196,6 +196,8 @@ settings file. ''')
                         help='Plot Aeff and final stage comparisons between using NuFlux 2d and NuFlux 3d.')
     parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Do not use log scale for energy.')
+    parser.add_argument('-logz','--logz',action='store_true',default=False,
+                        help='Use log scale for z.')
     parser.add_argument('-norm','--norm',action='store_true',default=False,
                         help='Normalize the histogram.')
     parser.add_argument('-a','--all',action='store_true',default=False,
@@ -461,15 +463,15 @@ settings file. ''')
                     delta_diff_map = {'map' : delta_hist, 'ebins': anlys_ebins, 'czbins': czbins}
 
                     relative_diff_to_baseline = ratio_map(delta_diff_map, nominal_nutau_event[channel])
-                    plot_one_map(relative_diff_to_baseline, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_one_sigma_OscFit_PISA_event_cmpr__%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, = \, %s \, plot \, (OscFit\, - \, PISA) \, / \,baseline \, %s }$'%(livetime, sys.replace('_', '\, '), sys_val, channel), save=args.save,annotate_prcs=4) 
+                    plot_one_map(relative_diff_to_baseline, args.outdir, logz = args.logz, logE=not(args.no_logE), fig_name=args.title+ '_systematics_one_sigma_OscFit_PISA_event_cmpr__%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, = \, %s \, plot \, (OscFit\, - \, PISA) \, / \,baseline \, %s }$'%(livetime, sys.replace('_', '\, '), sys_val, channel), save=args.save,annotate_prcs=4) 
 
                     plot_one_map(oscFit_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_final_%s_%s'% (channel, sys), fig_title=r'${\rm %s \, yr \, OscFit \, %s \, map \, diff \, ( \Delta \, %s \, = \, %s, \, Nevts: \, %.1f) }$'%(livetime, channel, sys.replace('_', '\, '), str(delta_val[sys]), np.sum(oscFit_map['map'])), save=args.save)
 
                     abs_max = np.max(abs(perc_diff_map['map']))
-                    plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=4,cmap='RdBu_r')
-                    #plot_one_map(perc_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
-                    plot_one_map(ratio_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4)
-                    plot_one_map(delta_diff_map, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4, cmap='RdBu_r')
+                    plot_one_map(perc_diff_map, args.outdir, logz = args.logz, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,min= -abs_max, max = abs_max, annotate_prcs=4,cmap='RdBu_r')
+                    #plot_one_map(perc_diff_map, args.outdir, logz = args.logz, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_PercentDifference'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit\, - \, PISA) \, / \,PISA \, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save, annotate_prcs=3,cmap='RdBu_r')
+                    plot_one_map(ratio_diff_map, args.outdir, logz = args.logz, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Ratio'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, / \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4)
+                    plot_one_map(delta_diff_map, args.outdir, logz = args.logz, logE=not(args.no_logE), fig_name=args.title+ '_systematics_diff_with_nominal_OscFit_PISA_event_cmpr_%s_%s_Delta'% (sys, channel), fig_title=r'${\rm %s \, yr \, %s \, plot \, (OscFit \, - \, PISA )\, %s }$'%(livetime, sys.replace('_', '\, '), channel), save=args.save,annotate_prcs=4, cmap='RdBu_r')
                 else:
                     print "csv file %s for %s from OscFit does not exist, can not compare PISA with OscFit." % (filename, sys)
 
