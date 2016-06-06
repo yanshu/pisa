@@ -184,7 +184,7 @@ def func_cubic_through_nominal(x, a, b, c):
 reco_prcs_vals = eval(args.reco_prcs_vals)
 data_nutau_norm = 1.0
 print "reco_prcs_vals = ", reco_prcs_vals
-RP_template_maker = TemplateMaker(get_values(template_settings['params']), no_sys_maps=True, **template_settings['binning'])
+RP_template_maker = TemplateMaker(get_values(change_nutau_norm_settings(template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)), no_sys_maps=True, **template_settings['binning'])
 
 if not args.templ_already_saved:
     tmaps = {}
