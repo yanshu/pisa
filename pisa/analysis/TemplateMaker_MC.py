@@ -399,7 +399,8 @@ class TemplateMaker:
                 numu_flux = self.fluxes[prim][int_type]['numu']
 
                 # apply spectral index, use one pivot energy for all flavors
-                egy_pivot = mean_true_e_all
+                #egy_pivot = mean_true_e_all
+                egy_pivot =  24.0900951261  # the value that JP's using
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                 # apply Barr systematics

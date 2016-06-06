@@ -77,12 +77,16 @@ else:
     from pisa.analysis.TemplateMaker_nutau import TemplateMaker
     pisa_mode = 'hist'
 use_NMH = not(args.IMH)
+if args.no_NC_osc:
+    nc_osc_mode = 'no_NC_osc'
+else:
+    nc_osc_mode = 'has_NC_osc'
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots')
 utils.mkdir(outdir+'/plots/png/')
 if args.templ_already_saved:
     # if templates already saved
-    output_template = from_json(outdir+'/%s_%s_RecoPrcs_templates_special_binning.json'% (args.sim, pisa_mode))
+    output_template = from_json(outdir+'/%s_%s_RecoPrcs_templates_%s.json'% (args.sim, pisa_mode, nc_osc_mode))
     tmaps = output_template['tmaps']
     MCmaps = output_template['MCmaps']
     coeffs = output_template['coeffs']
@@ -177,16 +181,15 @@ if args.plotReso:
                         plt.clf()
 
 
-
 def func_cubic_through_nominal(x, a, b, c):
     return a*x*x*x + b*x*x + c*x + 1.0 - a - b - c
 
 reco_prcs_vals = eval(args.reco_prcs_vals)
 data_nutau_norm = 1.0
 print "reco_prcs_vals = ", reco_prcs_vals
-RP_template_maker = TemplateMaker(get_values(template_settings['params']), no_sys_maps=True, **template_settings['binning'])
 
 if not args.templ_already_saved:
+    RP_template_maker = TemplateMaker(get_values(change_nutau_norm_settings(template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)), no_sys_maps=True, **template_settings['binning'])
     tmaps = {}
     coeffs = {}
     MCmaps = {}
@@ -207,8 +210,8 @@ if not args.templ_already_saved:
             tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True, turn_off_osc_NC=args.no_NC_osc)
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['map'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd']['map'] = tmap['cscd']['map']
-            tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = template['trck']['sumw2_nu'] 
-            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['sumw2_nu'] = template['cscd']['sumw2_nu'] 
+            tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = tmap['trck']['sumw2_nu'] 
+            tmaps[precision_tag][str(reco_prcs_val)]['cscd']['sumw2_nu'] = tmap['cscd']['sumw2_nu'] 
     
             MCMap = GetMCError(get_values(template_settings_Reco['params']), template_settings_Reco['binning']['anlys_ebins'], template_settings_Reco['binning']['czbins'], reco_mc_file)
             tmap_MC = MCMap.get_mc_events_map(True, get_values(template_settings_Reco['params']), reco_mc_file)
@@ -222,7 +225,7 @@ if not args.templ_already_saved:
               'template_settings' : template_settings}
     if args.pseudo_data_settings is not None:
         output['pseudo_data_settings'] = pseudo_data_settings
-    to_json(output,outdir+'/%s_%s_RecoPrcs_templates_special_binning.json'% (args.sim, pisa_mode))
+    to_json(output,outdir+'/%s_%s_RecoPrcs_templates_%s.json'% (args.sim, pisa_mode, nc_osc_mode))
 
 
 #print "nominal MCmaps = ", MCmaps['e_reco_precision_up']['1.0']['cscd']
@@ -241,14 +244,14 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
         templ = np.array(templ)
         templ_MC = np.array(templ_MC)
         templ_err = np.array(templ_err)
-        templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav])
+        templ_nominal = np.array(tmaps[precision_tag]['1.0'][flav]['map'])
         templ_nominal_err = np.array(np.sqrt(tmaps[precision_tag]['1.0'][flav]['sumw2_nu']))
 
         tml_shape = np.shape(templ)
         n_ebins = tml_shape[1] 
         n_czbins = tml_shape[2] 
         #print "tml_shape = ", tml_shape
-        coeff = np.empty(np.shape(tmaps[precision_tag]['1.0'][flav]), dtype = object) 
+        coeff = np.empty(np.shape(tmaps[precision_tag]['1.0'][flav]['map']), dtype = object) 
         all_ratios = np.divide(templ, templ_nominal)
         #print "all_ratios = ", all_ratios
         if args.use_mask:
@@ -331,8 +334,8 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
                         #plt.figtext(0.5, 0.95, 'Reco Precision cubic fits %s'%flav, fontsize=60,ha='center')
                         #fig.subplots_adjust(hspace=0)
                         #fig.subplots_adjust(wspace=0)
-                        plt.savefig(outdir+ '/plots/png/'+'%s_%s_%s_fits_reco_prcs_%s_special_binning.png'%(args.sim, pisa_mode, precision_tag, flav))
-                        plt.savefig(outdir+ '/plots/'+'%s_%s_%s_fits_reco_prcs_%s_special_binning.pdf'%(args.sim, pisa_mode, precision_tag, flav))
+                        plt.savefig(outdir+ '/plots/png/'+'%s_%s_%s_fits_reco_prcs_%s_%s.png'%(args.sim, pisa_mode, precision_tag, flav, nc_osc_mode))
+                        plt.savefig(outdir+ '/plots/'+'%s_%s_%s_fits_reco_prcs_%s_%s.pdf'%(args.sim, pisa_mode, precision_tag, flav, nc_osc_mode))
                         #plt.savefig(outdir+ '/plots/png/'+'%s_%s_%s_fits_reco_prcs_%s.png'%(args.sim, precision_tag, flav))
                         #plt.savefig(outdir+ '/plots/'+'%s_%s_%s_fits_reco_prcs_%s.pdf'%(args.sim, precision_tag, flav))
                         plt.clf()
@@ -342,5 +345,5 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
 
 
 #And write to file
-to_json(coeffs,outdir+'/%s_%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_special_binning.json'%(args.sim, pisa_mode, min(reco_prcs_vals), max(reco_prcs_vals)))
+to_json(coeffs,outdir+'/%s_%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_%s.json'%(args.sim, pisa_mode, min(reco_prcs_vals), max(reco_prcs_vals), nc_osc_mode))
 
