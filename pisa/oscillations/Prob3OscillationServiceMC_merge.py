@@ -80,7 +80,7 @@ class Prob3OscillationServiceMC(OscillationServiceBase):
         else:
             assert(type(prim)==str)
 
-        tprofile.info("start prob3 oscillation calculation (event by event)")
+        #tprofile.info("start prob3 oscillation calculation (event by event)")
         # Set to true, since we are using sin^2(theta) variables
         kSquared = True
         sin2th12Sq = np.sin(theta12)**2
@@ -148,5 +148,5 @@ class Prob3OscillationServiceMC(OscillationServiceBase):
 
         if loglevel <= logging.INFO: sys.stdout.write("\n")
 
-        tprofile.info("stop oscillation calculation")
+        #tprofile.info("stop oscillation calculation")
         return osc_prob_dict

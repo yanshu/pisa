@@ -56,8 +56,9 @@ class plotter(object):
             if name == 'data':
                 ax1.errorbar(x_bin_centers,map,yerr=error,fmt='o',color='black', markersize='4',label=name)
             else:
+                print map
                 hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1.5,color=color,linestyle=linestyle, label=name)
-                if error:
+                if error is not None:
                     ax1.bar(x_bin_edges[:-1],2*error, bottom=map-error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
         ax1.grid()
         gridlines = ax1.get_xgridlines() + ax1.get_ygridlines()
@@ -188,8 +189,9 @@ class plotter(object):
 if __name__ == '__main__':
     from pisa.utils.log import set_verbosity,logging,profile
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    from pisa.analysis.TemplateMaker_nutau import TemplateMaker
-    from pisa.analysis.stats.Maps_nutau import get_true_template, get_burn_sample
+    #from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+    from pisa.analysis.TemplateMaker_MC import TemplateMaker 
+    from pisa.analysis.stats.Maps_nutau import get_true_template, get_burn_sample_maps
     from pisa.utils.jsons import from_json
     from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm
     set_verbosity(0)
@@ -199,7 +201,7 @@ if __name__ == '__main__':
                         help='Settings file to use for template generation')
     parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
-    parser.add_argument('-o','--outdir',metavar='DIR',default='',
+    parser.add_argument('-o','--outdir',metavar='DIR',default='.',
                         help='Directory to save the output figures.')
     parser.add_argument('-f', '--fit-results', default=None, dest='fit_file',
                         help='use post fit parameters from fit result json file (nutau_norm = 1)')
@@ -230,9 +232,11 @@ if __name__ == '__main__':
     livetime = template_settings['params']['livetime']['value']
 
     # get template
-    template_maker = TemplateMaker(get_values(template_settings['params']),
+    new_template_settings = get_values(select_hierarchy_and_nutau_norm(template_settings['params'],normal_hierarchy=True,nutau_norm_value=1.0))
+    template_maker = TemplateMaker(new_template_settings,
                                         **template_settings['binning'])
-    true_template = template_maker.get_template(get_values(select_hierarchy_and_nutau_norm(template_settings['params'],normal_hierarchy=True,nutau_norm_value=1.0)))
+    true_template = template_maker.get_template(new_template_settings)
+    print true_template
     true_template['tot'] = {}
     true_template['tot']['map'] = true_template['cscd']['map'] + true_template['trck']['map']
     true_template['tot']['map_nu'] = true_template['cscd']['map_nu'] + true_template['trck']['map_nu']
@@ -242,7 +246,7 @@ if __name__ == '__main__':
     true_template['tot']['sumw2_mu'] = true_template['cscd']['sumw2_mu'] + true_template['trck']['sumw2_mu']
 
     if args.burn_sample_file:
-        burn_sample_maps = get_burn_sample(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'])
+        burn_sample_maps = get_burn_sample_maps(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'])
         burn_sample_maps['tot'] = {}
         burn_sample_maps['tot']['map'] = burn_sample_maps['cscd']['map'] + burn_sample_maps['trck']['map']
 
