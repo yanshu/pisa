@@ -40,11 +40,11 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, s
     if sim_version == "4digit":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
         Reco_Track_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Track'
-    elif sim_version == "5digit":
+    elif sim_version == "5digit" or "dima":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC'
         Reco_Track_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_Track'
     else:
-        raise ValueError('only allow 4digit and 5digit!') 
+        raise ValueError('only allow 4digit, 5digit(H2 model for hole ice) or dima (dima p1 and p2 for hole ice)!') 
 
     burn_sample_file = h5py.File(find_resource(file_name),'r')
     L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
