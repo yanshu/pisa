@@ -275,7 +275,7 @@ class TemplateMaker:
             #self.mc_error[channel]= hist_sqrt_w2
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, use_atmmu_f=False, turn_off_osc_NC=False, use_oscFit_genie_sys=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=False, use_oscFit_genie_sys=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -329,18 +329,6 @@ class TemplateMaker:
                 nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
-
-        #  get pivot energy 
-        #  note: this definition is only for testing, MC events need to be weighted:
-        true_e_all = np.array([]) 
-        for prim in ['nue', 'numu', 'nutau']:
-            nu_true_e = evts[prim]['cc']['true_energy']
-            nubar_true_e = evts[prim+'_bar']['cc']['true_energy']
-            nu_true_e_group_nu_nubar_cc = np.append(nu_true_e, nubar_true_e)
-            nu_true_e_group_nu_nubar_nc = np.append(evts[prim]['nc']['true_energy'], evts[prim+'_bar']['nc']['true_energy'])
-            true_e_all = np.append(true_e_all, np.append(nu_true_e_group_nu_nubar_cc, nu_true_e_group_nu_nubar_nc))
-        mean_true_e_all = np.mean(true_e_all)
-        print "mean_true_e_all = ", mean_true_e_all
 
         # Get osc probability maps
         with Timer(verbose=False) as t:
@@ -399,7 +387,6 @@ class TemplateMaker:
                 numu_flux = self.fluxes[prim][int_type]['numu']
 
                 # apply spectral index, use one pivot energy for all flavors
-                #egy_pivot = mean_true_e_all
                 egy_pivot =  24.0900951261  # the value that JP's using
                 nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
@@ -515,42 +502,12 @@ class TemplateMaker:
         self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
         # getting wgt2_hist
-        wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
-        wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
-        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            for int_type in ['cc', 'nc']:
-                wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
-                wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
-
-        # Get event_rate_pid maps in nue+nuebar cc; numu+numubar cc; nutau+nutaubar cc and nuall_nc ( this is only for testing)
-        event_rate_pid_map_grouped = {'params': params, 'cscd': {}, 'trck': {}}
-        for prim in ['nue', 'numu', 'nutau']:
-            event_rate_pid_map_grouped['cscd'][prim+'_cc'] = {'map': tmp_event_rate_cscd[prim]['cc'] + tmp_event_rate_cscd[prim+'_bar']['cc'],
-                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
-            event_rate_pid_map_grouped['trck'][prim+'_cc'] = {'map': tmp_event_rate_trck[prim]['cc'] + tmp_event_rate_trck[prim+'_bar']['cc'],
-                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        event_rate_cscd_nuall_nc = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
-        event_rate_trck_nuall_nc = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
-        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            event_rate_cscd_nuall_nc += tmp_event_rate_cscd[prim]['nc']
-            event_rate_trck_nuall_nc += tmp_event_rate_trck[prim]['nc']
-        event_rate_pid_map_grouped['cscd']['nuall_nc']= {'map': event_rate_cscd_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        event_rate_pid_map_grouped['trck']['nuall_nc']= {'map': event_rate_trck_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
-
-        # Get true_event_rate_pid maps in nue+nuebar cc; numu+numubar cc; nutau+nutaubar cc and nuall_nc ( this is only for testing)
-        true_event_rate_pid_map_grouped = {'params': params, 'cscd': {}, 'trck': {}}
-        for prim in ['nue', 'numu', 'nutau']:
-            true_event_rate_pid_map_grouped['cscd'][prim+'_cc'] = {'map': true_tmp_event_rate_cscd[prim]['cc'] + true_tmp_event_rate_cscd[prim+'_bar']['cc'],
-                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
-            true_event_rate_pid_map_grouped['trck'][prim+'_cc'] = {'map': true_tmp_event_rate_trck[prim]['cc'] + true_tmp_event_rate_trck[prim+'_bar']['cc'],
-                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        true_event_rate_cscd_nuall_nc = np.zeros(np.shape(true_tmp_event_rate_cscd['nue']['nc']))
-        true_event_rate_trck_nuall_nc = np.zeros(np.shape(true_tmp_event_rate_trck['nue']['nc']))
-        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            true_event_rate_cscd_nuall_nc += true_tmp_event_rate_cscd[prim]['nc']
-            true_event_rate_trck_nuall_nc += true_tmp_event_rate_trck[prim]['nc']
-        true_event_rate_pid_map_grouped['cscd']['nuall_nc']= {'map': true_event_rate_cscd_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        true_event_rate_pid_map_grouped['trck']['nuall_nc']= {'map': true_event_rate_trck_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+        #wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
+        #wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
+        #for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+        #    for int_type in ['cc', 'nc']:
+        #        wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
+        #        wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
 
         if any(step_changed[:6]):
             physics.debug("STAGE 6: Applying systematics...")
@@ -602,8 +559,7 @@ class TemplateMaker:
         if not return_stages: return self.final_event_rate
 
         # Otherwise, return all stages as a simple tuple
-        #return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
-        return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.final_event_rate, event_rate_pid_map_grouped, true_event_rate_pid_map_grouped)
+        return (self.flux_maps, self.event_rate_maps, self.event_rate_reco_maps, self.sys_maps, self.final_event_rate)
 
 
 if __name__ == '__main__':

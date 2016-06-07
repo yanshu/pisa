@@ -126,10 +126,6 @@ def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
 def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm):
     if params['atm_delta_index'] != 0:
         delta_index = params['atm_delta_index']
-        egy_med = np.median(true_e) 
-        egy_mean = np.mean(true_e) 
-        #egy_pivot = egy_med
-        #egy_pivot = egy_mean
         scale = np.power((true_e/egy_pivot),delta_index)
         if flux_sys_renorm:
             # keep weighted flux constant
