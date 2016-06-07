@@ -296,15 +296,15 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     opt_steps_dict['llh'].append(neg_llh)
 
     # comment these lines if using blind_fit:
-    #string = 'LLH at %.2f'%neg_llh
-    #msg = '{}'.format(string.ljust(18))
-    #for val in opt_vals:
-    #    string = '%2.5f'%(val)
-    #    msg += ' | {}'.format(string.ljust(9))
-    #physics.info(msg)
-    #sys.stdout.write(msg)
-    #sys.stdout.flush()
-    #sys.stdout.write("\b" * len(msg))
+    string = 'LLH at %.2f'%neg_llh
+    msg = '{}'.format(string.ljust(18))
+    for val in opt_vals:
+        string = '%2.5f'%(val)
+        msg += ' | {}'.format(string.ljust(9))
+    physics.info(msg)
+    sys.stdout.write(msg)
+    sys.stdout.flush()
+    sys.stdout.write("\b" * len(msg))
 
     return neg_llh
 

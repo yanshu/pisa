@@ -179,7 +179,7 @@
       "value": 0.0
     },
     "atmos_mu_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "kind": "uniform"
       },
@@ -216,7 +216,7 @@
         1.0
       ],
       "scale": 1.0,
-      "value": 0.0
+      "value": 0.18
     },
     "channel": {
       "fixed": true,
@@ -612,7 +612,7 @@
       "value": 0.0
     }, 
     "flux_spectral_index_d": {
-      "fixed": false, 
+      "fixed": true, 
       "prior": {
         "fiducial": 0.0, 
         "kind": "gaussian", 
@@ -686,7 +686,7 @@
             }
     },
     "nu_nubar_ratio": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -714,7 +714,7 @@
       "value": 1.0
     },
     "nc_norm": {
-      "fixed": true,
+      "fixed": false,
       "prior": {
         "kind": "uniform"
       },
@@ -726,7 +726,7 @@
       "value": 1.0
     },
     "nutau_norm": {
-      "fixed": true,
+      "fixed": false,
       "prior": {
         "kind": "uniform"
       },
@@ -896,7 +896,7 @@
       "GENSYS_AhtBY":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,
@@ -907,7 +907,7 @@
      "GENSYS_BhtBY":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,
@@ -918,7 +918,7 @@
      "GENSYS_CV1uBY":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,
@@ -929,7 +929,7 @@
      "GENSYS_CV2uBY":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,
@@ -940,7 +940,7 @@
       "GENSYS_MaCCQE":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,
@@ -951,7 +951,7 @@
       "GENSYS_MaRES":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
-	  "fixed": false,
+	  "fixed": true,
 	  "scale": 1.0,
 	  "prior": {
 	      "fiducial": 0.0,

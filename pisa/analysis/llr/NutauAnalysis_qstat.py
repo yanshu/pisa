@@ -32,7 +32,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample_maps, get_true_template, get_stat_fluct_map
-from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+from pisa.analysis.TemplateMaker_MC import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings
 
 # --- parse command line arguments ---
