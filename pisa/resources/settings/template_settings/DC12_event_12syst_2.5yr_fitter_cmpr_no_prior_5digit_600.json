@@ -807,7 +807,7 @@
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_special_binning.json"
+      "value": "reco_prcs/5digit_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,
