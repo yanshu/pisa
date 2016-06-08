@@ -130,25 +130,6 @@ class TemplateMaker:
                     'osc_code = %s' % osc_code
             raise NotImplementedError(error_msg)
 
-        # Reco Event Rate Service:
-        reco_mode = template_settings['reco_mode']
-        if reco_mode == 'MC':
-            self.reco_service = RecoServiceMC(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'param':
-            self.reco_service = RecoServiceParam(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'stored':
-            self.reco_service = RecoServiceKernelFile(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'vbwkde':
-            self.reco_service = RecoServiceVBWKDE(self.ebins, self.czbins,
-                                                **template_settings)
-        else:
-            error_msg = "reco_mode: %s is not implemented! "%reco_mode
-            error_msg+=" Please choose among: ['MC', 'param', 'stored','vbwkde']"
-            raise NotImplementedError(error_msg)
-
         # Instantiate a PID service
         self.pid_service = PID.pid_service_factory(
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
@@ -300,7 +281,7 @@ class TemplateMaker:
                     elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
-                    elif p in ['atmos_mu_scale']: step_changed[6] = True
+                    elif p in ['atmos_mu_scale', 'atmmu_f']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
                     else: steps_changed = [True]*7
 
