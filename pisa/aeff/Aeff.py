@@ -35,7 +35,7 @@ from pisa.utils.params import construct_genie_dict
 from pisa.aeff.AeffServiceMC import AeffServiceMC
 from pisa.aeff.AeffServicePar import AeffServicePar
 
-def apply_shape_mod(aeff_dict, ebins, czbins, **params):
+def apply_shape_mod(genie_spline_service, aeff_dict, ebins, czbins, **params):
     '''
     Taking Joakim's shape mod functionality and applying it generally
     to the aeff_dict, regardless of the aeff_service used
@@ -44,9 +44,6 @@ def apply_shape_mod(aeff_dict, ebins, czbins, **params):
     ### make dict of genie parameters ###
     GENSYS = construct_genie_dict(params)
 
-    ### make spline service for genie parameters ###
-    genie_spline_service = SplineService(ebins, dictFile = params['GENSYS_files'])
-        
     return_dict = {}
     ### modify the aeff for NC interactions ###
     ### here the aeff is gotten for NC interactions###
@@ -112,7 +109,7 @@ def apply_shape_mod(aeff_dict, ebins, czbins, **params):
 
     return return_dict
 
-def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
+def get_event_rates(osc_flux_maps,aeff_service,genie_spline_service,livetime=None,
                     aeff_scale=None,nutau_norm=None,
                     GENSYS_files=None,
                     GENSYS_AhtBY=None,GENSYS_BhtBY=None,
@@ -150,7 +147,7 @@ def get_event_rates(osc_flux_maps,aeff_service,livetime=None,
     ebins, czbins = get_binning(osc_flux_maps)
     
     #Apply GENIE uncertainties
-    aeff_dict = apply_shape_mod(aeff_dict_bare, ebins, czbins, **params)
+    aeff_dict = apply_shape_mod(genie_spline_service, aeff_dict_bare, ebins, czbins, **params)
 
     # apply the scaling for nu_xsec_scale and nubar_xsec_scale...
     flavours = ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']

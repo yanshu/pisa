@@ -111,8 +111,8 @@ def apply_GENIE_mod_oscFit(aeff_weights, linear_coeffs, quad_coeffs, param_value
 def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
     params_nu_nubar = 1.0
     isbar = '_bar' if 'bar' in prim else ''
-    scale_nue = 1.0
-    scale_numu = 1.0
+    scale_nue = np.ones(len(true_e)) 
+    scale_numu = np.ones(len(true_e)) 
     if params['Barr_nu_nubar_ratio']!= 0:
         scale_nue *= sf.modRatioNuBar('nue'+isbar, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
         scale_numu *= sf.modRatioNuBar('numu'+isbar, true_e, true_cz, params_nu_nubar, params['Barr_nu_nubar_ratio'])
@@ -181,7 +181,7 @@ def apply_Barr_mod(prim, ebins, nue_flux, numu_flux, true_e, true_cz, barr_splin
             logging.info("testing for: %s" %entry)
             if Flux_Mod_Dict[entry] != 0.0:
                 mod_table += flux_spline_service.modify_shape(true_e, true_cz, Flux_Mod_Dict[entry], entry, event_by_event=True, pre_saved_splines=barr_splines)
-    print("==> time barr_spline_service.modify_shape : %s sec"%t.secs)
+    profile.debug("==> time barr_spline_service.modify_shape : %s sec"%t.secs)
 
     if mod_table[mod_table<0].any():
         #remember: mod_table contains the 1 sigma modification of the flux squared and multiplied by the modification factor -
@@ -199,8 +199,6 @@ def apply_Barr_mod(prim, ebins, nue_flux, numu_flux, true_e, true_cz, barr_splin
 def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys_splines, **params):
 
     # code modified from Ste's apply_shape_mod() in Aeff.py
-    print "apply_GENIE_mod for ", prim , " ", int_type
-
     ### make dict of genie parameters ###
     GENSYS = construct_genie_dict(params)
 
@@ -208,9 +206,7 @@ def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys
         return aeff_weights
 
     ### make spline service for genie parameters ###
-    with Timer(verbose=False) as t:
-        genie_spline_service = SplineService(ebins=ebins, evals=true_e, dictFile = params['GENSYS_files'])
-    print("==> time initialize SplineService : %s sec"%t.secs)
+    genie_spline_service = SplineService(ebins=ebins, evals=true_e, dictFile = params['GENSYS_files'])
 
     mod_table = np.zeros(len(true_e))
 
@@ -221,7 +217,7 @@ def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys
                 #print "we are now passing onto modify shape: ", GENSYS[entry]
                 if entry == "MaCCQE" and int_type=='nc': continue
                 mod_table += genie_spline_service.modify_shape(true_e, true_cz, GENSYS[entry], str(entry), event_by_event=True, pre_saved_splines=gensys_splines)
-    print("==> time genie_spline_service.modify_shape : %s sec"%t.secs)
+    profile.debug("==> time genie_spline_service.modify_shape : %s sec"%t.secs)
 
     ### THIS FOLLOWING SECTION HAS DELIBERATE BEEN MADE THIS COMPLICATED - THE ASIMOV METHOD BREAKS THINGS OTHERWISE (ask me about it if interested) ###
     with Timer(verbose=False) as t:
@@ -239,6 +235,6 @@ def apply_GENIE_mod(prim, int_type, ebins, true_e, true_cz, aeff_weights, gensys
         #TEST FOR 0 AND OR NEGATIVE VALEUS #
         if modified_aeff_weights[modified_aeff_weights == 0.0].any():
             raise ValueError("Modified aeff_weights must have all bins > 0")
-    print("==> time for the rest process : %s sec"%t.secs)
+    profile.debug("==> time for the rest process : %s sec"%t.secs)
     return modified_aeff_weights
 

@@ -32,7 +32,6 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample_maps, get_true_template, get_stat_fluct_map
-from pisa.analysis.TemplateMaker_MC import TemplateMaker
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings
 
 # --- parse command line arguments ---
@@ -79,6 +78,7 @@ parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusan
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
+parser.add_argument('--use_hist_PISA',action='store_true',default=False, help='''Use event-by-event PISA; otherwise, use histogram-based PISA''') 
 args = parser.parse_args()
 set_verbosity(args.verbose)
 # -----------------------------------
@@ -104,10 +104,21 @@ czbins = template_settings['binning']['czbins']
 anlys_bins = (anlys_ebins, czbins)
 blind_fit = args.blind_fit
 params_keep_blind = eval(args.params_keep_blind)
+# one sanity check for background scale
+if template_settings['params']['use_atmmu_f']['value'] == False:
+    assert(template_settings['params']['atmmu_f']['fixed'] == True)
+else:
+    assert(template_settings['params']['atmos_mu_scale']['fixed'] == True)
 
 pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
 template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
 
+if args.use_hist_PISA:
+    from pisa.analysis.TemplateMaker_nutau import TemplateMaker
+    pisa_mode = 'hist'
+else:
+    from pisa.analysis.TemplateMaker_MC import TemplateMaker
+    pisa_mode = 'event'
 
 # fix a nuisance parameter if requested
 fix_param_name = None
@@ -193,7 +204,7 @@ for itrial in xrange(1,args.ntrials+1):
     elif args.bs:
         logging.info('Running on real data! (%s)'%args.bs)
         physics.info('Running on real data! (%s)'%args.bs)
-        fmap = get_burn_sample_maps(file_name=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel)
+        fmap = get_burn_sample_maps(file_name=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, sim_version = template_settings['params']['sim_ver'])
     # Randomly sampled (poisson) data
     else:
         if args.seed:

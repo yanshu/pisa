@@ -26,13 +26,15 @@ from pisa.analysis.stats.Maps import apply_ratio_scale
 from pisa.flux.HondaFluxService import HondaFluxService, Honda3DFluxService, primaries
 from pisa.flux.IPHondaFluxService import IPHondaFluxService, IPHonda3DFluxService
 from pisa.utils.jsons import from_json, to_json, json_string
+from pisa.utils.utils import Timer, oversample_binning
+
 from pisa.utils.log import logging, physics, set_verbosity
 from pisa.utils.proc import report_params, get_params, add_params
 from pisa.utils.utils import get_bin_centers
 from pisa.utils.shape import SplineService
 from pisa.utils.params import construct_shape_dict
 
-def apply_shape_mod(flux_maps, ebins, czbins, **params):
+def apply_shape_mod(flux_spline_service, flux_maps, ebins, czbins, **params):
     '''
     Taking Joakim's shape mod functionality and applying it generally
     to the flux_maps, regardless of the flux_service used
@@ -40,9 +42,6 @@ def apply_shape_mod(flux_maps, ebins, czbins, **params):
 
     #make flux_mod_dict and add it to the list of params.
     Flux_Mod_Dict = construct_shape_dict('flux', params)
-
-    ### make spline service for Barr parameters ###
-    flux_spline_service = SplineService(ebins, dictFile = params['flux_uncertainty_inputs'])
 
     ### FORM A TABLE FROM THE UNCERTAINTY WEIGHTS AND THE SPLINED MAPS CORRESPONDING TO THEM - WE DISCUSSED THIS SHOUD BE DONE EXPLICITLY FOR EASIER UNDERSTANDING###
     #Now apply all the shape modification for each of the flux uncertainties
@@ -161,7 +160,7 @@ def get_median_energy(flux_map):
 
     return energy
 
-def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio,
+def get_flux_maps(flux_service, barr_service, ebins, czbins, nue_numu_ratio,
                   nu_nubar_ratio, energy_scale, atm_delta_index,
                   flux_hadronic_A, flux_hadronic_B, flux_hadronic_C,
                   flux_hadronic_D, flux_hadronic_E, flux_hadronic_F,
@@ -223,7 +222,7 @@ def get_flux_maps(flux_service, ebins, czbins, nue_numu_ratio,
         scaled_maps = apply_delta_index(scaled_maps, atm_delta_index, median_energy)
 
     #Apply Barr uncertainties
-    scaled_maps = apply_shape_mod(scaled_maps, ebins, czbins, **params)
+    scaled_maps = apply_shape_mod(barr_service, scaled_maps, ebins, czbins, **params)
     
     return scaled_maps
 

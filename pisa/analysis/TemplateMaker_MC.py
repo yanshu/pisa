@@ -267,23 +267,21 @@ class TemplateMaker:
             assert(no_sys_maps==True)
 
         # just assume all steps changed
-        step_changed = [True]*7
+        step_changed = [True]*5
 
         # now see what really changed, if we have a cached map to decide from which step on we have to recalculate
         if self.cache_params:
-            step_changed = [False]*7
+            step_changed = [False]*5
             for p,v in params.items():
                 if self.cache_params[p] != v:
-                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale']: step_changed[0] = True
+                    if p in ['nue_numu_ratio','nu_nubar_ratio']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
-                    elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    #elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
-                    elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down']): step_changed[3] = True 
-                    elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
-                    elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
-                    elif p in ['atmos_mu_scale', 'atmmu_f']: step_changed[6] = True
+                    elif p in ['livetime','nutau_norm','aeff_scale', 'PID_scale', 'PID_offset', 'Barr_nu_nubar_ratio', 'Barr_uphor_ratio', 'axm_qe', 'axm_res', 'GENSYS_AhtBY', 'GENSYS_BhtBY','GENSYS_CV1uBY','GENSYS_CV2uBY', 'GENSYS_MaCCQE','GENSYS_MaRES', 'flux_hadronic_A','flux_hadronic_B', 'flux_hadronic_C', 'flux_hadronic_D','flux_hadronic_E', 'flux_hadronic_F', 'flux_hadronic_G', 'flux_hadronic_H','flux_hadronic_I', 'flux_hadronic_W', 'flux_hadronic_X', 'flux_hadronic_Y','flux_hadronic_Z', 'flux_pion_chargeratio_Chg', 'flux_prim_norm_a','flux_prim_exp_norm_b', 'flux_prim_exp_factor_c', 'flux_spectral_index_d']: step_changed[2] = True
+                    #elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down']): step_changed[3] = True 
+                    elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','hole_ice_fwd', 'dom_eff']): step_changed[3] = True
+                    elif p in ['atmos_mu_scale', 'atmmu_f']: step_changed[4] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
-                    else: steps_changed = [True]*7
+                    else: step_changed = [True]*5
 
         # update the cached.debugrmation
         self.cache_params = params
@@ -294,204 +292,221 @@ class TemplateMaker:
         anlys_bins = (self.anlys_ebins, self.czbins)
 
         # set up flux
-        self.fluxes = {}
-        for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
-            self.fluxes[prim] = {}
-            isbar = '_bar' if 'bar' in prim else ''
-            oppo_isbar = '' if 'bar' in prim else '_bar'
-            for int_type in ['cc', 'nc']:
-                self.fluxes[prim][int_type] = {}
-                nue_flux = evts[prim][int_type]['neutrino_nue_flux']
-                numu_flux = evts[prim][int_type]['neutrino_numu_flux']
-                oppo_nue_flux = evts[prim][int_type]['neutrino_oppo_nue_flux']
-                oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
-                true_e = evts[prim][int_type]['true_energy']
-                # apply flux systematics (nue_numu_ratio, nu_nubar_ratio)
-                nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
-                self.fluxes[prim][int_type]['nue'] = nue_flux
-                self.fluxes[prim][int_type]['numu'] = numu_flux
+        if any(step_changed[:1]):
+            with Timer() as t:
+                self.fluxes = {}
+                for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
+                    self.fluxes[prim] = {}
+                    isbar = '_bar' if 'bar' in prim else ''
+                    oppo_isbar = '' if 'bar' in prim else '_bar'
+                    for int_type in ['cc', 'nc']:
+                        self.fluxes[prim][int_type] = {}
+                        nue_flux = evts[prim][int_type]['neutrino_nue_flux']
+                        numu_flux = evts[prim][int_type]['neutrino_numu_flux']
+                        oppo_nue_flux = evts[prim][int_type]['neutrino_oppo_nue_flux']
+                        oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
+                        true_e = evts[prim][int_type]['true_energy']
+                        # apply flux systematics (nue_numu_ratio, nu_nubar_ratio)
+                        nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
+                        self.fluxes[prim][int_type]['nue'] = nue_flux
+                        self.fluxes[prim][int_type]['numu'] = numu_flux
+            profile.debug("==> elapsed time to set up flux : %s sec"%t.secs)
+        else:
+            profile.debug("STAGE 1: Reused from step before...")
 
         # Get osc probability maps
-        with Timer(verbose=False) as t:
-            if any(step_changed[:2]):
+        if any(step_changed[:2]):
+            with Timer(verbose=False) as t:
                 physics.debug("STAGE 2: Getting osc prob maps...")
                 self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
-            else:
-                profile.info("STAGE 2: Reused from step before...")
-        profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
+            profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
+        else:
+            profile.info("STAGE 2: Reused from step before...")
+        #print("==> elapsed time to get osc_prob : %s sec"%t.secs)
 
-        self.flux_maps = {}
-        self.event_rate_maps = {'params':params}
-        tmp_event_rate_reco_maps = {}
-        tmp_event_rate_cscd = {}
-        tmp_wgt2_cscd = {}
-        tmp_wgt2_trck = {}
-        true_tmp_event_rate_cscd = {}
-        tmp_event_rate_trck = {}
-        true_tmp_event_rate_trck = {}
-        for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
-            self.flux_maps[prim] = {}
-            tmp_event_rate_reco_maps[prim] = {}
-            self.event_rate_maps[prim] = {}
-            tmp_event_rate_cscd[prim] = {}
-            tmp_wgt2_cscd[prim] = {}
-            tmp_wgt2_trck[prim] = {}
-            tmp_event_rate_trck[prim] = {}
-            true_tmp_event_rate_cscd[prim] = {}
-            true_tmp_event_rate_trck[prim] = {}
-            for int_type in ['cc', 'nc']:
-                isbar = '_bar' if 'bar' in prim else ''
-                nc_scale = 1.0    # for nutau CC, nc_scale = nc_norm; otherwise nc_scale = 1
-                if int_type == 'nc':
-                    nc_scale = params['nc_norm']
-                nutau_scale = 1.0    # for nutau CC, nutau_scale = nutau_norm; otherwise nutau_scale = 1
-                if prim == 'nutau' or prim == 'nutau_bar':
-                    if int_type == 'cc':
-                        nutau_scale = params['nutau_norm']
-                true_e = evts[prim][int_type]['true_energy']
-                true_cz = evts[prim][int_type]['true_coszen']
-                reco_e = evts[prim][int_type]['reco_energy']
-                if use_oscFit_genie_sys:
-                    linear_coeff_MaCCQE = evts[prim][int_type]['linear_fit_MaCCQE']
-                    linear_coeff_MaCCRES = evts[prim][int_type]['linear_fit_MaCCRES']
-                    linear_coeff_MaNCRES = evts[prim][int_type]['linear_fit_MaNCRES']
-                    quad_coeff_MaCCQE = evts[prim][int_type]['quad_fit_MaCCQE']
-                    quad_coeff_MaCCRES = evts[prim][int_type]['quad_fit_MaCCRES']
-                    quad_coeff_MaNCRES = evts[prim][int_type]['quad_fit_MaNCRES']
-                reco_cz = evts[prim][int_type]['reco_coszen']
-                aeff_weights = evts[prim][int_type]['weighted_aeff']
-                gensys_splines = evts[prim][int_type]['GENSYS_splines']
-                barr_splines = evts[prim][int_type]['BARR_splines']
-                pid = evts[prim][int_type]['pid']
-                # get flux from self.fluxes
-                nue_flux = self.fluxes[prim][int_type]['nue']
-                numu_flux = self.fluxes[prim][int_type]['numu']
-
-                # apply spectral index, use one pivot energy for all flavors
-                egy_pivot =  24.0900951261  # the value that JP's using
-                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
-
-                # apply Barr systematics
-                nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
-                #nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, true_cz, **params)
-                nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
-
-                # use cut on trueE ( b/c PISA has a cut on true E)
-                if use_cut_on_trueE:
-                    cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
-                    true_e = true_e[cut]
-                    true_cz = true_cz[cut]
-                    reco_e = reco_e[cut]
-                    reco_cz = reco_cz[cut]
+        if any(step_changed[:3]):
+            self.flux_maps = {}
+            self.event_rate_maps = {'params':params}
+            tmp_event_rate_reco_maps = {}
+            tmp_event_rate_cscd = {}
+            tmp_wgt2_cscd = {}
+            tmp_wgt2_trck = {}
+            true_tmp_event_rate_cscd = {}
+            tmp_event_rate_trck = {}
+            true_tmp_event_rate_trck = {}
+            for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
+                self.flux_maps[prim] = {}
+                tmp_event_rate_reco_maps[prim] = {}
+                self.event_rate_maps[prim] = {}
+                tmp_event_rate_cscd[prim] = {}
+                tmp_wgt2_cscd[prim] = {}
+                tmp_wgt2_trck[prim] = {}
+                tmp_event_rate_trck[prim] = {}
+                true_tmp_event_rate_cscd[prim] = {}
+                true_tmp_event_rate_trck[prim] = {}
+                for int_type in ['cc', 'nc']:
+                    isbar = '_bar' if 'bar' in prim else ''
+                    nc_scale = 1.0    # for nutau CC, nc_scale = nc_norm; otherwise nc_scale = 1
+                    if int_type == 'nc':
+                        nc_scale = params['nc_norm']
+                    nutau_scale = 1.0    # for nutau CC, nutau_scale = nutau_norm; otherwise nutau_scale = 1
+                    if prim == 'nutau' or prim == 'nutau_bar':
+                        if int_type == 'cc':
+                            nutau_scale = params['nutau_norm']
+                    true_e = evts[prim][int_type]['true_energy']
+                    true_cz = evts[prim][int_type]['true_coszen']
+                    reco_e = evts[prim][int_type]['reco_energy']
                     if use_oscFit_genie_sys:
-                        linear_coeff_MaCCQE = linear_coeff_MaCCQE[cut]
-                        linear_coeff_MaCCRES = linear_coeff_MaCCRES[cut]
-                        linear_coeff_MaNCRES = linear_coeff_MaNCRES[cut]
-                        quad_coeff_MaCCQE = quad_coeff_MaCCQE[cut]
-                        quad_coeff_MaCCRES = quad_coeff_MaCCRES[cut]
-                        quad_coeff_MaNCRES = quad_coeff_MaNCRES[cut]
-                    aeff_weights = aeff_weights[cut]
-                    gensys_splines = gensys_splines[cut]
-                    pid = pid[cut]
-                    nue_flux = nue_flux[cut]
-                    numu_flux = numu_flux[cut]
+                        linear_coeff_MaCCQE = evts[prim][int_type]['linear_fit_MaCCQE']
+                        linear_coeff_MaCCRES = evts[prim][int_type]['linear_fit_MaCCRES']
+                        linear_coeff_MaNCRES = evts[prim][int_type]['linear_fit_MaNCRES']
+                        quad_coeff_MaCCQE = evts[prim][int_type]['quad_fit_MaCCQE']
+                        quad_coeff_MaCCRES = evts[prim][int_type]['quad_fit_MaCCRES']
+                        quad_coeff_MaNCRES = evts[prim][int_type]['quad_fit_MaNCRES']
+                    reco_cz = evts[prim][int_type]['reco_coszen']
+                    aeff_weights = evts[prim][int_type]['weighted_aeff']
+                    gensys_splines = evts[prim][int_type]['GENSYS_splines']
+                    barr_splines = evts[prim][int_type]['BARR_splines']
+                    pid = evts[prim][int_type]['pid']
+                    # get flux from self.fluxes
+                    nue_flux = self.fluxes[prim][int_type]['nue']
+                    numu_flux = self.fluxes[prim][int_type]['numu']
 
-                # apply axm_qe and axm_res (oscFit-way)
-                if use_oscFit_genie_sys:
-                    aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe'])
-                    aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res'])
-                else:
-                    # apply GENIE systematics (on aeff weight)
-                    aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
+                    # apply spectral index, use one pivot energy for all flavors
+                    egy_pivot =  24.0900951261  # the value that JP's using
+                    nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
-                # when generating fits for reco prcs, change reco_e and reco_cz:
-                if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
-                    reco_e, reco_cz = apply_reco_sys(true_e, true_cz, reco_e, reco_cz, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
+                    # apply Barr systematics
+                    if prim == 'nue':
+                        print "step1 nue_flux = ", nue_flux[0:10]
+                    nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                    if prim == 'nue':
+                        print "step2 nue_flux = ", nue_flux[0:10]
+                    nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
+                    if prim == 'nue':
+                        print "step3 nue_flux = ", nue_flux[0:10]
 
-                # Get flux maps
-                self.flux_maps[prim][int_type] = {} 
-                weighted_hist_nue_flux, _, _ = np.histogram2d(true_e, true_cz, weights= nue_flux * aeff_weights, bins=bins)
-                weighted_hist_numu_flux, _, _ = np.histogram2d(true_e, true_cz, weights= numu_flux * aeff_weights, bins=bins)
-                self.flux_maps[prim][int_type] = {}
-                self.flux_maps[prim][int_type]['nue'+isbar] = weighted_hist_nue_flux 
-                self.flux_maps[prim][int_type]['numu'+isbar] = weighted_hist_numu_flux 
-                self.flux_maps[prim][int_type]['ebins']=self.ebins
-                self.flux_maps[prim][int_type]['czbins']=self.czbins
+                    # use cut on trueE ( b/c PISA has a cut on true E)
+                    if use_cut_on_trueE:
+                        cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
+                        true_e = true_e[cut]
+                        true_cz = true_cz[cut]
+                        reco_e = reco_e[cut]
+                        reco_cz = reco_cz[cut]
+                        if use_oscFit_genie_sys:
+                            linear_coeff_MaCCQE = linear_coeff_MaCCQE[cut]
+                            linear_coeff_MaCCRES = linear_coeff_MaCCRES[cut]
+                            linear_coeff_MaNCRES = linear_coeff_MaNCRES[cut]
+                            quad_coeff_MaCCQE = quad_coeff_MaCCQE[cut]
+                            quad_coeff_MaCCRES = quad_coeff_MaCCRES[cut]
+                            quad_coeff_MaNCRES = quad_coeff_MaNCRES[cut]
+                        aeff_weights = aeff_weights[cut]
+                        gensys_splines = gensys_splines[cut]
+                        pid = pid[cut]
+                        nue_flux = nue_flux[cut]
+                        numu_flux = numu_flux[cut]
 
-                # Get osc_flux 
-                if no_osc_maps:
-                    #use no oscillation, osc_flux is just flux
-                    if 'nue' in prim:
-                        osc_flux = nue_flux
-                    elif 'numu' in prim:
-                        osc_flux = numu_flux
+                    # apply axm_qe and axm_res (oscFit-way)
+                    with Timer() as t:
+                        if use_oscFit_genie_sys:
+                            aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe'])
+                            aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res'])
+                        else:
+                            # apply GENIE systematics (on aeff weight, PISA-way)
+                            aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
+                    #print("==> elapsed time to apply_GENIE_mod : %s sec"%t.secs) 
+
+                    # when generating fits for reco prcs, change reco_e and reco_cz:
+                    if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
+                        reco_e, reco_cz = apply_reco_sys(true_e, true_cz, reco_e, reco_cz, params['e_reco_precision_up'], params['e_reco_precision_down'], params['cz_reco_precision_up'], params['cz_reco_precision_down'])
+
+                    # Get flux maps
+                    self.flux_maps[prim][int_type] = {} 
+                    weighted_hist_nue_flux, _, _ = np.histogram2d(true_e, true_cz, weights= nue_flux * aeff_weights, bins=bins)
+                    weighted_hist_numu_flux, _, _ = np.histogram2d(true_e, true_cz, weights= numu_flux * aeff_weights, bins=bins)
+                    self.flux_maps[prim][int_type] = {}
+                    self.flux_maps[prim][int_type]['nue'+isbar] = weighted_hist_nue_flux 
+                    self.flux_maps[prim][int_type]['numu'+isbar] = weighted_hist_numu_flux 
+                    self.flux_maps[prim][int_type]['ebins']=self.ebins
+                    self.flux_maps[prim][int_type]['czbins']=self.czbins
+
+                    # Get osc_flux 
+                    if no_osc_maps:
+                        #use no oscillation, osc_flux is just flux
+                        if 'nue' in prim:
+                            osc_flux = nue_flux
+                        elif 'numu' in prim:
+                            osc_flux = numu_flux
+                        else:
+                            osc_flux = np.zeros(len(nue_flux))
                     else:
-                        osc_flux = np.zeros(len(nue_flux))
-                else:
-                    osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
+                        osc_flux = nue_flux*self.osc_probs[prim][int_type]['nue_maps']+ numu_flux*self.osc_probs[prim][int_type]['numu_maps']
 
-                # Get event_rate(true) maps
-                final_weights = osc_flux * aeff_weights
-                weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= final_weights, bins=bins)
-                self.event_rate_maps[prim][int_type] = {}
-                self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
-                self.event_rate_maps[prim][int_type]['ebins']=self.ebins
-                self.event_rate_maps[prim][int_type]['czbins']=self.czbins
+                    # Get event_rate(true) maps
+                    final_weights = osc_flux * aeff_weights
+                    weighted_hist_true, _, _ = np.histogram2d(true_e, true_cz, weights= final_weights, bins=bins)
+                    self.event_rate_maps[prim][int_type] = {}
+                    self.event_rate_maps[prim][int_type]['map'] = weighted_hist_true * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    self.event_rate_maps[prim][int_type]['ebins']=self.ebins
+                    self.event_rate_maps[prim][int_type]['czbins']=self.czbins
 
-                # Get event_rate_reco maps (step1, tmp maps in 12 flavs)
-                weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= final_weights, bins=anlys_bins)
-                tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    # Get event_rate_reco maps (step1, tmp maps in 12 flavs)
+                    weighted_hist_reco, _, _ = np.histogram2d(reco_e, reco_cz, weights= final_weights, bins=anlys_bins)
+                    tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
-                # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
-                #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
-                pid_cscd =  pid < self.pid_bound
-                pid_trck =  pid >= self.pid_bound
-                weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
-                weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
-                wgt2_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (final_weights[pid_cscd])**2, bins=anlys_bins)
-                wgt2_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (final_weights[pid_trck])**2, bins=anlys_bins)
-                tmp_wgt2_cscd[prim][int_type] = wgt2_hist_cscd * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
-                tmp_wgt2_trck[prim][int_type] = wgt2_hist_trck * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
-                tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
-                tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
+                    #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
+                    pid_cscd =  pid < self.pid_bound
+                    pid_trck =  pid >= self.pid_bound
+                    weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
+                    weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
+                    wgt2_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= (final_weights[pid_cscd])**2, bins=anlys_bins)
+                    wgt2_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= (final_weights[pid_trck])**2, bins=anlys_bins)
+                    tmp_wgt2_cscd[prim][int_type] = wgt2_hist_cscd * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
+                    tmp_wgt2_trck[prim][int_type] = wgt2_hist_trck * (params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale)**2
+                    tmp_event_rate_cscd[prim][int_type] = weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    tmp_event_rate_trck[prim][int_type] = weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
-                # Get event_rate_pid maps in true e vs true cz (step1, tmp maps in 12 flavs)
-                true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
-                true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
-                true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
-                true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    # Get event_rate_pid maps in true e vs true cz (step1, tmp maps in 12 flavs)
+                    true_weighted_hist_cscd,_, _ = np.histogram2d(true_e[pid_cscd], true_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
+                    true_weighted_hist_trck,_, _ = np.histogram2d(true_e[pid_trck], true_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
+                    true_tmp_event_rate_cscd[prim][int_type] = true_weighted_hist_cscd * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
+                    true_tmp_event_rate_trck[prim][int_type] = true_weighted_hist_trck * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
-        # Get event_rate_reco maps (step2, combine nu and nubar for cc, and all flavs for nc)
-        self.event_rate_reco_maps = {'params': params}
-        for prim in ['nue', 'numu', 'nutau']:
-            self.event_rate_reco_maps[prim+'_cc'] = {'map': tmp_event_rate_reco_maps[prim]['cc'] + tmp_event_rate_reco_maps[prim+'_bar']['cc'],
-                                                     'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        event_rate_reco_map_nuall_nc = np.zeros(np.shape(tmp_event_rate_reco_maps['nue']['nc']))
-        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            event_rate_reco_map_nuall_nc += tmp_event_rate_reco_maps[prim]['nc']
-        self.event_rate_reco_maps['nuall_nc']= {'map': event_rate_reco_map_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            # Get event_rate_reco maps (step2, combine nu and nubar for cc, and all flavs for nc)
+            self.event_rate_reco_maps = {'params': params}
+            for prim in ['nue', 'numu', 'nutau']:
+                self.event_rate_reco_maps[prim+'_cc'] = {'map': tmp_event_rate_reco_maps[prim]['cc'] + tmp_event_rate_reco_maps[prim+'_bar']['cc'],
+                                                         'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            event_rate_reco_map_nuall_nc = np.zeros(np.shape(tmp_event_rate_reco_maps['nue']['nc']))
+            for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+                event_rate_reco_map_nuall_nc += tmp_event_rate_reco_maps[prim]['nc']
+            self.event_rate_reco_maps['nuall_nc']= {'map': event_rate_reco_map_nuall_nc, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
-        # Get event_rate_pid maps (step2, combine all flavs)
-        self.event_rate_pid_maps = {'params':params}
-        event_rate_pid_map_cscd = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
-        event_rate_pid_map_trck = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
-        for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            for int_type in ['cc', 'nc']:
-                event_rate_pid_map_cscd += tmp_event_rate_cscd[prim][int_type]
-                event_rate_pid_map_trck += tmp_event_rate_trck[prim][int_type]
-        self.event_rate_pid_maps['cscd'] = {'map': event_rate_pid_map_cscd, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
-        self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            # Get event_rate_pid maps (step2, combine all flavs)
+            self.event_rate_pid_maps = {'params':params}
+            event_rate_pid_map_cscd = np.zeros(np.shape(tmp_event_rate_cscd['nue']['nc']))
+            event_rate_pid_map_trck = np.zeros(np.shape(tmp_event_rate_trck['nue']['nc']))
+            for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+                for int_type in ['cc', 'nc']:
+                    event_rate_pid_map_cscd += tmp_event_rate_cscd[prim][int_type]
+                    event_rate_pid_map_trck += tmp_event_rate_trck[prim][int_type]
+            self.event_rate_pid_maps['cscd'] = {'map': event_rate_pid_map_cscd, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
+            print "event_rate_pid_map_cscd = ", event_rate_pid_map_cscd
 
-        # getting wgt2_hist
-        #wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
-        #wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
-        #for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-        #    for int_type in ['cc', 'nc']:
-        #        wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
-        #        wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
+            # getting wgt2_hist
+            #wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
+            #wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
+            #for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+            #    for int_type in ['cc', 'nc']:
+            #        wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
+            #        wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
+        else:
+            profile.debug("STAGE 3: Reused from step before...")
 
-        if any(step_changed[:6]):
-            physics.debug("STAGE 6: Applying systematics...")
+        if any(step_changed[:4]):
+            physics.debug("STAGE 4: Applying systematics...")
             with Timer(verbose=False) as t:
                 if no_sys_maps:
                     self.sys_maps = self.event_rate_pid_maps
@@ -518,9 +533,9 @@ class TemplateMaker:
                         self.sys_maps = self.Resolution_cz_down.apply_sys(self.reco_prec_maps_cz_up, cz_param_down)
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
-            profile.debug("STAGE 6: Reused from step before...")
-
-        if any(step_changed[:7]):
+            profile.debug("STAGE 4: Reused from step before...")
+        print " self.sys_maps = ", self.sys_maps['cscd']
+        if any(step_changed[:5]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
                 self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
