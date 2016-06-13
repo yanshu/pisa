@@ -28,6 +28,8 @@ import pisa.utils.events as events
 
 from pisa.flux.myHondaFluxService import myHondaFluxService as HondaFluxService
 from pisa.flux.IPHondaFluxService import IPHondaFluxService
+from pisa.utils.shape import SplineService
+
 from pisa.flux.Flux import get_flux_maps
 
 from pisa.oscillations.Oscillation import get_osc_flux
@@ -114,6 +116,8 @@ class TemplateMaker:
             error_msg = "flux_mode: %s is not implemented! "%flux_mode
             error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
             raise NotImplementedError(error_msg)
+        # make spline service for Barr parameters
+        self.flux_barr_service = SplineService(self.oversample_ebins, dictFile = self.params['flux_uncertainty_inputs'])
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']
@@ -142,6 +146,8 @@ class TemplateMaker:
 
         # Aeff/True Event Rate Service:
         aeff_mode = template_settings['aeff_mode']
+        # make spline service for genie parameters
+        self.genie_spline_service = SplineService(self.ebins, dictFile = self.params['GENSYS_files'])
         if aeff_mode == 'param':
             physics.debug(" Using effective area from PARAMETRIZATION...")
             self.aeff_service = AeffServicePar(self.ebins, self.czbins,
@@ -271,9 +277,11 @@ class TemplateMaker:
         self.rel_error = {}
         self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
         self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
+        self.rel_error['cscd'][np.isinf(self.rel_error['cscd'])] = 0
+        self.rel_error['trck'][np.isinf(self.rel_error['trck'])] = 0
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False, use_atmmu_f=False):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -296,7 +304,7 @@ class TemplateMaker:
                     elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
                     elif p in ['atmos_mu_scale']: step_changed[6] = True
                     # if this last statement is true, something changed that is unclear what it was....in that case just redo all steps
-                    else: steps_changed = [True]*7
+                    else: step_changed = [True]*7
 
         # update the cached.debugrmation
         self.cache_params = params
@@ -304,7 +312,7 @@ class TemplateMaker:
         if any(step_changed[:1]):
             physics.debug("STAGE 1: Getting Atm Flux maps...")
             with Timer() as t:
-                self.flux_maps = get_flux_maps(self.flux_service, self.oversample_ebins,self.oversample_czbins, **params)
+                self.flux_maps = get_flux_maps(self.flux_service, self.flux_barr_service, self.oversample_ebins,self.oversample_czbins, **params)
             profile.debug("==> elapsed time for flux stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 1: Reused from step before...")
@@ -351,7 +359,7 @@ class TemplateMaker:
             if any(step_changed[:3]):
                 physics.debug("STAGE 3: Getting event rate true maps...")
                 with Timer() as t:
-                    event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service, **params)
+                    event_rate_maps = get_event_rates(self.osc_flux_maps,self.aeff_service,self.genie_spline_service, **params)
                     self.event_rate_maps = self.downsample_binning(event_rate_maps, map_type = 'aeff')
                 profile.debug("==> elapsed time for aeff stage: %s sec"%t.secs)
             else:
@@ -361,7 +369,8 @@ class TemplateMaker:
             flavours = ['numu', 'numu_bar','nue','nue_bar', 'nutau', 'nutau_bar']
             for flav in flavours:
                 osc_flux_maps_ones[flav]['map']= np.ones_like(osc_flux_maps_ones[flav]['map'])
-            return get_event_rates(osc_flux_maps_ones,self.aeff_service, **params)
+            return get_event_rates(osc_flux_maps_ones,self.aeff_service, self.genie_spline_service, **params)
+
 
         if any(step_changed[:4]):
             physics.debug("STAGE 4: Getting event rate reco maps...")
@@ -394,7 +403,6 @@ class TemplateMaker:
                     self.domeff_maps = self.DomEfficiency.apply_sys(self.hole_ice_maps, params['dom_eff'])
                     #self.domeff_maps = self.event_rate_pid_maps
                     if params['e_reco_precision_up']==1 and params['e_reco_precision_down']==1 and params['cz_reco_precision_up']==1 and params['cz_reco_precision_down']==1:
-                        print "olay!!!"
                         self.sys_maps = self.domeff_maps
                     else:
                         self.reco_prec_maps_e_up = self.Resolution_e_up.apply_sys(self.domeff_maps, params['e_reco_precision_up'])
@@ -423,6 +431,8 @@ class TemplateMaker:
         self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
+        #print "self.final_event_rate['cscd']['sumw2_mu'] = ", self.final_event_rate['cscd']['sumw2_mu']
+        #print "self.final_event_rate['trck']['sumw2_mu' = ", self.final_event_rate['trck']['sumw2_mu']
 
         if not return_stages: return self.final_event_rate
 
