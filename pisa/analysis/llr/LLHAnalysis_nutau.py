@@ -76,7 +76,7 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
 
     return
 
-def find_max_llh_bfgs(blind_fit, params_keep_blind, fmap, template_maker, params, bfgs_settings,
+def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
                       save_steps=False, normal_hierarchy=None,
                       check_octant=False, no_optimize=False):
     """
@@ -196,7 +196,7 @@ def find_max_llh_bfgs(blind_fit, params_keep_blind, fmap, template_maker, params
     # Report any warnings if there are
     lvl = logging.WARN if (dict_flags['warnflag'] != 0) else logging.DEBUG
     for name, val in dict_flags.items():
-        if blind_fit and name in params_keep_blind:
+        if blind_fit:
             # still show the warning, but not the value for the params_keep_blind
             physics.log(lvl," %s : value not shown"%(name))
         else:
@@ -210,7 +210,7 @@ def find_max_llh_bfgs(blind_fit, params_keep_blind, fmap, template_maker, params
 
     if blind_fit:
         # remove params_keep_blind from the output result
-        for key in params_keep_blind:
+        for key in names:
             if key in opt_steps_dict.keys():
                 del opt_steps_dict[key]
 
