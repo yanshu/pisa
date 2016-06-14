@@ -295,10 +295,9 @@ class TemplateMaker:
             step_changed = [False]*7
             for p,v in params.items():
                 if self.cache_params[p] != v:
-                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index']: step_changed[0] = True
+                    if p in ['nue_numu_ratio','nu_nubar_ratio','energy_scale','atm_delta_index', 'flux_hadronic_A','flux_hadronic_B', 'flux_hadronic_C', 'flux_hadronic_D','flux_hadronic_E', 'flux_hadronic_F', 'flux_hadronic_G', 'flux_hadronic_H','flux_hadronic_I', 'flux_hadronic_W', 'flux_hadronic_X', 'flux_hadronic_Y','flux_hadronic_Z', 'flux_pion_chargeratio_Chg', 'flux_prim_norm_a','flux_prim_exp_norm_b', 'flux_prim_exp_factor_c', 'flux_spectral_index_d']: step_changed[0] = True
                     elif p in ['deltam21','deltam31','theta12','theta13','theta23','deltacp','energy_scale','YeI','YeO','YeM']: step_changed[1] = True
-                    elif p in ['livetime','nutau_norm','aeff_scale']: step_changed[2] = True
-                    #elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs','up_down_cz_reco_prcs']): step_changed[3] = True 
+                    elif p in ['livetime','nutau_norm','aeff_scale', 'GENSYS_AhtBY', 'GENSYS_BhtBY','GENSYS_CV1uBY','GENSYS_CV2uBY', 'GENSYS_MaCCQE','GENSYS_MaRES']: step_changed[2] = True
                     elif (apply_reco_prcs and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'e_reco_precision_down','cz_reco_precision_down']): step_changed[3] = True 
                     elif p in ['PID_scale', 'PID_offset']: step_changed[4] = True
                     elif (no_sys_maps==False and p in ['e_reco_precision_up', 'cz_reco_precision_up', 'up_down_e_reco_prcs', 'up_down_cz_reco_prcs','hole_ice','dom_eff']): step_changed[5] = True
