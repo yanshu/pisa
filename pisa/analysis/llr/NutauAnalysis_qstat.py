@@ -51,9 +51,6 @@ parser.add_argument('-pd','--pseudo_data_settings',type=str,
 parser.add_argument('-bs','--burn_sample_file',metavar='FILE',type=str, dest='bs',
                     default='', help='HDF5 File containing burn sample.')
 parser.add_argument('--blind_fit',action='store_true', default=False, help='Do blind fit.')
-parser.add_argument('--params_keep_blind',metavar='str(list)',
-                    default="['hole_ice','theta23','deltam31','nutau_norm','theta13']",
-                    help='''Params to be kept blind.''')
 parser.add_argument('-n','--ntrials',type=int, default = 1,
                     help="Number of trials to run")
 parser.add_argument('-s','--save-steps',action='store_true',default=False,
@@ -103,7 +100,6 @@ anlys_ebins = template_settings['binning']['anlys_ebins']
 czbins = template_settings['binning']['czbins']
 anlys_bins = (anlys_ebins, czbins)
 blind_fit = args.blind_fit
-params_keep_blind = eval(args.params_keep_blind)
 # one sanity check for background scale
 if template_settings['params']['use_atmmu_f']['value'] == False:
     assert(template_settings['params']['atmmu_f']['fixed'] == True)
@@ -271,7 +267,7 @@ for itrial in xrange(1,args.ntrials+1):
                     largs[2] = change_settings(largs[2],fix_param_scan_name,fix_param_scan_val,True)
 
             
-            res = find_max_llh_bfgs(blind_fit, params_keep_blind, *largs, **kwargs)
+            res = find_max_llh_bfgs(blind_fit, *largs, **kwargs)
             # execute optimizer
             if len(fit_results) == 0:
                 fit_results.append(res)
@@ -301,7 +297,7 @@ for itrial in xrange(1,args.ntrials+1):
             #    kwargs['no_optimize']=True
 
             # execute optimizer
-            fit_results.append(find_max_llh_bfgs(blind_fit, params_keep_blind, *largs, **kwargs))
+            fit_results.append(find_max_llh_bfgs(blind_fit, *largs, **kwargs))
             profile.info("stop optimizer")
 
         del largs
