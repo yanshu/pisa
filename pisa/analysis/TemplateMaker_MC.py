@@ -258,8 +258,7 @@ class TemplateMaker:
             #self.mc_error[channel]= hist_sqrt_w2
 
             # if encounters zero count bins use 0 as error, so convert inf to zero
-            self.rel_error['cscd'][np.isinf(self.rel_error['cscd'])] = 0
-            self.rel_error['trck'][np.isinf(self.rel_error['trck'])] = 0
+            self.rel_error[channel][np.isinf(self.rel_error[channel])] = 0
 
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=False, use_oscFit_genie_sys=False):
