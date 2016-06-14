@@ -248,12 +248,18 @@ class TemplateMaker:
         self.rel_error = {}
         #self.mc_error = {}
         for channel in ['cscd', 'trck']:
+            #TODO
+            # here pid bound is 3.0, might change in future
             pid_cut = all_pid>=3.0 if channel=='trck' else all_pid<3.0
             hist_w,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut])
             hist_w2,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut]**2)
             hist_sqrt_w2 = np.sqrt(hist_w2)
             self.rel_error[channel]= hist_sqrt_w2/hist_w
             #self.mc_error[channel]= hist_sqrt_w2
+
+            # if encounters zero count bins use 0 as error, so convert inf to zero
+            self.rel_error['cscd'][np.isinf(self.rel_error['cscd'])] = 0
+            self.rel_error['trck'][np.isinf(self.rel_error['trck'])] = 0
 
 
     def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=False, use_oscFit_genie_sys=False):
