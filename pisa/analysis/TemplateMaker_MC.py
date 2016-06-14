@@ -322,7 +322,6 @@ class TemplateMaker:
             profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
         else:
             profile.info("STAGE 2: Reused from step before...")
-        #print("==> elapsed time to get osc_prob : %s sec"%t.secs)
 
         if any(step_changed[:3]):
             self.flux_maps = {}
@@ -377,14 +376,8 @@ class TemplateMaker:
                     nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                     # apply Barr systematics
-                    if prim == 'nue':
-                        print "step1 nue_flux = ", nue_flux[0:10]
                     nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
-                    if prim == 'nue':
-                        print "step2 nue_flux = ", nue_flux[0:10]
                     nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
-                    if prim == 'nue':
-                        print "step3 nue_flux = ", nue_flux[0:10]
 
                     # use cut on trueE ( b/c PISA has a cut on true E)
                     if use_cut_on_trueE:
@@ -493,7 +486,6 @@ class TemplateMaker:
                     event_rate_pid_map_trck += tmp_event_rate_trck[prim][int_type]
             self.event_rate_pid_maps['cscd'] = {'map': event_rate_pid_map_cscd, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
             self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
-            print "event_rate_pid_map_cscd = ", event_rate_pid_map_cscd
 
             # getting wgt2_hist
             #wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
@@ -534,7 +526,6 @@ class TemplateMaker:
             profile.debug("==> elapsed time for sys stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 4: Reused from step before...")
-        print " self.sys_maps = ", self.sys_maps['cscd']
         if any(step_changed[:5]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
