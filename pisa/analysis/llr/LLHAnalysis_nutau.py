@@ -137,7 +137,7 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
         for name in names:
             msg += ' | {}'.format(name[:9].ljust(9))
         physics.info(msg)
-        print msg
+        #print msg
 
     best_fit_vals,llh,dict_flags = opt.fmin_l_bfgs_b(
             func=llh_bfgs, x0=init_vals, args=const_args, approx_grad=True,
@@ -154,12 +154,13 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
         init_vals = get_param_values(free_params)
         init_vals = np.array(init_vals)*np.array(scales)
 
-        string = 'LLH'
-        msg = '{}'.format(string.ljust(18))
-        for name in names:
-            msg += ' | {}'.format(name[:7].ljust(8))
-        #physics.info(msg)
-        print msg
+        if not blind_fit:
+            string = 'LLH'
+            msg = '{}'.format(string.ljust(18))
+            for name in names:
+                msg += ' | {}'.format(name[:7].ljust(8))
+            physics.info(msg)
+            #print msg
 
         const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
         display_optimizer_settings(free_params=free_params,
@@ -214,7 +215,6 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
             if key in opt_steps_dict.keys():
                 del opt_steps_dict[key]
 
-    #print "final result = ", opt_steps_dict
     return opt_steps_dict
 
 

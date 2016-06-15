@@ -532,12 +532,12 @@ class TemplateMaker:
         else:
             profile.debug("STAGE 4: Reused from step before...")
         if any(step_changed[:5]):
-            physics.debug("STAGE 7: Getting bkgd maps...")
+            physics.debug("STAGE 5: Getting bkgd maps...")
             with Timer(verbose=False) as t:
                 self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
-            profile.debug("STAGE 7: Reused from step before...")
+            profile.debug("STAGE 5: Reused from step before...")
 
         # Calculate the sum_w2, method 1: sum_w2 is calculated at baseline histogram
         self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2    
