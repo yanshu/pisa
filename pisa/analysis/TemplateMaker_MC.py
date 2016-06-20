@@ -139,7 +139,7 @@ class TemplateMaker:
             self.pid_remove = -2
         else:
             self.pid_remove = -3
-        self.pid_bound = 3
+        self.pid_bound = 2
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -249,8 +249,10 @@ class TemplateMaker:
         #self.mc_error = {}
         for channel in ['cscd', 'trck']:
             #TODO
-            # here pid bound is 3.0, might change in future
-            pid_cut = all_pid>=3.0 if channel=='trck' else all_pid<3.0
+            if channel == 'cscd':
+                pid_cut =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
+            else:
+                pid_cut =  pid >= self.pid_bound
             hist_w,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut])
             hist_w2,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut]**2)
             hist_sqrt_w2 = np.sqrt(hist_w2)
@@ -261,7 +263,7 @@ class TemplateMaker:
             self.rel_error[channel][np.isinf(self.rel_error[channel])] = 0
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=True, use_oscFit_genie_sys=True):
+    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=True, use_oscFit_genie_sys=True, no_genie_barr_sys=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -369,8 +371,9 @@ class TemplateMaker:
                         quad_coeff_MaNCRES = evts[prim][int_type]['quad_fit_MaNCRES']
                     reco_cz = evts[prim][int_type]['reco_coszen']
                     aeff_weights = evts[prim][int_type]['weighted_aeff']
-                    gensys_splines = evts[prim][int_type]['GENSYS_splines']
-                    barr_splines = evts[prim][int_type]['BARR_splines']
+                    if not no_genie_barr_sys:
+                        gensys_splines = evts[prim][int_type]['GENSYS_splines']
+                        barr_splines = evts[prim][int_type]['BARR_splines']
                     pid = evts[prim][int_type]['pid']
                     # get flux from self.fluxes
                     nue_flux = self.fluxes[prim][int_type]['nue']
@@ -381,8 +384,9 @@ class TemplateMaker:
                     nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
 
                     # apply Barr systematics
-                    nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
-                    nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
+                    if not no_genie_barr_sys:
+                        nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                        nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
 
                     # use cut on trueE ( b/c PISA has a cut on true E)
                     if use_cut_on_trueE:
@@ -399,20 +403,20 @@ class TemplateMaker:
                             quad_coeff_MaCCRES = quad_coeff_MaCCRES[cut]
                             quad_coeff_MaNCRES = quad_coeff_MaNCRES[cut]
                         aeff_weights = aeff_weights[cut]
-                        gensys_splines = gensys_splines[cut]
+                        if not no_genie_barr_sys:
+                            gensys_splines = gensys_splines[cut]
                         pid = pid[cut]
                         nue_flux = nue_flux[cut]
                         numu_flux = numu_flux[cut]
 
                     # apply axm_qe and axm_res (oscFit-way)
-                    with Timer() as t:
+                    if not no_genie_barr_sys:
                         if use_oscFit_genie_sys:
                             aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe'])
                             aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res'])
                         else:
                             # apply GENIE systematics (on aeff weight, PISA-way)
                             aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
-                    #print("==> elapsed time to apply_GENIE_mod : %s sec"%t.secs) 
 
                     # when generating fits for reco prcs, change reco_e and reco_cz:
                     if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
