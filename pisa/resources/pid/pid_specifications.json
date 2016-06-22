@@ -1,8 +1,8 @@
 {
   "DeepCore":{
     "IC86":{
-      "msu_4digit":{
-        "mn8d-mn7d": {
+      "4digit":{
+        "msu_mn8d-mn7d": {
           "field_map":{
               "pid": "IC86_Dunkman_L6/delta_LLH"
           },
@@ -12,8 +12,8 @@
           }
         }
       },
-      "msu_5digit":{
-        "mn8d-mn7d": {
+      "5digit":{
+        "msu_mn8d-mn7d": {
           "field_map":{
               "pid": "IC86_Dunkman_L6/delta_LLH"
           },
