@@ -207,7 +207,10 @@ if not args.templ_already_saved:
             template_settings_Reco = copy.deepcopy(template_settings)
             template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True, turn_off_osc_NC=args.no_NC_osc)
+            if args.use_hist_PISA:
+                tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True)
+            else:
+                tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), num_data_events=None, no_sys_maps= True, apply_reco_prcs=True)
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['map'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd']['map'] = tmap['cscd']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = tmap['trck']['sumw2_nu'] 
