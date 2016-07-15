@@ -51,7 +51,7 @@ def apply_reco_sys(true_energy, true_coszen, reco_energy, reco_coszen, e_reco_pr
         reco_coszen[reco_coszen<-1] = -2-reco_coszen[reco_coszen<-1]
     return reco_energy, reco_coszen
 
-def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins, turn_off_osc_NC=False):
+def get_osc_probs(evts, params, osc_service, ebins):
     osc_probs = {}
     for prim in ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau', 'nutau_bar']:
         osc_probs[prim]= {}
@@ -63,13 +63,12 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins, turn_off_o
         for int_type in ['cc', 'nc']:
             true_e = evts[prim][int_type]['true_energy']
             true_cz = evts[prim][int_type]['true_coszen']
-            if use_cut_on_trueE:
+            if params['use_cut_on_trueE']:
                 cut = np.logical_and(true_e < ebins[-1], true_e>= ebins[0])
                 true_e = true_e[cut]
                 true_cz = true_cz[cut]
             osc_probs[prim][int_type] = osc_service.fill_osc_prob(true_e, true_cz, prim, event_by_event=True, **params)
-            if turn_off_osc_NC and int_type=='nc':
-                print "NO OSC FOR NC"
+            if params['turn_off_osc_NC'] and int_type=='nc':
                 if prim in ['nutau', 'nutau_bar']:
                     osc_probs[prim][int_type]['nue_maps'] = np.zeros(np.shape(osc_probs[prim][int_type]['nue_maps']))
                     osc_probs[prim][int_type]['numu_maps'] = np.zeros(np.shape(osc_probs[prim][int_type]['numu_maps']))
@@ -81,24 +80,24 @@ def get_osc_probs(evts, params, osc_service, use_cut_on_trueE, ebins, turn_off_o
                     osc_probs[prim][int_type]['numu_maps'] = np.ones(np.shape(osc_probs[prim][int_type]['numu_maps']))
     return osc_probs
 
-def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params, flux_sys_renorm):
+def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params):
 
     if params['nue_numu_ratio']==1 and params['nu_nubar_ratio']==1:
         return nue_flux, numu_flux
 
     # nue_numu_ratio
     if params['nue_numu_ratio'] != 1:
-        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=flux_sys_renorm)
+        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=params['flux_sys_renorm'])
 
     # nu_nubar_ratio
     if params['nu_nubar_ratio'] != 1:
         if 'bar' not in prim:
-            scaled_nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
-            scaled_numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
+            scaled_nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+            scaled_numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
         else:
             #nue(mu)_flux is actually nue(mu)_bar because prim has '_bar' in it
-            _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
-            _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=flux_sys_renorm)
+            _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+            _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
     return scaled_nue_flux, scaled_numu_flux
 
 # apply Barr flux ratios ( oscFit way)
@@ -123,11 +122,11 @@ def apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params):
     modified_numu_flux = numu_flux * scale_numu
     return modified_nue_flux, modified_numu_flux
 
-def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm):
+def apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params):
     if params['atm_delta_index'] != 0:
         delta_index = params['atm_delta_index']
         scale = np.power((true_e/egy_pivot),delta_index)
-        if flux_sys_renorm:
+        if params['flux_sys_renorm']:
             # keep weighted flux constant
             weighted_nue_flux = nue_flux * aeff_weights
             total_nue_flux = weighted_nue_flux.sum() 
