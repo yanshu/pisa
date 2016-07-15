@@ -24,9 +24,13 @@ import pisa.utils.dataProcParams as DPP
 def get_low_level_quantities(file_name, file_type, anlys_ebins, czbins, fields, sim_version, cuts='analysis',
                               run_setting_file='events/mc_sim_run_settings.json', det='deepcore',
                               data_proc_file='events/data_proc_params.json'):
+    if sim_version=='dima':
+        proc_version = '5digit'
+    else:
+        proc_version = '4digit'
     data_proc_params = DPP.DataProcParams(
             detector=det,
-            proc_ver=sim_version,
+            proc_ver=proc_version,
             data_proc_params=find_resource(data_proc_file))
     run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector=det)
     data = data_proc_params.getData(find_resource(file_name), run_settings=run_settings, file_type=file_type)
@@ -35,12 +39,13 @@ def get_low_level_quantities(file_name, file_type, anlys_ebins, czbins, fields, 
                     return_fields=fields)
     return cut_data
 
-def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, sim_version='4digit'):
+def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, pid_remove, pid_bound, sim_version='4digit'):
     # right now only use burn sample with sim_version = '4digit'
+    print "sim_version == ", sim_version
     if sim_version == "4digit":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
         Reco_Track_Name = 'IC86_Dunkman_L6_MultiNest8D_PDG_Track'
-    elif sim_version == "5digit" or "dima":
+    elif sim_version == "5digit" or sim_version=="dima":
         Reco_Neutrino_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC'
         Reco_Track_Name = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_Track'
     else:
@@ -62,9 +67,9 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, s
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # throw away dLLH < -3
-    reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=-3]
-    reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=-3]
-    dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=-3]
+    reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=pid_remove]
+    reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=pid_remove]
+    dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=pid_remove]
 
     # don't throw away dLLH < -3, only use this when using param service for PID in PISA
     #reco_energy_L6_cut1 = reco_energy_L6
@@ -79,9 +84,9 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, s
     burn_sample_dict = {}
     for flav in ['cscd','trck']:
         if flav == 'cscd':
-            cut_pid = dLLH_L6_cut1 < 3.0 
+            cut_pid = dLLH_L6_cut1 < pid_bound 
         if flav == 'trck':
-            cut_pid = dLLH_L6_cut1 >= 3.0 
+            cut_pid = dLLH_L6_cut1 >= pid_bound 
         reco_energy_L6_pid = reco_energy_L6_cut1[cut_pid]
         reco_coszen_L6_pid = reco_coszen_L6_cut1[cut_pid]
 
@@ -127,7 +132,7 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, s
 
 
 def get_asimov_data_fmap_up_down(template_maker, fiducial_params, channel=None):
-    true_template = template_maker.get_template(fiducial_params)  
+    true_template = template_maker.get_template(fiducial_params, num_data_events=None)
     true_fmap = Maps.flatten_map(true_template, channel=channel)
     return true_fmap
 
@@ -145,7 +150,7 @@ def get_pseudo_data_fmap(template_maker, fiducial_params, channel, seed=None):
         if 'cscd' or 'trck' only returns the channel requested.
     """
 
-    true_template = template_maker.get_template(fiducial_params)
+    true_template = template_maker.get_template(fiducial_params, num_data_events=None)
     true_fmap = Maps.flatten_map(true_template, channel=channel)
     if seed:
         fmap = get_random_map(true_fmap, seed=seed)
@@ -157,9 +162,9 @@ def get_stat_fluct_map(template_maker, fiducial_params, channel, seed=None):
     """
     Get a map that is fluctuated by the statistical uncertainty of the model
     """
-    true_template = template_maker.get_template(fiducial_params)
+    true_template = template_maker.get_template(fiducial_params, num_data_events=None)
     true_fmap = Maps.flatten_map(true_template, channel=channel)
-    sumw2 = Maps.flatten_map(true_template, channel=channel,mapname='sumw2')
+    sumw2 = Maps.flatten_map(true_template, channel=channel, mapname='sumw2')
     sigma = np.sqrt(sumw2)
     if not seed is None:
         np.random.seed(seed=seed)
@@ -167,12 +172,12 @@ def get_stat_fluct_map(template_maker, fiducial_params, channel, seed=None):
     fmap.clip(0,out=fmap)
     return fmap
 
-def get_true_template(template_params, template_maker, no_sys_maps=False, error=False, both=False):
+def get_true_template(template_params, template_maker, num_data_events, no_sys_maps=False, error=False, both=False):
     if template_params['theta23'] == 0.0:
         logging.info("Zero theta23, so generating no oscillations template...")
-        true_template = template_maker.get_template(template_params, no_osc_maps=True, no_sys_maps = no_sys_maps)
+        true_template = template_maker.get_template(template_params, num_data_events=num_data_events, no_osc_maps=True, no_sys_maps = no_sys_maps)
     else:
-        true_template = template_maker.get_template(template_params, no_osc_maps=False, no_sys_maps= no_sys_maps)  
+        true_template = template_maker.get_template(template_params, num_data_events=num_data_events, no_osc_maps=False, no_sys_maps= no_sys_maps)  
 
     if not both:
         true_fmap = Maps.flatten_map(true_template, channel=template_params['channel'])
