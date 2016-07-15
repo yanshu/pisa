@@ -52,6 +52,11 @@ from pisa.sys.HoleIce import HoleIce
 from pisa.sys.DomEfficiency import DomEfficiency
 from pisa.sys.Resolution import Resolution
 
+from pisa.oscillations.Prob3OscillationServiceMC_merge import Prob3OscillationServiceMC as Prob3OscillationService_MC
+
+from pisa.analysis.TemplateMaker_MC_functions import apply_reco_sys, get_osc_probs, apply_flux_ratio, apply_spectral_index
+#from pisa.analysis.TemplateMaker_MC_functions import apply_GENIE_mod, apply_Barr_mod, apply_Barr_flux_ratio, apply_GENIE_mod_oscFit
+
 class TemplateMaker:
     '''
     This class handles all steps needed to produce a template with a
@@ -89,6 +94,7 @@ class TemplateMaker:
         self.final_event_rate = None
 
         self.reco_mc_wt_file = template_settings['reco_mc_wt_file']
+        self.aeff_weight_file = template_settings['aeff_weight_file'] 
         self.params = template_settings
         self.sim_ver = self.params['sim_ver']
         
@@ -125,6 +131,7 @@ class TemplateMaker:
             from pisa.oscillations.Prob3OscillationService import Prob3OscillationService
             self.osc_service = Prob3OscillationService(
                 self.oversample_ebins, self.oversample_czbins, **template_settings)
+            self.osc_service_mc = Prob3OscillationService_MC(self.oversample_ebins, self.oversample_czbins, **template_settings)
         elif osc_code == 'gpu':
             from pisa.oscillations.Prob3GPUOscillationService import Prob3GPUOscillationService
             self.osc_service = Prob3GPUOscillationService(
@@ -185,6 +192,8 @@ class TemplateMaker:
         self.pid_service = PID.pid_service_factory(
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
         )
+        self.pid_remove = self.params['pid_remove']
+        self.pid_bound = self.params['pid_bound'] 
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -240,48 +249,109 @@ class TemplateMaker:
             raise ValueError('Only implemented downsampling for two types of maps: osc_flux and aeff')
         return new_maps
 
-
     def calc_mc_errors(self):
-        logging.info('Opening file: %s'%(self.reco_mc_wt_file))
+        logging.info('Opening file: %s'%(self.aeff_weight_file))
         try:
-            evts = events.Events(self.reco_mc_wt_file)
+            evts = events.Events(self.aeff_weight_file)
         except IOError,e:
             logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
             sys.exit(1)
-        all_flavors_dict = {}
-        for flavor in ['nue', 'numu','nutau']:
-            flavor_dict = {}
-            logging.debug("Working on %s "%flavor)
+        print "self.aeff_weight_file = " , self.aeff_weight_file
+
+        osc_probs = get_osc_probs(evts, self.params, self.osc_service_mc, ebins=self.ebins)
+        all_reco_e = np.array([])
+        all_reco_cz = np.array([])
+        all_weight = np.array([])
+        all_pid = np.array([])
+        for prim in ['nue', 'numu','nutau', 'nue_bar', 'numu_bar', 'nutau_bar']:
             for int_type in ['cc','nc']:
-                bins = (self.anlys_ebins,self.czbins)
-                hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy']+evts[flavor+'_bar'][int_type]['reco_energy'],evts[flavor][int_type]['reco_coszen']+evts[flavor +'_bar_'][int_type]['reco_coszen'],bins=bins)
-                #nu_hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy'], evts[flavor][int_type]['reco_coszen'],bins=bins)
-                #nubar_hist_2d,_,_ = np.histogram2d(evts[flavor+'_bar'][int_type]['reco_energy'], evts[flavor +'_bar'][int_type]['reco_coszen'],bins=bins)
-                #flavor_dict[int_type] = nu_hist_2d + nubar_hist_2d
-                flavor_dict[int_type] = hist_2d
-            all_flavors_dict[flavor] = flavor_dict
-        numu_cc_map = all_flavors_dict['numu']['cc']
-        nue_cc_map = all_flavors_dict['nue']['cc']
-        nutau_cc_map = all_flavors_dict['nutau']['cc']
-        nuall_nc_map = all_flavors_dict['numu']['nc']
+                true_e = evts[prim][int_type]['true_energy']
+                reco_e = evts[prim][int_type]['reco_energy']
+                reco_cz = evts[prim][int_type]['reco_coszen']
+                aeff_weights = evts[prim][int_type]['weighted_aeff']
+                pid = evts[prim][int_type]['pid']
+                nue_flux = evts[prim][int_type]['neutrino_nue_flux']
+                numu_flux = evts[prim][int_type]['neutrino_numu_flux']
+                if self.params['use_cut_on_trueE']:
+                    cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
+                    true_e = true_e[cut]
+                    reco_e = reco_e[cut]
+                    reco_cz = reco_cz[cut]
+                    aeff_weights = aeff_weights[cut]
+                    pid = pid[cut]
+                    nue_flux = nue_flux[cut]
+                    numu_flux = numu_flux[cut]
+                osc_flux = nue_flux*osc_probs[prim][int_type]['nue_maps']+ numu_flux*osc_probs[prim][int_type]['numu_maps']
+                final_weight = osc_flux * aeff_weights
+                # get all reco_e, reco_cz, pid, weight:
+                all_reco_e = np.append(all_reco_e, reco_e)
+                all_reco_cz = np.append(all_reco_cz, reco_cz)
+                all_pid = np.append(all_pid, pid)
+                all_weight = np.append(all_weight, final_weight)
 
-        #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
-        mc_event_maps = {'params':self.params}
-        mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
-        mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
-        mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
-        mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
-
-        final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
+        bins = (self.anlys_ebins,self.czbins)
         self.rel_error = {}
-        self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
-        self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
-        self.rel_error['cscd'][np.isinf(self.rel_error['cscd'])] = 0
-        self.rel_error['trck'][np.isinf(self.rel_error['trck'])] = 0
+        #self.mc_error = {}
+        for channel in ['cscd', 'trck']:
+            #TODO
+            if channel == 'cscd':
+                #pid_cut =  np.logical_and(all_pid < self.pid_bound, all_pid>=self.pid_remove)
+                pid_cut =  all_pid < self.pid_bound
+            else:
+                pid_cut =  all_pid >= self.pid_bound
+            hist_w,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut])
+            hist_w2,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut]**2)
+            hist_sqrt_w2 = np.sqrt(hist_w2)
+            self.rel_error[channel]= hist_sqrt_w2/hist_w
+            if channel == 'cscd':
+                print "rel error ", channel, " ", hist_sqrt_w2/hist_w
+            #self.mc_error[channel]= hist_sqrt_w2
+
+            # if encounters zero count bins use 0 as error, so convert inf to zero
+            self.rel_error[channel][np.isinf(self.rel_error[channel])] = 0
+
+    #def calc_mc_errors(self):
+    #    logging.info('Opening file: %s'%(self.reco_mc_wt_file))
+    #    try:
+    #        evts = events.Events(self.reco_mc_wt_file)
+    #    except IOError,e:
+    #        logging.error("Unable to open event data file %s"%simfile)
+    #        logging.error(e)
+    #        sys.exit(1)
+    #    all_flavors_dict = {}
+    #    for flavor in ['nue', 'numu','nutau']:
+    #        flavor_dict = {}
+    #        logging.debug("Working on %s "%flavor)
+    #        for int_type in ['cc','nc']:
+    #            bins = (self.anlys_ebins,self.czbins)
+    #            hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy']+evts[flavor+'_bar'][int_type]['reco_energy'],evts[flavor][int_type]['reco_coszen']+evts[flavor +'_bar_'][int_type]['reco_coszen'],bins=bins)
+    #            #nu_hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy'], evts[flavor][int_type]['reco_coszen'],bins=bins)
+    #            #nubar_hist_2d,_,_ = np.histogram2d(evts[flavor+'_bar'][int_type]['reco_energy'], evts[flavor +'_bar'][int_type]['reco_coszen'],bins=bins)
+    #            #flavor_dict[int_type] = nu_hist_2d + nubar_hist_2d
+    #            flavor_dict[int_type] = hist_2d
+    #        all_flavors_dict[flavor] = flavor_dict
+    #    numu_cc_map = all_flavors_dict['numu']['cc']
+    #    nue_cc_map = all_flavors_dict['nue']['cc']
+    #    nutau_cc_map = all_flavors_dict['nutau']['cc']
+    #    nuall_nc_map = all_flavors_dict['numu']['nc']
+
+    #    #print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
+    #    mc_event_maps = {'params':self.params}
+    #    mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
+    #    mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
+    #    mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
+    #    mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
+
+    #    final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
+    #    self.rel_error = {}
+    #    self.rel_error['cscd']=1./(final_MC_event_rate['cscd']['map'])      
+    #    self.rel_error['trck']=1./(final_MC_event_rate['trck']['map'])      
+    #    self.rel_error['cscd'][np.isinf(self.rel_error['cscd'])] = 0
+    #    self.rel_error['trck'][np.isinf(self.rel_error['trck'])] = 0
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
+    def get_template(self, params, num_data_events, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False, only_upto_stage_2=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -421,11 +491,10 @@ class TemplateMaker:
         if any(step_changed[:7]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, num_data_events, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")
-
         self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2
         self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
