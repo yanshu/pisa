@@ -76,6 +76,8 @@ class TemplateMaker:
         self.event_rate_maps = None
         self.event_rate_reco_maps = None
         self.event_rate_pid_maps = None
+        self.wgt2_pid_map_cscd = None
+        self.wgt2_pid_map_trck = None
         self.hole_ice_maps = None
         self.domeff_maps = None
         self.reco_prec_maps_e_up = None
@@ -135,11 +137,10 @@ class TemplateMaker:
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
         )
         # set up pid ( remove pid < pid_remove and separate cscd and trck by pid_bound)
-        if self.sim_ver == '5digit':
-            self.pid_remove = -2
-        else:
-            self.pid_remove = -3
-        self.pid_bound = 2
+        self.pid_remove = self.params['pid_remove']
+        self.pid_bound = self.params['pid_bound'] 
+        print "self.pid_bound = ", self.pid_bound
+        print "self.pid_remove = ", self.pid_remove
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -187,33 +188,9 @@ class TemplateMaker:
             logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
             sys.exit(1)
-        # This only gets raw MC events, rel_error is not 1/sqrt(N_mc), they have to be weighted
-        #all_flavors_dict = {}
-        #for flavor in ['nue', 'numu','nutau']:
-        #    flavor_dict = {}
-        #    logging.debug("Working on %s "%flavor)
-        #    for int_type in ['cc','nc']:
-        #        bins = (self.anlys_ebins,self.czbins)
-        #        nu_hist_2d,_,_ = np.histogram2d(evts[flavor][int_type]['reco_energy'], evts[flavor][int_type]['reco_coszen'],bins=bins)
-        #        nubar_hist_2d,_,_ = np.histogram2d(evts[flavor+'_bar'][int_type]['reco_energy'], evts[flavor +'_bar'][int_type]['reco_coszen'],bins=bins)
-        #        flavor_dict[int_type] = nu_hist_2d + nubar_hist_2d
-        #    all_flavors_dict[flavor] = flavor_dict
-        #numu_cc_map = all_flavors_dict['numu']['cc']
-        #nue_cc_map = all_flavors_dict['nue']['cc']
-        #nutau_cc_map = all_flavors_dict['nutau']['cc']
-        #nuall_nc_map = all_flavors_dict['numu']['nc']
+        print "self.aeff_weight_file = " , self.aeff_weight_file
 
-        ##print " before PID, total no. of MC events = ", sum(sum(numu_cc_map))+sum(sum(nue_cc_map))+sum(sum(nutau_cc_map))+sum(sum(nuall_nc_map))
-        #mc_event_maps = {'params':self.params}
-        #mc_event_maps['numu_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':numu_cc_map}
-        #mc_event_maps['nue_cc'] =  {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nue_cc_map}
-        #mc_event_maps['nutau_cc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nutau_cc_map}
-        #mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
-        #final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
-
-        use_cut_on_trueE = True
-        turn_off_osc_NC = False
-        osc_probs = get_osc_probs(evts, self.params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
+        osc_probs = get_osc_probs(evts, self.params, self.osc_service, ebins=self.ebins)
         all_reco_e = np.array([])
         all_reco_cz = np.array([])
         all_weight = np.array([])
@@ -227,7 +204,7 @@ class TemplateMaker:
                 pid = evts[prim][int_type]['pid']
                 nue_flux = evts[prim][int_type]['neutrino_nue_flux']
                 numu_flux = evts[prim][int_type]['neutrino_numu_flux']
-                if use_cut_on_trueE:
+                if self.params['use_cut_on_trueE']:
                     cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
                     true_e = true_e[cut]
                     reco_e = reco_e[cut]
@@ -250,9 +227,9 @@ class TemplateMaker:
         for channel in ['cscd', 'trck']:
             #TODO
             if channel == 'cscd':
-                pid_cut =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
+                pid_cut =  np.logical_and(all_pid < self.pid_bound, all_pid>=self.pid_remove)
             else:
-                pid_cut =  pid >= self.pid_bound
+                pid_cut =  all_pid >= self.pid_bound
             hist_w,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut])
             hist_w2,_,_ = np.histogram2d(all_reco_e[pid_cut], all_reco_cz[pid_cut], bins=bins, weights=all_weight[pid_cut]**2)
             hist_sqrt_w2 = np.sqrt(hist_w2)
@@ -263,7 +240,7 @@ class TemplateMaker:
             self.rel_error[channel][np.isinf(self.rel_error[channel])] = 0
 
 
-    def get_template(self, params, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, use_cut_on_trueE=False, apply_reco_prcs=False, flux_sys_renorm=False, turn_off_osc_NC=True, use_oscFit_genie_sys=True, no_genie_barr_sys=False):
+    def get_template(self, params, num_data_events, return_stages=False, no_osc_maps=False, only_tau_maps=False, no_sys_maps = False, return_aeff_maps = False, apply_reco_prcs=False):
         '''
         Runs entire template-making chain, using parameters found in
         'params' dict. If 'return_stages' is set to True, returns
@@ -314,7 +291,7 @@ class TemplateMaker:
                         oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                         true_e = evts[prim][int_type]['true_energy']
                         # apply flux systematics (nue_numu_ratio, nu_nubar_ratio)
-                        nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
+                        nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params)
                         self.fluxes[prim][int_type]['nue'] = nue_flux
                         self.fluxes[prim][int_type]['numu'] = numu_flux
             profile.debug("==> elapsed time to set up flux : %s sec"%t.secs)
@@ -325,7 +302,7 @@ class TemplateMaker:
         if any(step_changed[:2]):
             with Timer(verbose=False) as t:
                 physics.debug("STAGE 2: Getting osc prob maps...")
-                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
+                self.osc_probs = get_osc_probs(evts, params, self.osc_service, ebins=self.ebins)
             profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
         else:
             profile.info("STAGE 2: Reused from step before...")
@@ -362,7 +339,7 @@ class TemplateMaker:
                     true_e = evts[prim][int_type]['true_energy']
                     true_cz = evts[prim][int_type]['true_coszen']
                     reco_e = evts[prim][int_type]['reco_energy']
-                    if use_oscFit_genie_sys:
+                    if params['use_oscFit_genie_barr_sys']:
                         linear_coeff_MaCCQE = evts[prim][int_type]['linear_fit_MaCCQE']
                         linear_coeff_MaCCRES = evts[prim][int_type]['linear_fit_MaCCRES']
                         linear_coeff_MaNCRES = evts[prim][int_type]['linear_fit_MaNCRES']
@@ -371,7 +348,7 @@ class TemplateMaker:
                         quad_coeff_MaNCRES = evts[prim][int_type]['quad_fit_MaNCRES']
                     reco_cz = evts[prim][int_type]['reco_coszen']
                     aeff_weights = evts[prim][int_type]['weighted_aeff']
-                    if not no_genie_barr_sys:
+                    if params['use_pisa_genie_barr_sys']:
                         gensys_splines = evts[prim][int_type]['GENSYS_splines']
                         barr_splines = evts[prim][int_type]['BARR_splines']
                     pid = evts[prim][int_type]['pid']
@@ -381,21 +358,24 @@ class TemplateMaker:
 
                     # apply spectral index, use one pivot energy for all flavors
                     egy_pivot =  24.0900951261  # the value that JP's using
-                    nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
+                    nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params) 
 
-                    # apply Barr systematics
-                    if not no_genie_barr_sys:
-                        nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+                    # apply Barr systematics (oscFit way, Barr_nu_nubar_ratio and Barr_uphor_ratio)
+                    if params['use_oscFit_genie_barr_sys']:
                         nue_flux, numu_flux = apply_Barr_flux_ratio(prim, nue_flux, numu_flux, true_e, true_cz, **params)
 
+                    # apply Barr systematics (pisa way)
+                    if params['use_pisa_genie_barr_sys']:
+                        nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
+
                     # use cut on trueE ( b/c PISA has a cut on true E)
-                    if use_cut_on_trueE:
+                    if params['use_cut_on_trueE']:
                         cut = np.logical_and(true_e<self.ebins[-1], true_e>= self.ebins[0])
                         true_e = true_e[cut]
                         true_cz = true_cz[cut]
                         reco_e = reco_e[cut]
                         reco_cz = reco_cz[cut]
-                        if use_oscFit_genie_sys:
+                        if params['use_oscFit_genie_barr_sys']:
                             linear_coeff_MaCCQE = linear_coeff_MaCCQE[cut]
                             linear_coeff_MaCCRES = linear_coeff_MaCCRES[cut]
                             linear_coeff_MaNCRES = linear_coeff_MaNCRES[cut]
@@ -403,20 +383,19 @@ class TemplateMaker:
                             quad_coeff_MaCCRES = quad_coeff_MaCCRES[cut]
                             quad_coeff_MaNCRES = quad_coeff_MaNCRES[cut]
                         aeff_weights = aeff_weights[cut]
-                        if not no_genie_barr_sys:
+                        if params['use_pisa_genie_barr_sys']:
                             gensys_splines = gensys_splines[cut]
                         pid = pid[cut]
                         nue_flux = nue_flux[cut]
                         numu_flux = numu_flux[cut]
 
                     # apply axm_qe and axm_res (oscFit-way)
-                    if not no_genie_barr_sys:
-                        if use_oscFit_genie_sys:
-                            aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe'])
-                            aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res'])
-                        else:
-                            # apply GENIE systematics (on aeff weight, PISA-way)
-                            aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
+                    if params['use_oscFit_genie_barr_sys']:
+                        aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCQE, quad_coeff_MaCCQE, params['axm_qe'])
+                        aeff_weights = apply_GENIE_mod_oscFit(aeff_weights, linear_coeff_MaCCRES, quad_coeff_MaCCRES, params['axm_res'])
+                    if params['use_pisa_genie_barr_sys']:
+                        # apply GENIE systematics (on aeff weight, PISA-way)
+                        aeff_weights = apply_GENIE_mod(prim, int_type, self.ebins, true_e, true_cz, aeff_weights, gensys_splines, **params)
 
                     # when generating fits for reco prcs, change reco_e and reco_cz:
                     if apply_reco_prcs and (params['e_reco_precision_up'] != 1 or params['cz_reco_precision_up'] != 1 or params['e_reco_precision_down'] != 1 or params['cz_reco_precision_down'] !=1):
@@ -457,8 +436,8 @@ class TemplateMaker:
                     tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
                     # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
-                    #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
-                    pid_cscd =  pid < self.pid_bound
+                    pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
+                    #pid_cscd =  pid < self.pid_bound
                     pid_trck =  pid >= self.pid_bound
                     weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
                     weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
@@ -497,12 +476,12 @@ class TemplateMaker:
             self.event_rate_pid_maps['trck'] = {'map': event_rate_pid_map_trck, 'ebins': self.anlys_ebins, 'czbins': self.czbins}
 
             # getting wgt2_hist
-            #wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
-            #wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
-            #for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
-            #    for int_type in ['cc', 'nc']:
-            #        wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
-            #        wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
+            self.wgt2_pid_map_cscd = np.zeros(np.shape(tmp_wgt2_cscd['nue']['nc']))
+            self.wgt2_pid_map_trck = np.zeros(np.shape(tmp_wgt2_trck['nue']['nc']))
+            for prim in ['nue','numu','nutau','nue_bar','numu_bar','nutau_bar']:
+                for int_type in ['cc', 'nc']:
+                    self.wgt2_pid_map_cscd += tmp_wgt2_cscd[prim][int_type]
+                    self.wgt2_pid_map_trck += tmp_wgt2_trck[prim][int_type]
         else:
             profile.debug("STAGE 3: Reused from step before...")
 
@@ -538,17 +517,17 @@ class TemplateMaker:
         if any(step_changed[:5]):
             physics.debug("STAGE 5: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, num_data_events, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 5: Reused from step before...")
 
         # Calculate the sum_w2, method 1: sum_w2 is calculated at baseline histogram
-        self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2    
-        self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
+        #self.final_event_rate['cscd']['sumw2_nu'] = (self.final_event_rate['cscd']['map_nu']* self.rel_error['cscd'])**2    
+        #self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
         # Calculate the sum_w2, method 2: sum_w2 get updated every time get_template() is called
-        #self.final_event_rate['cscd']['sumw2_nu'] = wgt2_pid_map_cscd     
-        #self.final_event_rate['trck']['sumw2_nu'] = wgt2_pid_map_trck
+        self.final_event_rate['cscd']['sumw2_nu'] = self.wgt2_pid_map_cscd     
+        self.final_event_rate['trck']['sumw2_nu'] = self.wgt2_pid_map_trck
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
 
