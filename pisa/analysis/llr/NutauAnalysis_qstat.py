@@ -48,8 +48,9 @@ parser.add_argument('-m','--minimizer_settings',type=str,
 parser.add_argument('-pd','--pseudo_data_settings',type=str,
                     metavar='JSONFILE',default=None,
                     help='''Settings for pseudo data templates, if desired to be different from template_settings.''')
-parser.add_argument('-bs','--burn_sample_file',metavar='FILE',type=str, dest='bs',
-                    default='', help='HDF5 File containing burn sample.')
+parser.add_argument('--data','--data_file',metavar='FILE',type=str, dest='data_file',
+                    default='', help='HDF5 File containing real data, can be all data or burn sample file.')
+parser.add_argument('--bs',action='store_true', default=False, help='Input data is burn sample.')
 parser.add_argument('--blind_fit',action='store_true', default=False, help='Do blind fit.')
 parser.add_argument('-n','--ntrials',type=int, default = 1,
                     help="Number of trials to run")
@@ -76,6 +77,7 @@ parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo d
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
 parser.add_argument('--use_hist_PISA',action='store_true',default=False, help='''Use event-by-event PISA; otherwise, use histogram-based PISA''') 
+parser.add_argument('--use_chi2',action='store_true',default=False, help='''Use chi2 instead of -llh for the minimizer.''') 
 args = parser.parse_args()
 set_verbosity(args.verbose)
 # -----------------------------------
@@ -84,14 +86,15 @@ set_verbosity(args.verbose)
 
 # the below cases do not make much sense, therefor complain if the user tries to use them
 if args.t_stat == 'asimov':
-    assert(args.bs == '')
-if args.bs:
+    assert(args.data_file == '')
+if args.data_file:
     assert(args.pseudo_data_settings == None)
     assert(args.mu_data == 1.0)
+if args.bs:
+    assert (args.data_file != '')
 
 # Read in the settings
 template_settings = from_json(args.template_settings)
-pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 minimizer_settings  = from_json(args.minimizer_settings)
 if args.bs:
     template_settings['params']['livetime']['value'] = 0.045 
@@ -106,13 +109,22 @@ if template_settings['params']['use_atmmu_f']['value'] == False:
 else:
     assert(template_settings['params']['atmos_mu_scale']['fixed'] == True)
 
+pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
+print 'livetime in pseudo_data_settings =', pseudo_data_settings['params']['livetime']['value']
 pseudo_data_settings['params'] = select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],normal_hierarchy=not(args.inv_h_data),nutau_norm_value=float(args.mu_data))
 template_settings['params'] = select_hierarchy(template_settings['params'],normal_hierarchy=not(args.inv_h_hypo))
 
+if args.use_chi2:
+    logging.info('Using chi2 for minimizer')
+else:
+    logging.info('Using -llh for minimizer')
+
 if args.use_hist_PISA:
+    logging.info('Using pisa.analysis.TemplateMaker_nutau, i.e. hist-based PISA')
     from pisa.analysis.TemplateMaker_nutau import TemplateMaker
     pisa_mode = 'hist'
 else:
+    logging.info('Using pisa.analysis.TemplateMaker_MC, i.e. MC-based PISA')
     from pisa.analysis.TemplateMaker_MC import TemplateMaker
     pisa_mode = 'event'
 
@@ -193,14 +205,15 @@ for itrial in xrange(1,args.ntrials+1):
     # Asimov dataset (exact expecation values)
     if args.t_stat == 'asimov':
         fmap = get_true_template(get_values(pseudo_data_settings['params']),
-                                            pseudo_data_template_maker
+                                            pseudo_data_template_maker,
+                                            num_data_events = None
                 )
         
     # Real data
-    elif args.bs:
-        logging.info('Running on real data! (%s)'%args.bs)
-        physics.info('Running on real data! (%s)'%args.bs)
-        fmap = get_burn_sample_maps(file_name=args.bs, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, sim_version = template_settings['params']['sim_ver'])
+    elif args.data_file:
+        logging.info('Running on real data! (%s)'%args.data_file)
+        physics.info('Running on real data! (%s)'%args.data_file)
+        fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
     # Randomly sampled (poisson) data
     else:
         if args.seed:
@@ -222,6 +235,8 @@ for itrial in xrange(1,args.ntrials+1):
                                         )
         else:
             raise Exception('psudo data fluctuation method not implemented!')
+    # get the total no. of events in fmap
+    num_data_events = np.sum(fmap)
 
     # -----------------------------------
 
@@ -230,7 +245,7 @@ for itrial in xrange(1,args.ntrials+1):
     
     # save settings
     results['test_statistics'] = args.t_stat
-    if not args.t_stat == 'asimov' or args.bs:
+    if not args.t_stat == 'asimov' or args.data_file:
         results['mu_data'] = float(args.mu_data)
     if not args.t_stat == 'llr':
         results[scan_param] = scan_list
@@ -267,20 +282,24 @@ for itrial in xrange(1,args.ntrials+1):
                     largs[2] = change_settings(largs[2],fix_param_scan_name,fix_param_scan_val,True)
 
             
-            res = find_max_llh_bfgs(blind_fit, *largs, **kwargs)
+            res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
             # execute optimizer
             if len(fit_results) == 0:
                 fit_results.append(res)
             else:
                 for key,value in res.items():
                     fit_results[0][key].append(value[0])
-                
+            fit_results[0]['chi2'] = chi2
+            fit_results[0]['chi2_p'] = chi2_p
+            fit_results[0]['dof'] = dof
+            print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
             profile.info("stop optimizer")
                 
         # - denominator (second fit for ratio)
 
         # LLR method 
-        if not args.on and len(fit_results) == 1:
+        #if not args.on and len(fit_results) == 1:
+        if not args.on:
             if args.t_stat == 'llr':
                 physics.info("Finding best fit for hypothesis mu_tau = 1.0")
                 profile.info("start optimizer")
@@ -297,7 +316,12 @@ for itrial in xrange(1,args.ntrials+1):
             #    kwargs['no_optimize']=True
 
             # execute optimizer
-            fit_results.append(find_max_llh_bfgs(blind_fit, *largs, **kwargs))
+            res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
+            fit_results.append(res)
+            fit_results[-1]['chi2'] = chi2
+            fit_results[-1]['chi2_p'] = chi2_p
+            fit_results[-1]['dof'] = dof
+            print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
             profile.info("stop optimizer")
 
         del largs
@@ -313,6 +337,18 @@ for itrial in xrange(1,args.ntrials+1):
         results['q'] = np.array([2*(llh-fit_results[1]['llh'][0]) for llh in fit_results[0]['llh']])
         physics.info('found q values %s'%results['q'])
         physics.info('sqrt(q) = %s'%np.sqrt(results['q']))
+
+    if args.use_chi2:
+        logging.info('Using chi2 for minimizer')
+        results['use_chi2_in_minimizing'] = 'True'
+    else:
+        logging.info('Using -llh for minimizer')
+        results['use_chi2_in_minimizing'] = 'False'
+
+    if args.use_hist_PISA:
+        results['PISA'] = 'hist'
+    else:
+        results['PISA'] = 'MC'
 
     # Store this trial
     trials.append(results)
