@@ -59,6 +59,14 @@
       "fixed": true,
       "value": "4digit"
     },
+    "pid_remove":{
+      "fixed": true,
+      "value": -3.0
+    },
+    "pid_bound":{
+      "fixed": true,
+      "value": 3.0 
+    },
     "PID_offset": {
       "fixed": true,
       "prior": {
@@ -87,6 +95,10 @@
       "scale": 1.0,
       "value": 1.0
     },
+    "flux_uncertainty_inputs": {
+      "fixed": true, 
+	"value": "flux/flux_unc_data.json"
+    }, 
     "YeI": {
       "fixed": true,
       "prior": {
@@ -158,7 +170,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined.hdf5"
+      "value": "aeff/events__deepcore__ic86__runs_1260-1660:200__proc_v4digit__unjoined_with_fluxes.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -174,6 +186,14 @@
       "scale": 1.0,
       "value": 0.0
     },
+    "turn_off_osc_NC":{
+      "fixed": true,
+      "value": true
+    },
+    "use_cut_on_trueE":{
+      "fixed": true,
+      "value": false
+    },
     "atmos_mu_scale": {
       "fixed": false,
       "prior": {
@@ -185,6 +205,34 @@
       ],
       "scale": 1.0,
       "value": 0.37
+    },
+    "noise_f": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        1.0
+      ],
+      "scale": 1.0,
+      "value": 0.0
+    },
+    "use_atmmu_f":{
+      "fixed": true,
+      "value": false
+    },
+    "atmmu_f": {
+      "fixed": false,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        0.0,
+        0.99999
+      ],
+      "scale": 1.0,
+      "value": 0.18
     },
     "channel": {
       "fixed": true,
@@ -340,6 +388,259 @@
       "fixed": true,
       "value": "flux/spl-nu-20-01-000-solmin-aa-2014.d"
     },
+    "flux_hadronic_A": {
+      "fixed": true,
+      "filestring":"UNCF_A",	
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_B": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_C": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_D": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_E": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_F": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_G": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_H": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_I": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_W": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_X": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_Y": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_hadronic_Z": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_pion_chargeratio_Chg": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_prim_exp_factor_c": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_prim_exp_norm_b": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_prim_norm_a": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
+    "flux_spectral_index_d": {
+      "fixed": true, 
+      "prior": {
+        "fiducial": 0.0, 
+        "kind": "gaussian", 
+        "sigma": 1.0
+      }, 
+      "range": [
+        -3.0, 
+        3.0
+      ], 
+      "scale": 1.0, 
+      "value": 0.0
+    }, 
     "NuFluxIP_file": {
       "fixed": true,
       "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160_avg_100epoints_100czpoints.json"
@@ -557,6 +858,76 @@
       ],
       "scale": 1.0,
       "value": 0.7382742735936014
-    }
+    },
+      "GENSYS_files" : {
+	  "value" : "aeff/relative-crosssections/genie-weigthed-crosssections.json",
+	  "fixed": true
+      },
+      "GENSYS_AhtBY":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+     "GENSYS_BhtBY":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+     "GENSYS_CV1uBY":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+     "GENSYS_CV2uBY":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+      "GENSYS_MaCCQE":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+      "GENSYS_MaRES":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      }
   }
 }
