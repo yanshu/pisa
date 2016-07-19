@@ -27,7 +27,7 @@
   },
   "PINGU": {
     "V36": {
-      "V5": {
+      "5": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_Train_V36_baseline_HE_CutsV4_BDTG.weights.xml"
