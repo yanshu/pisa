@@ -40,7 +40,7 @@
       }
     },
     "V38": {
-      "V5.1": {
+      "5.1": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_PINGU_V38_HE_E2wgt_MLPBNN.weights.xml"
@@ -53,7 +53,7 @@
       }
     },
     "V39": {
-      "V5.1": {
+      "5.1": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_PINGU_V39_HE_E2wgt_MLPBNN.weights.xml"
