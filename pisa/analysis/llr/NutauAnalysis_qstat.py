@@ -73,6 +73,8 @@ parser.add_argument('--fluct', default='poisson', help='''What random sampling t
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('-fd', default='', dest='f_param_data', help='''fix a niusance parameter for the psudo data to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusance parameter to a value by e.g. -f nuisance_p=1.2 for grid point calculations''')
+parser.add_argument('--read_fmap_from_json', default='', dest='read_fmap_from_json', help='''Read fmap from json.''')
+parser.add_argument('--save_fmap_to_json', default='', dest='save_fmap_to_json', help='''Save fmap to json.''')
 parser.add_argument('--seed', default='',help='provide a fixed seed for pseudo data sampling',dest='seed')
 parser.add_argument('--only-numerator',action='store_true',default=False, dest='on', help='''only calculate numerator''')
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
@@ -166,6 +168,10 @@ else:
     scan_param = 'nutau_norm'
     scan_list = [float(args.mu_hypo)]
 
+print "scan = ", args.scan
+print "scan_list = ", scan_list
+print "scan_param = ", scan_param
+
 
 # Workaround for old scipy versions
 import scipy
@@ -202,39 +208,49 @@ for itrial in xrange(1,args.ntrials+1):
 
     # --- Get the data, or psudeodata, and store it in fmap
 
-    # Asimov dataset (exact expecation values)
-    if args.t_stat == 'asimov':
-        fmap = get_true_template(get_values(pseudo_data_settings['params']),
-                                            pseudo_data_template_maker,
-                                            num_data_events = None
-                )
-        
-    # Real data
-    elif args.data_file:
-        logging.info('Running on real data! (%s)'%args.data_file)
-        physics.info('Running on real data! (%s)'%args.data_file)
-        fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
-    # Randomly sampled (poisson) data
+    # if read fmap from json
+    if args.read_fmap_from_json != '':
+        file = from_json(args.read_fmap_from_json)
+        fmap = file['fmap']
     else:
-        if args.seed:
-            results['seed'] = int(args.seed)
+        # Asimov dataset (exact expecation values)
+        if args.t_stat == 'asimov':
+            fmap = get_true_template(get_values(pseudo_data_settings['params']),
+                                                pseudo_data_template_maker,
+                                                num_data_events = None
+                    )
+            
+        # Real data
+        elif args.data_file:
+            logging.info('Running on real data! (%s)'%args.data_file)
+            physics.info('Running on real data! (%s)'%args.data_file)
+            fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
+        # Randomly sampled (poisson) data
         else:
-            results['seed'] = get_seed()
-        logging.info("  RNG seed: %ld"%results['seed'])
-        if args.fluct == 'poisson':
-            fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
-                                        get_values(pseudo_data_settings['params']),
-                                        seed=results['seed'],
-                                        channel=channel
-                                        )
-        elif args.fluct == 'model_stat':
-            fmap = get_stat_fluct_map(pseudo_data_template_maker,
-                                        get_values(pseudo_data_settings['params']),
-                                        seed=results['seed'],
-                                        channel=channel
-                                        )
-        else:
-            raise Exception('psudo data fluctuation method not implemented!')
+            if args.seed:
+                results['seed'] = int(args.seed)
+            else:
+                results['seed'] = get_seed()
+            logging.info("  RNG seed: %ld"%results['seed'])
+            if args.fluct == 'poisson':
+                fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
+                                            get_values(pseudo_data_settings['params']),
+                                            seed=results['seed'],
+                                            channel=channel
+                                            )
+            elif args.fluct == 'model_stat':
+                fmap = get_stat_fluct_map(pseudo_data_template_maker,
+                                            get_values(pseudo_data_settings['params']),
+                                            seed=results['seed'],
+                                            channel=channel
+                                            )
+            else:
+                raise Exception('psudo data fluctuation method not implemented!')
+
+    # if want to save fmap to json
+    if args.save_fmap_to_json != '':
+        to_json({'fmap':fmap}, args.save_fmap_to_json)
+
     # get the total no. of events in fmap
     num_data_events = np.sum(fmap)
 
@@ -271,7 +287,7 @@ for itrial in xrange(1,args.ntrials+1):
             if args.t_stat == 'llr':
                 physics.info("Finding best fit for hypothesis mu_tau = 0.0")
                 profile.info("start optimizer")
-                largs[2] = change_settings( template_settings['params'], scan_param, 0.0, True)
+                largs[2] = change_settings( template_settings['params'], 'nutau_norm', 0.0, True)
 
             # profile LLH/Asimov
             else:
@@ -283,45 +299,50 @@ for itrial in xrange(1,args.ntrials+1):
 
             
             res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
+            res['chi2'] = [chi2]
+            res['chi2_p'] = [chi2_p]
+            res['dof'] = [dof]
             # execute optimizer
             if len(fit_results) == 0:
                 fit_results.append(res)
             else:
                 for key,value in res.items():
                     fit_results[0][key].append(value[0])
-            fit_results[0]['chi2'] = chi2
-            fit_results[0]['chi2_p'] = chi2_p
-            fit_results[0]['dof'] = dof
             print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
             profile.info("stop optimizer")
                 
         # - denominator (second fit for ratio)
 
-        # LLR method 
         #if not args.on and len(fit_results) == 1:
         if not args.on:
+            # LLR method 
             if args.t_stat == 'llr':
                 physics.info("Finding best fit for hypothesis mu_tau = 1.0")
                 profile.info("start optimizer")
-                largs[2] = change_settings(template_settings['params'], scan_param, 1.0, True)
-            # profile LLH, and temporarily also asimov. since the convolution method alters the expecation value of he p.d.f
+                largs[2] = change_settings(template_settings['params'], 'nutau_norm', 1.0, True)
+            # profile LLH, and temporarily also asimov. since the convolution method alters the expecation value of the p.d.f
             elif args.t_stat == 'profile' or args.t_stat == 'asimov':
-                physics.info("Finding best fit while profiling %s"%scan_param)
-                profile.info("start optimizer")
-                largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
-            # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
-            #elif args.t_stat == 'asimov':
-            #    profile.info("clculate llh without fitting")
-            #    largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
-            #    kwargs['no_optimize']=True
+                print "len(fit_results) = ", len(fit_results)
+                if scan_param =='nutau_norm' and len(fit_results)>1:
+                    print "One fit for profiling nutau_norm is done already."
+                    continue
+                else:
+                    physics.info("Finding best fit while profiling %s"%scan_param)
+                    profile.info("start optimizer")
+                    largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
+                    # in case of the asimov dataset the MLE for the parameters are simply their input values, so we can save time by not performing the actual fit
+                    #elif args.t_stat == 'asimov':
+                    #    profile.info("clculate llh without fitting")
+                    #    largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
+                    #    kwargs['no_optimize']=True
 
-            # execute optimizer
-            res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
-            fit_results.append(res)
-            fit_results[-1]['chi2'] = chi2
-            fit_results[-1]['chi2_p'] = chi2_p
-            fit_results[-1]['dof'] = dof
-            print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
+                    # execute optimizer
+                    res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
+                    res['chi2'] = [chi2]
+                    res['chi2_p'] = [chi2_p]
+                    res['dof'] = [dof]
+                    fit_results.append(res)
+                    print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
             profile.info("stop optimizer")
 
         del largs
@@ -338,6 +359,7 @@ for itrial in xrange(1,args.ntrials+1):
         physics.info('found q values %s'%results['q'])
         physics.info('sqrt(q) = %s'%np.sqrt(results['q']))
 
+    # save minimizer settings info
     if args.use_chi2:
         logging.info('Using chi2 for minimizer')
         results['use_chi2_in_minimizing'] = 'True'
@@ -345,6 +367,7 @@ for itrial in xrange(1,args.ntrials+1):
         logging.info('Using -llh for minimizer')
         results['use_chi2_in_minimizing'] = 'False'
 
+    # save PISA settings info
     if args.use_hist_PISA:
         results['PISA'] = 'hist'
     else:
