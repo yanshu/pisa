@@ -38,7 +38,8 @@ def get_chi2(data, mc, data_sumw2, mc_sumw2, params, priors):
     template, where each input is expected to be a 2d numpy array
     """
     chi2 = np.sum((data-mc)**2/(data_sumw2 + mc_sumw2))
-    chi2 += sum([prior.chi2(val) for (val, prior) in zip(params, priors)])
+    if len(priors)!=0:
+        chi2 += sum([prior.chi2(val) for (val, prior) in zip(params, priors)])
     no_uniform_prior = 0
     for prior in priors:
         if prior.kind == 'uniform':
