@@ -118,7 +118,7 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
         f_opt_steps_dict['llh'] = []
         logging.warn("NO FREE PARAMS, returning LLH")
         neg_llh = llh_bfgs(init_vals, num_data_events, names, scales, fmap, fixed_params, template_maker, f_opt_steps_dict, priors, use_chi2)
-        print ''
+        print 'NO FREE PARAMS !!!'
         fixed_params_all = dict(get_values(fixed_params).items())
         fixed_map, fixed_map_sumw2 = get_true_template(select_hierarchy(fixed_params_all,normal_hierarchy),template_maker, num_data_events, error=True)
         fmap_sumw2 = fixed_map 
@@ -304,8 +304,14 @@ def llh_bfgs(opt_vals, num_data_events, names, scales, fmap, fixed_params, templ
     #neg_llh = -get_binwise_smeared_llh(fmap, true_fmap, sumw2_map)
     # barlow
     #neg_llh = get_barlow_llh(fmap, map_nu, sumw2_nu, map_mu, sumw2_mu)
+
+    # if no free params
+    if len(opt_vals)==0:
+        if not use_chi2:
+            return neg_llh
     # add priors
-    neg_llh -= sum([prior.llh(opt_val) for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
+    if len(opt_vals)!=0:
+        neg_llh -= sum([prior.llh(opt_val) for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
     fmap_sumw2 = true_fmap 
     chi2, chi2_p, dof = get_chi2(fmap, true_fmap, fmap_sumw2, sumw2_map, unscaled_opt_vals, priors)
 
