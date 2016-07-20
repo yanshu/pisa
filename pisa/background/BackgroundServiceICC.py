@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,sim_ver,use_def1=False,icc_bg_file=None,**kwargs):
+    def __init__(self,ebins,czbins,sim_ver,pid_bound,pid_remove,use_def1=False,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
@@ -30,6 +30,7 @@ class BackgroundServiceICC:
 
         self.icc_bg_dict = {}
         logging.info("Creating a ICC background dict...")
+        print "icc_bg_file = ", icc_bg_file
 
         # sanity check 
         santa_doms = bg_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
@@ -55,21 +56,19 @@ class BackgroundServiceICC:
         if sim_ver == '4digit':
             reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['energy'])
             reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino']['zenith']))
-            # throw away delta LLH < -3:
-            reco_energy_all = reco_energy_all[dLLH>=-3]
-            reco_coszen_all = reco_coszen_all[dLLH>=-3]
-            dLLH = dLLH[dLLH>=-3]
-            pid_cut = 3.0       # this cut value 3.0 is from MSU, might optimize later
         elif sim_ver == '5digit' or 'dima':
             reco_energy_all = np.array(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['energy'])
             reco_coszen_all = np.array(np.cos(bg_file['IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC']['zenith']))
-            # throw away delta LLH < -2:
-            #reco_energy_all = reco_energy_all[dLLH>=-2]
-            #reco_coszen_all = reco_coszen_all[dLLH>=-2]
-            #dLLH = dLLH[dLLH>=-2]
-            pid_cut = 3.0       # this cut value 3.0 is from MSU, might optimize later
         else:
             raise ValueError('Only allow sim_ver  4digit, 5 digit or dima!')
+
+        # throw away delta LLH < pid_remove:
+        reco_energy_all = reco_energy_all[dLLH>=pid_remove]
+        reco_coszen_all = reco_coszen_all[dLLH>=pid_remove]
+        dLLH = dLLH[dLLH>=pid_remove]
+        pid_cut = pid_bound 
+        print "pid_remove = ", pid_remove
+        print "pid_bound = ", pid_bound
 
         # split in half for testing:
         #the commented out section was just a test for using subsets of the MC files

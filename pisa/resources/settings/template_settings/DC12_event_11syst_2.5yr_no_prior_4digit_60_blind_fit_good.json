@@ -1,58 +1,46 @@
 {
   "binning": {
     "czbins": [
-      -1.0,
-      -0.875,
-      -0.75,
-      -0.625,
-      -0.5,
-      -0.375,
-      -0.25,
-      -0.125,
-      0.0,
-      0.125,
-      0.25,
-      0.375,
-      0.5,
-      0.625,
-      0.75,
-      0.875,
-      1.0
+    -1.0,
+    -0.75,
+    -0.5 ,
+    -0.25,
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
     ],
     "ebins": [
-        3.16227766,
-        4.25878499,
-        5.73550191,
-        7.72426461,
-        10.40262294,
-        14.00969148,
-        18.86749683,
-        25.40972706,
-        34.22044985,
-        46.08625607,
-        62.06648387,
-        83.58779273,
-        112.57153069,
-        151.60526564,
-        204.17379447
+    3.16227766, 
+    4.21696503, 
+    5.62341325, 
+    7.49894209,
+    10.0,
+    13.33521432, 
+    17.7827941,
+    23.71373706,
+    31.6227766,
+    42.16965034,
+    56.23413252,
+    74.98942093,
+    100.0
     ],
     "anlys_ebins": [
-        5.73550191,
-        7.72426461,
-        10.40262294,
-        14.00969148,
-        18.86749683,
-        25.40972706,
-        34.22044985,
-        46.08625607,
-        62.06648387,
-        83.58779273,
-        112.57153069
+    5.62341325, 
+    7.49894209,
+    10.0,
+    13.33521432, 
+    17.7827941,
+    23.71373706,
+    31.6227766,
+    42.16965034,
+    56.23413252
     ],
     "oversample_cz": 1,
     "oversample_e": 1,
-    "actual_oversample_cz": 20,
-    "actual_oversample_e": 20 
+    "actual_oversample_cz": 40,
+    "actual_oversample_e": 40 
   },
   "params": {
     "sim_ver":{
@@ -65,7 +53,7 @@
     },
     "pid_bound":{
       "fixed": true,
-      "value": 3.0 
+      "value": 2.0 
     },
     "PID_offset": {
       "fixed": true,
@@ -157,7 +145,7 @@
       "value": "MC"
     },
     "aeff_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "kind": "uniform"
       },
@@ -177,25 +165,17 @@
       "prior": {
         "fiducial": 0.0,
         "kind": "gaussian",
-        "sigma": 0.05
+        "sigma": 0.1
       },
       "range": [
-        -0.2,
-        0.2
+        -0.5,
+        0.5
       ],
       "scale": 1.0,
       "value": 0.0
     },
-    "turn_off_osc_NC":{
-      "fixed": true,
-      "value": true
-    },
-    "use_cut_on_trueE":{
-      "fixed": true,
-      "value": false
-    },
     "atmos_mu_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "kind": "uniform"
       },
@@ -218,9 +198,29 @@
       "scale": 1.0,
       "value": 0.0
     },
+    "flux_sys_renorm":{
+      "fixed": true,
+      "value": true
+    },
+    "turn_off_osc_NC":{
+      "fixed": true,
+      "value": true
+    },
+    "use_cut_on_trueE":{
+      "fixed": true,
+      "value": false 
+    },
+    "use_oscFit_genie_barr_sys":{
+      "fixed": true,
+      "value": false 
+    },
+    "use_pisa_genie_barr_sys":{
+      "fixed": true,
+      "value": false 
+    },
     "use_atmmu_f":{
       "fixed": true,
-      "value": false
+      "value": true
     },
     "atmmu_f": {
       "fixed": false,
@@ -239,7 +239,7 @@
       "value": "all"
     },
     "cz_reco_precision_up": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -273,7 +273,7 @@
       },
       "range": [
         0.0,
-        6.283185307179586
+        6.283185307179586 
       ],
       "scale": 1.0,
       "value": 5.340707511102648
@@ -298,8 +298,8 @@
         "kind": "uniform"
       },
       "range": [
-        -0.1,
-        0.00
+        -0.007,
+        0.007
       ],
       "scale": 100.0,
       "value": -0.00237
@@ -310,11 +310,11 @@
         "kind": "uniform"
       },
       "range": [
-        0.0,
-        0.1
+        -0.007,
+        0.007
       ],
       "scale": 100.0,
-      "value": 0.00246
+      "value": 0.002457
     },
     "detector_depth": {
       "fixed": true,
@@ -328,8 +328,8 @@
         "sigma": 0.1
       },
       "range": [
-        0.85,
-        1.15
+        0.5,
+        1.5
       ],
       "scale": 1.0,
       "value": 1.0
@@ -641,27 +641,43 @@
       "scale": 1.0, 
       "value": 0.0
     }, 
-    "NuFluxIP_file": {
-      "fixed": true,
-      "value": "flux/IPhonda2014_fluxes2d_aa_for_PISA_e140_cz160_avg_100epoints_100czpoints.json"
-    },
     "ocelot_file": {
         "fixed": true,
         "value": "oscillations/osc_probabilities_e140_cz160_good.json"
     },
+    "fit_bin_ratio":{
+        "fixed": true,
+        "value": false
+    },
+    "fit_thru_baseline":{
+        "fixed": true,
+        "value": false 
+    },
     "hole_ice": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.02,
+        "fiducial": 0.25,
         "kind": "gaussian",
-        "sigma": 0.01
+        "sigma": 0.1
       },
       "range": [
         0.0,
-        0.05
+        0.5
       ],
-      "scale": 10.0,
-      "value": 0.02
+      "scale": 1.0,
+      "value": 0.25
+    },
+    "hole_ice_fwd": {
+      "fixed": true,
+      "prior": {
+        "kind": "uniform"
+      },
+      "range": [
+        -5.2,
+        0.2
+      ],
+      "scale": 1.0,
+      "value": 0.0
     },
     "icc_bg_file": {
       "fixed": true,
@@ -671,8 +687,30 @@
       "fixed": true,
       "value": 2.5
     },
+    "Barr_uphor_ratio":{
+        "value": 0.0,
+        "range": [-3.0,3.0],
+        "fixed": true,
+        "scale": 1.0,
+        "prior": {
+            "fiducial": 0.0,
+            "kind": "gaussian",
+            "sigma": 1.0
+            }
+    },
+    "Barr_nu_nubar_ratio":{
+        "value": 0.0,
+        "range": [-3.0,3.0],
+        "fixed": true,
+        "scale": 1.0,
+        "prior": {
+            "fiducial": 0.0,
+            "kind": "gaussian",
+            "sigma": 1.0
+            }
+    },
     "nu_nubar_ratio": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -699,8 +737,22 @@
       "scale": 1.0,
       "value": 1.0
     },
+    "nc_norm": {
+      "fixed": false,
+      "prior": {
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.2
+      },
+      "range": [
+        0.5,
+        1.5
+      ],
+      "scale": 1.0,
+      "value": 1.0
+    },
     "nutau_norm": {
-      "fixed": true,
+      "fixed": false,
       "prior": {
         "kind": "uniform"
       },
@@ -708,7 +760,7 @@
        -1.5,
         2.5
       ],
-      "scale": 0.1,
+      "scale": 1.0,
       "value": 1.0
     },
     "osc_code": {
@@ -769,15 +821,19 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/4digit_DomEff_fits_10_by_16.json"
+      "value": "domeff_holeice/4digit_event_polyfit_bin_count_no_thru_baseline_DomEff_fits_4digit_fitter_10_by_10_no_NC_osc.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/4digit_HoleIce_fits_10_by_16.json"
+      "value": "domeff_holeice/4digit_event_polyfit_bin_count_no_thru_baseline_HoleIce_fits_4digit_fitter_10_by_10_no_NC_osc.json"
+    },
+    "holeice_fwd_slope_file": {
+      "fixed": true,
+      "value": "None"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/4digit_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_10_by_16.json"
+      "value": "reco_prcs/4digit_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,
@@ -794,7 +850,7 @@
       "value": 1.0
     },
     "up_down_cz_reco_prcs": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "fiducial": 1.0,
         "kind": "gaussian",
@@ -810,7 +866,7 @@
     "theta12": {
       "fixed": true,
       "prior": {
-        "fiducial": 0.5846852994181004,
+        "fiducial": 0.5839958715755919,
         "kind": "gaussian",
         "sigma": 0.013962634015954637
       },
@@ -819,12 +875,12 @@
         0.6283185307179586
       ],
       "scale": 1.0,
-      "value": 0.5846852994181004
+      "value": 0.5839958715755919
     },
     "theta13": {
       "fixed": false,
       "prior": {
-        "fiducial": 0.14835298641951802,
+        "fiducial": 0.14819001778459273,
         "kind": "gaussian",
         "sigma": 0.003490658503988659
       },
@@ -833,7 +889,7 @@
         0.158824961931484
       ],
       "scale": 1.0,
-      "value": 0.14835298641951802
+      "value": 0.14819001778459273
     },
     "theta23_ih": {
       "fixed": false,
@@ -857,7 +913,7 @@
         1.0
       ],
       "scale": 1.0,
-      "value": 0.7382742735936014
+      "value": 0.7373241279447564
     },
       "GENSYS_files" : {
 	  "value" : "aeff/relative-crosssections/genie-weigthed-crosssections.json",
@@ -919,6 +975,28 @@
 	  }
       },
       "GENSYS_MaRES":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+      "axm_qe":{
+	  "value": 0.0,
+	  "range": [-3.0,3.0],
+	  "fixed": true,
+	  "scale": 1.0,
+	  "prior": {
+	      "fiducial": 0.0,
+	      "kind": "gaussian",
+	      "sigma": 1.0
+	  }
+      },
+      "axm_res":{
 	  "value": 0.0,
 	  "range": [-3.0,3.0],
 	  "fixed": true,

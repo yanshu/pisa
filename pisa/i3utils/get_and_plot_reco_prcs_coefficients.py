@@ -44,8 +44,8 @@ parser.add_argument('--reco_prcs_vals',type=str,
                     default = 'np.linspace(0.7,1.3,13)', help = '''The reco. precision values to use.''')
 parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
-parser.add_argument('--use_event_PISA',action='store_true',default=False,
-                    help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
+parser.add_argument('--use_hist_PISA',action='store_true',default=False,
+                    help="Use histogram-based PISA") 
 parser.add_argument('--no_NC_osc',action='store_true',default=False,
                     help="Use no oscillation for NC, for cmpr with oscFit.") 
 parser.add_argument('--use_mask',action='store_true',default=False,
@@ -70,12 +70,12 @@ set_verbosity(args.verbose)
 #Read in the settings
 x_steps = 0.05
 outdir = args.outdir
-if args.use_event_PISA:
-    from pisa.analysis.TemplateMaker_MC import TemplateMaker
-    pisa_mode = 'event'
-else:
+if args.use_hist_PISA:
     from pisa.analysis.TemplateMaker_nutau import TemplateMaker
     pisa_mode = 'hist'
+else:
+    from pisa.analysis.TemplateMaker_MC import TemplateMaker
+    pisa_mode = 'event'
 use_NMH = not(args.IMH)
 if args.no_NC_osc:
     nc_osc_mode = 'no_NC_osc'
@@ -119,7 +119,7 @@ elif args.sim == 'dima_p2':
     #TODO    
     print "to do, dima_p2 sets"
 else:
-    raise ValueError( "sim allowed: ['5digit', '4digit', 'dima']")
+    raise ValueError( "sim allowed: ['5digit', '4digit', 'dima_p1', 'dima_p2']")
 
 # Just make sure the reco_mc_file is correct
 template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
@@ -207,7 +207,10 @@ if not args.templ_already_saved:
             template_settings_Reco = copy.deepcopy(template_settings)
             template_settings_Reco['params'][precision_tag]['value'] = reco_prcs_val
             template_settings_Reco['params']['nutau_norm']['value'] = data_nutau_norm 
-            tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True, turn_off_osc_NC=args.no_NC_osc)
+            if args.use_hist_PISA:
+                tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), no_sys_maps= True, apply_reco_prcs=True)
+            else:
+                tmap = RP_template_maker.get_template(get_values(change_nutau_norm_settings(template_settings_Reco['params'], data_nutau_norm ,True, normal_hierarchy=use_NMH)), num_data_events=None, no_sys_maps= True, apply_reco_prcs=True)
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['map'] = tmap['trck']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['cscd']['map'] = tmap['cscd']['map']
             tmaps[precision_tag][str(reco_prcs_val)]['trck']['sumw2_nu'] = tmap['trck']['sumw2_nu'] 

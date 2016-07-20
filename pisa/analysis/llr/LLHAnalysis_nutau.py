@@ -13,16 +13,17 @@ import sys
 import copy
 import numpy as np
 import scipy.optimize as opt
+import scipy.stats as stats
 
 from pisa.utils.jsons import to_json
 from pisa.utils.log import logging, physics, profile
 from pisa.utils.params import get_values, select_hierarchy, get_fixed_params, get_free_params, get_param_values, get_param_scales, get_param_bounds, get_param_priors
 from pisa.utils.utils import Timer
-from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh, get_binwise_smeared_llh, get_barlow_llh
+from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh, get_binwise_smeared_llh, get_barlow_llh, get_chi2
 from pisa.analysis.stats.Maps_nutau import get_true_template
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
-                           minimizer_settings,only_atm_params=True,check_octant=False):
+                           minimizer_settings,only_atm_params=True,check_octant=False,use_chi2=False):
     """
     For the hypothesis of the mass hierarchy being NMH
     ('normal_hierarchy'=True) or IMH ('normal_hierarchy'=False), finds the
@@ -47,17 +48,18 @@ def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_norm
     hypo_params = select_hierarchy(hypo_params,normal_hierarchy=hypo_normal)
 
     with Timer() as t:
-        llh_data = find_max_llh_bfgs(
+        llh_data, chi2, chi2_p = find_max_llh_bfgs(
             fmap=asimov_data_set,
             template_maker=template_maker,
             params=hypo_params,
             bfgs_settings=minimizer_settings,
             normal_hierarchy=hypo_normal,
-            check_octant=check_octant
+            check_octant=check_octant,
+            use_chi2 = use_chi2
         )
     profile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
-    return llh_data
+    return llh_data, chi2, chi2_p, dof
 
 def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
                                bfgs_settings):
@@ -76,9 +78,9 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
 
     return
 
-def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
+def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, bfgs_settings,
                       save_steps=False, normal_hierarchy=None,
-                      check_octant=False, no_optimize=False):
+                      check_octant=False, no_optimize=False, use_chi2=False):
     """
     Finds the template (and free systematic params) that maximize
     likelihood that the data came from the chosen template of true
@@ -115,10 +117,14 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
         f_opt_steps_dict = {key:[] for key in names}
         f_opt_steps_dict['llh'] = []
         logging.warn("NO FREE PARAMS, returning LLH")
-        neg_llh = llh_bfgs(init_vals, names, scales, fmap, fixed_params, template_maker, f_opt_steps_dict, priors)
-        print ''
-        return {'llh': [neg_llh]}
-
+        neg_llh = llh_bfgs(init_vals, num_data_events, names, scales, fmap, fixed_params, template_maker, f_opt_steps_dict, priors, use_chi2)
+        print 'NO FREE PARAMS !!!'
+        fixed_params_all = dict(get_values(fixed_params).items())
+        fixed_map, fixed_map_sumw2 = get_true_template(select_hierarchy(fixed_params_all,normal_hierarchy),template_maker, num_data_events, error=True)
+        fmap_sumw2 = fixed_map 
+        unscaled_fixed_vals = get_param_values(fixed_params)
+        chi2, chi2_p, dof = get_chi2(fmap, fixed_map, fmap_sumw2, fixed_map_sumw2, unscaled_fixed_vals, priors)
+        return {'llh': [neg_llh]}, chi2, chi2_p, dof
 
     opt_steps_dict = {key:[] for key in names}
     opt_steps_dict['llh'] = []
@@ -127,9 +133,11 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
     after_check_opt_steps_dict = {key:[] for key in names}
     after_check_opt_steps_dict['llh'] = []
 
-    const_args = (names,scales,fmap,fixed_params,template_maker,opt_steps_dict,priors)
+    const_args = (num_data_events, names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors, use_chi2)
 
     display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
+
+    fiducial_vals = copy.deepcopy(init_vals)
 
     if not blind_fit:
         string = ''
@@ -162,7 +170,7 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
             physics.info(msg)
             #print msg
 
-        const_args = (names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors)
+        const_args = (num_data_events, names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors, use_chi2)
         display_optimizer_settings(free_params=free_params,
                                    names=names,
                                    init_vals=init_vals,
@@ -185,7 +193,14 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
             opt_steps_dict = before_check_opt_steps_dict
 
 
-    best_fit_params = { name: value for name, value in zip(names, best_fit_vals) }
+    best_fit_params = { name: value for name, value in zip(names, best_fit_vals) } 
+    # best_fit_params is scaled vals, so need to unscale them
+    unscaled_best_fit_vals = [best_fit_vals[i]/scales[i] for i in xrange(len(best_fit_vals))]
+    unscaled_best_fit_params = { names[i]: val for i,val in enumerate(unscaled_best_fit_vals) }
+    best_fit_params_all = dict(unscaled_best_fit_params.items() + get_values(fixed_params).items())
+    best_fit_map, best_fit_map_sumw2 = get_true_template(select_hierarchy(best_fit_params_all,normal_hierarchy),template_maker, num_data_events, error=True)
+    fmap_sumw2 = best_fit_map 
+    chi2, chi2_p, dof = get_chi2(fmap, best_fit_map, fmap_sumw2, best_fit_map_sumw2, unscaled_best_fit_vals, priors)
 
     # Report best fit
     if not blind_fit:
@@ -215,11 +230,11 @@ def find_max_llh_bfgs(blind_fit, fmap, template_maker, params, bfgs_settings,
             if key in opt_steps_dict.keys():
                 del opt_steps_dict[key]
 
-    return opt_steps_dict
+    return opt_steps_dict, chi2, chi2_p, dof
 
 
-def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
-        opt_steps_dict, priors):
+def llh_bfgs(opt_vals, num_data_events, names, scales, fmap, fixed_params, template_maker,
+        opt_steps_dict, priors, use_chi2):
 
     '''
     Function that the bfgs algorithm tries to minimize: wraps get_template()
@@ -253,6 +268,7 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
         trial of the optimization process.
     priors : sequence of pisa.utils.params.Prior objects
         Priors corresponding to opt_vals list.
+    use_chi2: use chi2 instead of -llh for the minimizer
 
     Returns
     -------
@@ -261,19 +277,21 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
 
     '''
     # free parameters being "optimized" by minimizer re-scaled to their true values.
-    unscaled_opt_vals = [opt_vals[i]/scales[i] for i in xrange(len(opt_vals))]
-
-    unscaled_free_params = { names[i]: val for i,val in enumerate(unscaled_opt_vals) }
-    template_params = dict(unscaled_free_params.items() + get_values(fixed_params).items())
+    if len(opt_vals)==0:
+        template_params = dict(get_values(fixed_params).items())
+    else:
+        unscaled_opt_vals = [opt_vals[i]/scales[i] for i in xrange(len(opt_vals))]
+        unscaled_free_params = { names[i]: val for i,val in enumerate(unscaled_opt_vals) }
+        template_params = dict(unscaled_free_params.items() + get_values(fixed_params).items())
 
     # Now get true template, and compute LLH
     with Timer() as t:
         # normal
-        #true_fmap = get_true_template(template_params,template_maker) 
+        #true_fmap = get_true_template(template_params,template_maker, num_data_events) 
         # smeared
-        true_fmap,sumw2_map = get_true_template(template_params,template_maker,error=True) 
+        true_fmap, sumw2_map = get_true_template(template_params,template_maker,num_data_events,error=True) 
         # barlow
-        #map_nu, map_mu, sumw2_nu, sumw2_mu = get_true_template(template_params, template_maker, error=True, both=True)
+        #map_nu, map_mu, sumw2_nu, sumw2_mu = get_true_template(template_params, template_maker, num_data_events, error=True, both=True)
 
     profile.debug("==> elapsed time for template maker: %s sec"%t.secs)
 
@@ -281,14 +299,28 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     # to reflect the fact that the optimizer finds a minimum rather
     # than maximum.
     # normal
-    #neg_llh = -get_binwise_llh(fmap,true_fmap)
+    neg_llh = -get_binwise_llh(fmap,true_fmap)
     # smeared
-    neg_llh = -get_binwise_smeared_llh(fmap, true_fmap, sumw2_map)
+    #neg_llh = -get_binwise_smeared_llh(fmap, true_fmap, sumw2_map)
     # barlow
     #neg_llh = get_barlow_llh(fmap, map_nu, sumw2_nu, map_mu, sumw2_mu)
-    # add priors
-    neg_llh -= sum([prior.llh(opt_val) for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
 
+    # if no free params
+    if len(opt_vals)==0:
+        if not use_chi2:
+            return neg_llh
+    # add priors
+    if len(opt_vals)!=0:
+        neg_llh -= sum([prior.llh(opt_val) for (opt_val, prior) in zip(unscaled_opt_vals, priors)])
+    fmap_sumw2 = true_fmap 
+    chi2, chi2_p, dof = get_chi2(fmap, true_fmap, fmap_sumw2, sumw2_map, unscaled_opt_vals, priors)
+
+    # if no free params
+    if len(opt_vals)==0:
+        if use_chi2:
+            return chi2
+        else:
+            return neg_llh
     # Save all optimizer-tested values to opt_steps_dict, to see
     # optimizer history later
     for key in names:
@@ -296,15 +328,18 @@ def llh_bfgs(opt_vals, names, scales, fmap, fixed_params, template_maker,
     opt_steps_dict['llh'].append(neg_llh)
 
     # comment these lines if using blind_fit:
-    string = 'LLH at %.2f'%neg_llh
-    msg = '{}'.format(string.ljust(18))
-    for val in opt_vals:
-        string = '%2.5f'%(val)
-        msg += ' | {}'.format(string.ljust(9))
-    physics.info(msg)
-    sys.stdout.write(msg)
-    sys.stdout.flush()
-    sys.stdout.write("\b" * len(msg))
+    #string = 'LLH at %.2f'%neg_llh
+    #msg = '{}'.format(string.ljust(18))
+    #for val in opt_vals:
+    #    string = '%2.5f'%(val)
+    #    msg += ' | {}'.format(string.ljust(9))
+    #physics.info(msg)
+    #sys.stdout.write(msg)
+    #sys.stdout.flush()
+    #sys.stdout.write("\b" * len(msg))
 
-    return neg_llh
+    if use_chi2:
+        return chi2
+    else:
+        return neg_llh
 

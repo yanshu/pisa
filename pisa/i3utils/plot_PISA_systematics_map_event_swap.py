@@ -19,7 +19,7 @@ from scipy import stats
 from matplotlib.offsetbox import AnchoredText
 from scipy.constants import Julian_year
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker as TemplateMaker_default
-from pisa.analysis.TemplateMaker_MC import TemplateMaker as TemplateMaker_event
+from pisa.analysis.TemplateMaker_MC_for_fitter_cmpr import TemplateMaker as TemplateMaker_event
 import pisa.utils.utils as utils
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy
 from pisa.utils.log import set_verbosity,logging,profile

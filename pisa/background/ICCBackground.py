@@ -20,7 +20,7 @@ from pisa.utils.proc import report_params, get_params, add_params
 from pisa.background.BackgroundServiceICC import BackgroundServiceICC
 
 
-def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
+def add_icc_background(event_rate_pid_maps, background_service, num_data_events, atmos_mu_scale,
                         livetime, atmmu_f, noise_f, use_atmmu_f, **kwargs):
 
     """
@@ -47,12 +47,19 @@ def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
             # atmmu_f is the fraction of atmospheric muons to total no. of events (neutrinos + background + noise), default = 0.2
             # noise_f is the fraction of noise, it's set to 0 for MSU sample, since noise is only a few events (study from JP)
             # n_total = n_total * atmmu_f + n_total * noise_f + n_nu
-            # thus: scale = n_total * atmmu_f/n_mu, where n_total = n_nu / (1 - atmmu_f - noise_f)
-            scale = n_nu * atmmu_f / n_mu / (1 - atmmu_f - noise_f)
-            bg_rate_pid_map = background_dict[flav] * scale
-            sumw2 = background_dict[flav] * scale**2
+            # thus: norm_mu = n_total * atmmu_f/n_mu, where n_total = n_data_events
+            if num_data_events!=None:
+                norm_mu = num_data_events * atmmu_f/n_mu
+                norm_nu = num_data_events * (1-atmmu_f-noise_f)/n_nu
+            else:
+                #num_data_events set to None when using get_template() to get pseudo data ( see Maps_nutau.py)
+                norm_nu = 1
+                norm_mu = n_nu * atmmu_f / n_mu / (1 - atmmu_f - noise_f) 
+            bg_rate_pid_map = background_dict[flav] * norm_mu 
+            sumw2 = background_dict[flav] * norm_mu**2
         else:
-            # this is another way of defining the scale factor for background
+            # this is the PISA way of defining the scale factor for background
+            norm_nu = 1.0
             bg_rate_pid_map = background_dict[flav] * atmos_mu_scale * livetime
             sumw2 = background_dict[flav] * atmos_mu_scale**2 * livetime**2
         #replace zero entry errors (which are 0 here), with 0.5 * the smallest absolute error....if everything is zero, replace everything by one
@@ -65,9 +72,9 @@ def add_icc_background(event_rate_pid_maps, background_service, atmos_mu_scale,
         else:
             # if they are all zero, return 1 as error for every bin
             sumw2 = np.ones_like(sumw2)
-        event_rate_maps[flav] = {'map':event_rate_pid_map + bg_rate_pid_map,
+        event_rate_maps[flav] = {'map':event_rate_pid_map*norm_nu + bg_rate_pid_map,
                                  'sumw2':sumw2,
-                                 'map_nu':event_rate_pid_map,
+                                 'map_nu':event_rate_pid_map*norm_nu,
                                  'map_mu':bg_rate_pid_map,
                                  'sumw2_nu':np.zeros(np.shape(sumw2)),
                                  'sumw2_mu':sumw2,
