@@ -59,6 +59,14 @@
       "fixed": true,
       "value": "dima"
     },
+    "pid_remove":{
+      "fixed": true,
+      "value": -3.0
+    },
+    "pid_bound":{
+      "fixed": true,
+      "value": 2.0 
+    },
     "PID_offset": {
       "fixed": true,
       "prior": {
@@ -201,6 +209,26 @@
       ],
       "scale": 1.0,
       "value": 0.0
+    },
+    "flux_sys_renorm":{
+      "fixed": true,
+      "value": true
+    },
+    "turn_off_osc_NC":{
+      "fixed": true,
+      "value": true
+    },
+    "use_cut_on_trueE":{
+      "fixed": true,
+      "value": false 
+    },
+    "use_oscFit_genie_barr_sys":{
+      "fixed": true,
+      "value": true
+    },
+    "use_pisa_genie_barr_sys":{
+      "fixed": true,
+      "value": false 
     },
     "use_atmmu_f":{
       "fixed": true,
