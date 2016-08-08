@@ -185,7 +185,7 @@ class TemplateMaker:
         try:
             evts = events.Events(self.aeff_weight_file)
         except IOError,e:
-            logging.error("Unable to open event data file %s"%simfile)
+            logging.error("Unable to open event data file %s"%self.aeff_weight_file)
             logging.error(e)
             sys.exit(1)
         print "self.aeff_weight_file = " , self.aeff_weight_file
