@@ -1,8 +1,8 @@
 {
   "DeepCore":{
     "IC86":{
-      "msu_4digit":{
-        "mn8d-mn7d": {
+      "4digit":{
+        "msu_mn8d-mn7d": {
           "field_map":{
               "pid": "IC86_Dunkman_L6/delta_LLH"
           },
@@ -12,8 +12,8 @@
           }
         }
       },
-      "msu_5digit":{
-        "mn8d-mn7d": {
+      "5digit":{
+        "msu_mn8d-mn7d": {
           "field_map":{
               "pid": "IC86_Dunkman_L6/delta_LLH"
           },
@@ -27,7 +27,7 @@
   },
   "PINGU": {
     "V36": {
-      "V5": {
+      "5": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_Train_V36_baseline_HE_CutsV4_BDTG.weights.xml"
@@ -40,7 +40,7 @@
       }
     },
     "V38": {
-      "V5.1": {
+      "5.1": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_PINGU_V38_HE_E2wgt_MLPBNN.weights.xml"
@@ -53,7 +53,7 @@
       }
     },
     "V39": {
-      "V5.1": {
+      "5.1": {
         "V1": {
           "field_map": {
             "pid": "PINGU_PID_Score/PID_PINGU_V39_HE_E2wgt_MLPBNN.weights.xml"
