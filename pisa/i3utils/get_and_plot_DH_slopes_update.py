@@ -219,14 +219,18 @@ if not args.templ_already_saved:
         DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
         DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
         DH_template_settings['params']['pid_events']['value'] = reco_mc_file    #pid file same as reco_mc file
-        DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
+        if args.use_event_PISA:
+            DH_template_settings['params']['use_atmmu_f']['value'] = False
+            DH_template_settings['params']['atmmu_f']['value'] = 0.0
+        else:
+            DH_template_settings['params']['atmos_mu_scale']['value'] = 0.0
     
         DH_template_maker = TemplateMaker(get_values(select_hierarchy(DH_template_settings['params'], use_NMH)), no_sys_maps=True,**DH_template_settings['binning'])
         if args.use_event_PISA:
             # for comparison with oscFit: turn off NC oscillation
             template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),num_data_events=None, no_sys_maps=True)
         else:
-            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),no_sys_maps=True)
+            template = DH_template_maker.get_template(get_values(change_nutau_norm_settings(DH_template_settings['params'], 1.0 ,nutau_norm_fix=True, normal_hierarchy=use_NMH)),num_data_events=None, no_sys_maps=True)
 
         templates[str(run_num)]['trck']['map'] = template['trck']['map']
         templates[str(run_num)]['cscd']['map'] = template['cscd']['map']
