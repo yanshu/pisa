@@ -13,7 +13,7 @@ from pisa.analysis.stats.LLHStatistics import get_random_map
 from pisa.utils.log import logging
 
 
-def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_type=None):
+def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, flux_sys_renorm, int_type=None):
     """
     Scales the ratio of the entries of two maps, conserving the total.
     """
@@ -35,8 +35,17 @@ def apply_ratio_scale(orig_maps, key1, key2, ratio_scale, is_flux_scale, int_typ
         orig_ratio = orig_maps[key1]['map'] / orig_maps[key2]['map']
 
     # conserved total:
-    scaled_map2 = orig_sum / (1 + ratio_scale*orig_ratio)
-    scaled_map1 = ratio_scale*orig_ratio*scaled_map2
+    if flux_sys_renorm:
+        scaled_map2 = orig_sum / (1 + ratio_scale*orig_ratio)
+        scaled_map1 = ratio_scale*orig_ratio*scaled_map2
+    else:
+        logging.trace('Scale only map1.')
+        if not is_flux_scale:
+            scaled_map1 = ratio_scale*orig_maps[key1][int_type]['map']
+            scaled_map2 = orig_maps[key2][int_type]['map']
+        else:
+            scaled_map1 = ratio_scale*orig_maps[key1]['map']
+            scaled_map2 = orig_maps[key2]['map']
 
     logging.trace(' %s / %s %s ratio before scaling: %.3f'%(key1, key2, log_str,
                     orig_total1/orig_total2))
