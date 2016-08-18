@@ -416,6 +416,19 @@ def fix_osc_params(params):
 
     return new_params
 
+def float_param(params,param):
+    """
+    returns dict with param set to 'fixed'=False
+    """
+    new_params = {}
+    # or initialize with new copy by dict(params)
+    for key,value in params.items():
+        new_params[key] = deepcopy(value)
+        if param in key:
+            new_params[key]['fixed'] = False
+
+    return new_params
+
 def fix_param(params,param):
     """
     returns dict with param set to 'fixed'=True
