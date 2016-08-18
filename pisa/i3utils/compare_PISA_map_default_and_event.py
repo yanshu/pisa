@@ -209,10 +209,12 @@ settings file. ''')
     # get basic information
     template_settings = from_json(args.template_settings)
     template_settings['params']['icc_bg_file']['value'] = find_resource(args.background_file)
+    print "args.background_file= ", args.background_file
     template_settings['params']['atmos_mu_scale']['value'] = 0
     livetime = 2.5
     template_settings['params']['livetime']['value'] = livetime
-    template_settings['params']['sim_ver']['value'] = sim_version 
+    if sim_version != '':
+        template_settings['params']['sim_ver']['value'] = sim_version 
 
     ebins = template_settings['binning']['ebins']
     anlys_ebins = template_settings['binning']['anlys_ebins']
@@ -266,10 +268,11 @@ settings file. ''')
     profile.info('==> elapsed time to initialize templates: %s sec'%t.secs)
 
     # Make nutau template:
+    print "getting template ..."
     with Timer(verbose=False) as t:
-        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params_default),return_stages=True, no_sys_maps=True)
+        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params_default),num_data_events=None,return_stages=True, no_sys_maps=True)
     profile.info('==> elapsed time to get NUTAU template (default PISA): %s sec'%t.secs)
-    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params_default),return_stages=True, no_sys_maps=True)
+    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params_default),num_data_events=None,return_stages=True, no_sys_maps=True)
     flux_map_nominal_nutau = nominal_nutau_all_stages[0]
     osc_flux_map_nominal_nutau = nominal_nutau_all_stages[1]
     evt_rate_map_nominal_nutau = nominal_nutau_all_stages[2]
@@ -280,12 +283,10 @@ settings file. ''')
     nominal_no_nutau = nominal_no_nutau_all_stages[5]
 
     with Timer(verbose=False) as t:
-        #nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm))
-        nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=True, flux_sys_renorm=not(args.no_flux_sys_renorm))
+        nominal_nutau_event_all_stages = nominal_template_maker_event.get_template(get_values(nominal_nutau_params_event),num_data_events=None,return_stages=True, no_sys_maps=True)
     profile.info('==> elapsed time to get NUTAU template (event-by-event PISA): %s sec'%t.secs)
     with Timer(verbose=False) as t:
-        #nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=False, flux_sys_renorm=not(args.no_flux_sys_renorm))
-        nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params_event),return_stages=True, no_sys_maps=True, use_cut_on_trueE=True, flux_sys_renorm=not(args.no_flux_sys_renorm))
+        nominal_no_nutau_event_all_stages = no_nutau_nominal_template_maker_event.get_template(get_values(nominal_no_nutau_params_event),num_data_events=None,return_stages=True, no_sys_maps=True)
     profile.info('==> elapsed time to get (no nutau) NUTAU template ( event-by-event PISA): %s sec'%t.secs)
     evt_rate_map_nominal_nutau_event = nominal_nutau_event_all_stages[1]
     evt_rate_map_nominal_no_nutau_event = nominal_no_nutau_event_all_stages[1]
@@ -293,6 +294,12 @@ settings file. ''')
     reco_rate_map_nominal_no_nutau_event = nominal_no_nutau_event_all_stages[2]
     nominal_nutau_event = nominal_nutau_event_all_stages[4]
     nominal_no_nutau_event = nominal_no_nutau_event_all_stages[4]
+
+    for flavor in ['nue_cc','numu_cc','nutau_cc','nuall_nc']:
+        print "No. evts " , flavor, " (in reco e and cz) = ", (np.sum(reco_rate_map_nominal_nutau_event[flavor]['map']))
+    print "No. evts in background for ", flavor , (np.sum(nominal_nutau_event['cscd']['map_mu'])+np.sum(nominal_nutau_event['trck']['map_mu']))
+    a=0
+    assert(a==2) 
 
     #############  Compare Aeff Stage Template ############
     if args.plot_aeff:
