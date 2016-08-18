@@ -18,8 +18,8 @@
               "pid": "IC86_Dunkman_L6/delta_LLH"
           },
           "criteria": {
-              "cscd" : "pid < 3",
-              "trck" : "pid >=3"
+              "cscd" : "(pid >= -3) & (pid < 2)",
+              "trck" : "pid >=2"
           }
         }
       }
