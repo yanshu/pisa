@@ -389,7 +389,7 @@ settings file. ''')
     print "syslist = ", syslist
     print 'fit nutauCCnorm = 1'
     for sys in syslist:
-        if sys != 'llh' and sys!='chi2' and sys!='chi2_p':
+        if sys != 'llh' and sys!='chi2' and sys!='chi2_p' and sys!='dof':
             val = fit_file_llr['trials'][0]['fit_results'][1][sys][0]
             if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
                 sys += '_nh'
@@ -404,7 +404,7 @@ settings file. ''')
     syslist = fit_file_profile['trials'][0]['fit_results'][0].keys()
     print 'fit nutauCCnorm = 0'
     for sys in syslist:
-        if sys != 'llh' and sys!='chi2' and sys!='chi2_p':
+        if sys != 'llh' and sys!='chi2' and sys!='chi2_p' and sys!='dof':
             val = fit_file_profile['trials'][0]['fit_results'][0][sys][0]
             if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
                 sys += '_nh'
@@ -418,7 +418,7 @@ settings file. ''')
     syslist = fit_file_profile['trials'][0]['fit_results'][1].keys()
     print 'fit nutauCCnorm = free'
     for sys in syslist:
-        if sys != 'llh' and sys!='chi2' and sys!='chi2_p':
+        if sys != 'llh' and sys!='chi2' and sys!='chi2_p' and sys!='dof':
             val = fit_file_profile['trials'][0]['fit_results'][1][sys][0]
             if sys == 'theta23' or sys =='deltam23' or sys =='deltam31':
                 sys += '_nh'
@@ -529,9 +529,9 @@ settings file. ''')
 
         with Timer(verbose=False) as t:
             fit_nutau = fit_nutau_template_maker.get_template(get_values(fit_nutau_params),num_data_events=num_data_events,return_stages=False, no_sys_maps= False)
-            fit_no_nutau = fit_no_nutau_template_maker.get_template(get_values(fit_no_nutau_params),num_data_events=num_data_events,return_stages=False, no_sys_maps= False)
-            fit_free_nutau = fit_free_nutau_template_maker.get_template(get_values(fit_free_nutau_params),num_data_events=num_data_events,return_stages=False, no_sys_maps= False)
-        profile.info('==> elapsed time to get NUTAU template: %s sec'%t.secs)
+        profile.info('==> elapsed time to get one event-by-event NUTAU template: %s sec'%t.secs)
+        fit_no_nutau = fit_no_nutau_template_maker.get_template(get_values(fit_no_nutau_params),num_data_events=num_data_events,return_stages=False, no_sys_maps= False)
+        fit_free_nutau = fit_free_nutau_template_maker.get_template(get_values(fit_free_nutau_params),num_data_events=num_data_events,return_stages=False, no_sys_maps= False)
 
         #get chi2
         free_params = get_free_params(select_hierarchy(fit_free_nutau_template_settings['params'], True))
@@ -551,9 +551,11 @@ settings file. ''')
         #fmap_sumw2[select_2] = np.square(-0.5 + np.sqrt(burn_sample_array[select_2]+0.25))
 
         fmap_sumw2 = best_fit_map
+        print "best_fit_map = ", best_fit_map 
+        print "burn_sample_array = ", burn_sample_array
 
-        chi2, chi2_p = get_chi2(burn_sample_array, best_fit_map, fmap_sumw2, best_fit_map_sumw2, unscaled_best_fit_vals, priors)
-        print "chi2, chi2_p = ", chi2, " ", chi2_p
+        chi2, chi2_p, dof = get_chi2(burn_sample_array, best_fit_map, fmap_sumw2, best_fit_map_sumw2, unscaled_best_fit_vals, priors)
+        print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
         #print "fit_nutau cscd = "
         #print fit_nutau['cscd']
         #print "\n"
