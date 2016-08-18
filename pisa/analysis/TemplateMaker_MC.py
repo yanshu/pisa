@@ -28,7 +28,6 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.Flux import get_flux_maps
 from pisa.oscillations.Oscillation import get_osc_flux
 
 from pisa.reco.RecoServiceMC import RecoServiceMC
@@ -185,7 +184,7 @@ class TemplateMaker:
         try:
             evts = events.Events(self.aeff_weight_file)
         except IOError,e:
-            logging.error("Unable to open event data file %s"%self.aeff_weight_file)
+            logging.error("Unable to open event data file %s"%simfile)
             logging.error(e)
             sys.exit(1)
         print "self.aeff_weight_file = " , self.aeff_weight_file
