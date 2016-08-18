@@ -32,7 +32,7 @@ from pisa.utils.jsons import from_json,to_json
 from pisa.analysis.llr.LLHAnalysis_nutau import find_max_llh_bfgs
 from pisa.analysis.stats.Maps import get_seed
 from pisa.analysis.stats.Maps_nutau import get_pseudo_data_fmap, get_burn_sample_maps, get_true_template, get_stat_fluct_map
-from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings
+from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy, fix_param, change_settings, float_param
 
 # --- parse command line arguments ---
 parser = ArgumentParser(description='''Runs the LLR optimizer-based analysis varying a number of systematic parameters
@@ -71,6 +71,7 @@ parser.add_argument('--inv-mh-data', action='store_true', default=False, dest='i
 parser.add_argument('--inv-mh-hypo', action='store_true', default=False, dest='inv_h_hypo', help='''invert mass hierarchy in test hypothesis''')
 parser.add_argument('--fluct', default='poisson', help='''What random sampling to be used for psudo data, this is usually just poisson, but can also be set to model_stat to gaussian fluctuate the model expectations by theiruncertainty''')
 parser.add_argument('-f', default='', dest='f_param', help='''fix a niusance parameter and if needed set to a value by e.g. -f nuisance_p=1.2''')
+parser.add_argument('--float_param', default='', dest='float_param', help='''make a niusance parameter float''')
 parser.add_argument('-fd', default='', dest='f_param_data', help='''fix a niusance parameter for the psudo data to a value by e.g. -f nuisance_p=1.2''')
 parser.add_argument('-fs', default='', dest='f_param_scan', help='''fix a niusance parameter to a value by e.g. -f nuisance_p=1.2 for grid point calculations''')
 parser.add_argument('--read_fmap_from_json', default='', dest='read_fmap_from_json', help='''Read fmap from json.''')
@@ -129,6 +130,11 @@ else:
     logging.info('Using pisa.analysis.TemplateMaker_MC, i.e. MC-based PISA')
     from pisa.analysis.TemplateMaker_MC import TemplateMaker
     pisa_mode = 'event'
+
+# make a nuisance parameter float
+if not args.float_param == '':
+    template_settings['params'] = float_param(template_settings['params'], args.float_param)
+    print 'make param %s float'%(args.float_param)
 
 # fix a nuisance parameter if requested
 fix_param_name = None

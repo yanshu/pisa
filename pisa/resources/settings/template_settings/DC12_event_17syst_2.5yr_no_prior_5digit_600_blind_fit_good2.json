@@ -2,52 +2,40 @@
   "binning": {
     "czbins": [
     -1.0,
-    -0.8,
-    -0.6,
-    -0.4,
-    -0.2,
+    -0.75,
+    -0.5 ,
+    -0.25,
     0.0,
-    0.2,
-    0.4,
-    0.6,
-    0.8,
+    0.25,
+    0.5,
+    0.75,
     1.0
     ],
     "ebins": [
-    0.95499259,
-    1.25892541,
-    1.65958691,
-    2.18776162,
-    2.8840315, 
-    3.80189396,
-    5.01187234,
-    6.60693448,
-    8.7096359,
-    11.48153621,
-    15.13561248,
-    19.95262315,
-    26.30267992,
-    34.67368505,
-    45.70881896,
-    60.25595861,
-    79.43282347,
-    104.71285481,
-    138.03842646,
-    181.97008586,
-    239.8832919
+    3.16227766, 
+    4.21696503, 
+    5.62341325, 
+    7.49894209,
+    10.0,
+    13.33521432, 
+    17.7827941,
+    23.71373706,
+    31.6227766,
+    42.16965034,
+    56.23413252,
+    74.98942093,
+    100.0
     ],
     "anlys_ebins": [
-    5.01187234,
-    6.60693448,
-    8.7096359,
-    11.48153621,
-    15.13561248,
-    19.95262315,
-    26.30267992,
-    34.67368505,
-    45.70881896,
-    60.25595861,
-    79.43282347
+    5.62341325, 
+    7.49894209,
+    10.0,
+    13.33521432, 
+    17.7827941,
+    23.71373706,
+    31.6227766,
+    42.16965034,
+    56.23413252
     ],
     "oversample_cz": 1,
     "oversample_e": 1,
@@ -157,7 +145,7 @@
       "value": "MC"
     },
     "aeff_scale": {
-      "fixed": false,
+      "fixed": true,
       "prior": {
         "kind": "uniform"
       },
@@ -177,11 +165,11 @@
       "prior": {
         "fiducial": 0.0,
         "kind": "gaussian",
-        "sigma": 0.05
+        "sigma": 0.1
       },
       "range": [
-        -0.2,
-        0.2
+        -0.5,
+        0.5
       ],
       "scale": 1.0,
       "value": 0.0
@@ -212,7 +200,7 @@
     },
     "flux_sys_renorm":{
       "fixed": true,
-      "value": false 
+      "value": true
     },
     "turn_off_osc_NC":{
       "fixed": true,
@@ -229,6 +217,10 @@
     "use_pisa_genie_barr_sys":{
       "fixed": true,
       "value": false 
+    },
+    "use_atmmu_f":{
+      "fixed": true,
+      "value": true
     },
     "use_atmmu_f":{
       "fixed": true,
@@ -253,9 +245,7 @@
     "cz_reco_precision_up": {
       "fixed": false,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.7,
@@ -310,8 +300,8 @@
         "kind": "uniform"
       },
       "range": [
-        -0.1,
-        0.00
+        -0.007,
+        0.007
       ],
       "scale": 100.0,
       "value": -0.00237
@@ -322,8 +312,8 @@
         "kind": "uniform"
       },
       "range": [
-        0.0,
-        0.1
+        -0.007,
+        0.007
       ],
       "scale": 100.0,
       "value": 0.002457
@@ -340,8 +330,8 @@
         "sigma": 0.1
       },
       "range": [
-        0.85,
-        1.15
+        0.5,
+        1.5
       ],
       "scale": 1.0,
       "value": 1.0
@@ -657,16 +647,24 @@
         "fixed": true,
         "value": "oscillations/osc_probabilities_e140_cz160_good.json"
     },
+    "fit_bin_ratio":{
+        "fixed": true,
+        "value": false
+    },
+    "fit_thru_baseline":{
+        "fixed": true,
+        "value": false 
+    },
     "hole_ice": {
       "fixed": false,
       "prior": {
         "fiducial": 0.25,
         "kind": "gaussian",
-        "sigma": 0.15
+        "sigma": 0.1
       },
       "range": [
-        0.15,
-        0.35
+        0.0,
+        0.5
       ],
       "scale": 1.0,
       "value": 0.25
@@ -744,11 +742,13 @@
     "nc_norm": {
       "fixed": false,
       "prior": {
-        "kind": "uniform"
+        "fiducial": 1.0,
+        "kind": "gaussian",
+        "sigma": 0.2
       },
       "range": [
-        0.0,
-        2.0
+        0.5,
+        1.5
       ],
       "scale": 1.0,
       "value": 1.0
@@ -762,7 +762,7 @@
        -1.5,
         2.5
       ],
-      "scale": 0.1,
+      "scale": 1.0,
       "value": 1.0
     },
     "osc_code": {
@@ -823,19 +823,19 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_DomEff_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_DomEff_fits_blind_fit_1_no_NC_osc.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_HoleIce_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_HoleIce_fits_blind_fit_1_no_NC_osc.json"
     },
     "holeice_fwd_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_no_thru_baseline_HoleIce_fwd_fits_blind_fit_1_no_NC_osc.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/5digit_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
+      "value": "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,
@@ -854,9 +854,7 @@
     "up_down_cz_reco_prcs": {
       "fixed": false,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.8,

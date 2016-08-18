@@ -39,7 +39,6 @@ def apply_shape_mod(flux_spline_service, flux_maps, ebins, czbins, **params):
     Taking Joakim's shape mod functionality and applying it generally
     to the flux_maps, regardless of the flux_service used
     '''
-
     #make flux_mod_dict and add it to the list of params.
     Flux_Mod_Dict = construct_shape_dict('flux', params)
 
@@ -54,12 +53,13 @@ def apply_shape_mod(flux_spline_service, flux_maps, ebins, czbins, **params):
         prim_dict['ebins'] = flux_maps[prim]['ebins']
         prim_dict['czbins'] = flux_maps[prim]['czbins']
         mod_table = np.zeros_like(flux_maps[prim]['map'])
-        #print "for testing purposes, here is flux_hadronic_H: ", flux_hadronic_H
         # here I want a dictionary named Flux_Mod_Dict containing the mod factors as keys and UNCF_X files as entries, then I can modify the flux by:
         logging.info("now reaching the flux_mod_dict stage: \n %s"%Flux_Mod_Dict)
         for entry in Flux_Mod_Dict:
-            if entry == 'fixed': continue
+            if (params[entry]==0):
+                continue
             logging.info("testing for: %s" %entry)
+            Flux_Mod_Dict[entry] += 1.1
             mod_table += flux_spline_service.modify_shape(ebins, czbins, Flux_Mod_Dict[entry], entry).T
 
         if mod_table[mod_table<0].any():
@@ -76,7 +76,7 @@ def apply_shape_mod(flux_spline_service, flux_maps, ebins, czbins, **params):
 
     return return_dict
 
-def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
+def apply_nue_numu_ratio(flux_maps, nue_numu_ratio, flux_sys_renorm):
     """
     Applies the nue_numu_ratio systematic to the flux maps
     and returns the scaled maps. The actual calculation is
@@ -87,14 +87,16 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
         orig_maps = flux_maps,
         key1 = 'nue', key2 = 'numu',
         ratio_scale = nue_numu_ratio,
-        is_flux_scale = True
+        is_flux_scale = True,
+        flux_sys_renorm = flux_sys_renorm
     )
 
     scaled_nue_bar_flux, scaled_numu_bar_flux = apply_ratio_scale(
         orig_maps = flux_maps,
         key1 = 'nue_bar', key2 = 'numu_bar',
         ratio_scale = nue_numu_ratio,
-        is_flux_scale = True
+        is_flux_scale = True,
+        flux_sys_renorm = flux_sys_renorm
     )
 
     flux_maps['nue']['map'] = scaled_nue_flux
@@ -104,7 +106,7 @@ def apply_nue_numu_ratio(flux_maps, nue_numu_ratio):
 
     return flux_maps
 
-def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
+def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio, flux_sys_renorm):
     """
     Applies the nu_nubar_ratio systematic to the event rate
     maps and returns the scaled maps. The actual calculation is
@@ -121,6 +123,7 @@ def apply_nu_nubar_ratio(flux_maps, nu_nubar_ratio):
                 key1 = flavour, key2 = flavour+'_bar',
                 ratio_scale = nu_nubar_ratio,
                 is_flux_scale = True,
+                flux_sys_renorm = flux_sys_renorm
             )
             flux_maps[flavour]['map'] = scaled_nu_rates
             flux_maps[flavour+'_bar']['map'] = scaled_nubar_rates
@@ -161,7 +164,7 @@ def get_median_energy(flux_map):
     return energy
 
 def get_flux_maps(flux_service, barr_service, ebins, czbins, nue_numu_ratio,
-                  nu_nubar_ratio, energy_scale, atm_delta_index,
+                  nu_nubar_ratio, flux_sys_renorm, energy_scale, atm_delta_index,
                   flux_hadronic_A, flux_hadronic_B, flux_hadronic_C,
                   flux_hadronic_D, flux_hadronic_E, flux_hadronic_F,
                   flux_hadronic_G, flux_hadronic_H, flux_hadronic_I,
@@ -210,18 +213,28 @@ def get_flux_maps(flux_service, barr_service, ebins, czbins, nue_numu_ratio,
 
     # now scale the nue(bar) / numu(bar) flux ratios, keeping the total
     # Flux (nue + numu, nue_bar + numu_bar) constant, or return unscaled maps:
-    scaled_maps = apply_nue_numu_ratio(maps, nue_numu_ratio) if nue_numu_ratio != 1.0 else maps
+    scaled_maps = apply_nue_numu_ratio(maps, nue_numu_ratio, flux_sys_renorm) if nue_numu_ratio != 1.0 else maps
 
     # now scale the nu(e/mu) / nu(e/mu)bar event count ratios, keeping the total
     # (nue + nuebar etc.) constant
     if nu_nubar_ratio != 1.:
-        scaled_maps = apply_nu_nubar_ratio(scaled_maps, nu_nubar_ratio)
+        scaled_maps = apply_nu_nubar_ratio(scaled_maps, nu_nubar_ratio, flux_sys_renorm)
 
     median_energy = get_median_energy(maps['numu'])
     if atm_delta_index != 0.0:
         scaled_maps = apply_delta_index(scaled_maps, atm_delta_index, median_energy)
 
-    #Apply Barr uncertainties
+    #Apply Barr uncertainties (18 syst.)
+    flux_sys = {'flux_hadronic_A':flux_hadronic_A, 'flux_hadronic_B':flux_hadronic_B, 'flux_hadronic_C':flux_hadronic_C,
+                'flux_hadronic_D':flux_hadronic_D, 'flux_hadronic_E':flux_hadronic_E, 'flux_hadronic_F':flux_hadronic_F,
+                'flux_hadronic_G':flux_hadronic_G, 'flux_hadronic_H':flux_hadronic_H, 'flux_hadronic_I':flux_hadronic_I,
+                'flux_hadronic_W':flux_hadronic_W, 'flux_hadronic_X':flux_hadronic_X, 'flux_hadronic_Y':flux_hadronic_Y,
+                'flux_hadronic_Z':flux_hadronic_Z, 'flux_prim_norm_a':flux_prim_norm_a,
+                'flux_prim_exp_norm_b':flux_prim_exp_norm_b, 'flux_prim_exp_factor_c':flux_prim_exp_factor_c,
+                'flux_spectral_index_d':flux_spectral_index_d, 'flux_pion_chargeratio_Chg':flux_pion_chargeratio_Chg}
+    #print "flux_prim_exp_factor_c = ", flux_prim_exp_factor_c
+    for sys in flux_sys.keys():
+        params[sys] = flux_sys[sys]
     scaled_maps = apply_shape_mod(barr_service, scaled_maps, ebins, czbins, **params)
     
     return scaled_maps
@@ -247,6 +260,8 @@ if __name__ == '__main__':
                         default='bisplrep')
     parser.add_argument('--nue_numu_ratio',metavar='FLOAT',type=float,
                         help='''Factor to scale nue_flux by''',default=1.0)
+    hselect.add_argument('--flux_sys_renorm', default=True,
+                        action='store_true', help="Use renormalization for flux-related syst.")
     parser.add_argument('--nu_nubar_ratio',metavar='FLOAT',type=float,
                         help='''Factor to scale nu_nubar_flux by''',default=1.0)
     parser.add_argument('--delta_index',metavar='FLOAT',type=float,
@@ -339,6 +354,7 @@ if __name__ == '__main__':
                               args.czbins,
                               args.nue_numu_ratio,
                               args.nu_nubar_ratio,
+                              args.flux_sys_renorm,
                               args.energy_scale,
                               args.delta_index,
                               args.flux_hadronic_A,

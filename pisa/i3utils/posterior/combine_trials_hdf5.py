@@ -56,20 +56,13 @@ def process_trial(trials,trial):
     if not trials:
         trials = dict(trial)
         for dkey in trials.keys():
-            for hkey in trial[dkey].keys():
-                if hkey == 'seed':
-                    trials[dkey][hkey] = []
-                    continue
-                for key in trials[dkey][hkey].keys():
-                    trials[dkey][hkey][key] = []
+            trials[dkey] = []
     else:
         for dkey in trial.keys():
-            for hkey in trial[dkey].keys():
-                if hkey == 'seed':
-                    trials[dkey][hkey].append(trial[dkey][hkey])
-                    continue
-                for key in trial[dkey][hkey].keys():
-                    trials[dkey][hkey][key].append(trial[dkey][hkey][key][-1])
+            if isinstance(trial[dkey], float) or isinstance(trial[dkey], int):
+                trials[dkey].append(trial[dkey])
+            else:
+                trials[dkey].append(trial[dkey][-1])
     return trials
 
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -89,9 +82,9 @@ mod_num = len(args.infiles)/20
 start_time = datetime.now()
 
 minimizer_settings = {}
-template_settings_up = {}
+template_settings = {}
 pseudo_data_settings = {}
-trials = {}
+trials = {'numerator':{}, 'denominator':{}, 'q':[]}
 for i,filename in enumerate(args.infiles):
     if mod_num > 0:
         if i%mod_num == 0: print "  >> %d files done..."%i
@@ -104,28 +97,33 @@ for i,filename in enumerate(args.infiles):
     if not minimizer_settings:
         minimizer_settings = data['minimizer_settings']
 
-    if not template_settings_up:
-        template_settings_up = data['template_settings_up']
+    if not template_settings:
+        template_settings = data['template_settings']
 
     if not pseudo_data_settings:
         try: pseudo_data_settings = data['pseudo_data_settings']
         except: pass
 
     if len(args.infiles)==1:
-        trials= data['trials'][0]
+        trials['numerator']= data['trials']['fit_results'][0]
+        trials['denominator']= data['trials']['fit_results'][1]
+        trials['q'] = data['trials']['q']
     else:
         for trial in data['trials']:
-            trials = process_trial(trials,trial)
+            #print "trial = ", trial
+            trials['numerator'] = process_trial(trials['numerator'],trial['fit_results'][0])
+            trials['denominator'] = process_trial(trials['denominator'],trial['fit_results'][1])
+            trials['q'].append(trial['q'])
 
 #print "trials: ", trials
 fh = h5py.File(args.outfile,'w')
 
 min_group = fh.create_group('minimizer_settings')
-template_group = fh.create_group('template_settings_up')
+template_group = fh.create_group('template_settings')
 trial_group = fh.create_group('trials')
 
 save_dict(minimizer_settings,min_group)
-save_dict(template_settings_up,template_group)
+save_dict(template_settings,template_group)
 save_dict(trials,trial_group)
 
 if pseudo_data_settings:

@@ -246,7 +246,7 @@ if __name__ == '__main__':
     true_template['tot']['sumw2_mu'] = true_template['cscd']['sumw2_mu'] + true_template['trck']['sumw2_mu']
 
     if args.burn_sample_file:
-        burn_sample_maps = get_burn_sample_maps(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'])
+        burn_sample_maps = get_burn_sample_maps(burn_sample_file= args.burn_sample_file, anlys_ebins= anlys_ebins, czbins= czbins, output_form ='map', cut_level='L6', channel=template_settings['params']['channel']['value'], pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
         burn_sample_maps['tot'] = {}
         burn_sample_maps['tot']['map'] = burn_sample_maps['cscd']['map'] + burn_sample_maps['trck']['map']
 
