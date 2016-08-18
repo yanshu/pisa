@@ -212,7 +212,7 @@
     },
     "flux_sys_renorm":{
       "fixed": true,
-      "value": true
+      "value": false 
     },
     "turn_off_osc_NC":{
       "fixed": true,
