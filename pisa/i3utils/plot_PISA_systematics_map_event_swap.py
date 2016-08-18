@@ -19,7 +19,7 @@ from scipy import stats
 from matplotlib.offsetbox import AnchoredText
 from scipy.constants import Julian_year
 from pisa.analysis.TemplateMaker_nutau import TemplateMaker as TemplateMaker_default
-from pisa.analysis.TemplateMaker_MC_for_fitter_cmpr import TemplateMaker as TemplateMaker_event
+from pisa.analysis.TemplateMaker_MC import TemplateMaker as TemplateMaker_event
 import pisa.utils.utils as utils
 from pisa.utils.params import get_values, select_hierarchy_and_nutau_norm, select_hierarchy
 from pisa.utils.log import set_verbosity,logging,profile
@@ -358,9 +358,9 @@ settings file. ''')
 
     # Make nutau template:
     with Timer(verbose=False) as t:
-        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params_default),return_stages=True, no_sys_maps=True)
+        nominal_nutau_all_stages = nominal_template_maker_default.get_template(get_values(nominal_nutau_params_default),num_data_events=None,return_stages=True, no_sys_maps=True)
     profile.info('==> elapsed time to get NUTAU template (default PISA): %s sec'%t.secs)
-    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params_default),return_stages=True, no_sys_maps=True)
+    nominal_no_nutau_all_stages = no_nutau_nominal_template_maker_default.get_template(get_values(nominal_no_nutau_params_default),num_data_events=None,return_stages=True, no_sys_maps=True)
     flux_map_nominal_nutau = nominal_nutau_all_stages[0]
     osc_flux_map_nominal_nutau = nominal_nutau_all_stages[1]
     evt_rate_map_nominal_nutau = nominal_nutau_all_stages[2]
