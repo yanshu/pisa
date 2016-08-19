@@ -116,6 +116,9 @@ class TemplateMaker:
             error_msg = "flux_mode: %s is not implemented! "%flux_mode
             error_msg+=" Please choose among: ['bisplrep', 'integral-preserving']"
             raise NotImplementedError(error_msg)
+        # if use no renormalization after flux systematics, then use_atmmu_f=True, otherwise, aeff_scale is not ~ 1.
+        if self.params['flux_sys_renorm']==False:
+            assert(self.params['use_atmmu_f'])==True
 
         # Oscillated Flux Service:
         osc_code = template_settings['osc_code']

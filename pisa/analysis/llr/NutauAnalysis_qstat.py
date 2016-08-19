@@ -81,6 +81,7 @@ parser.add_argument('--only-numerator',action='store_true',default=False, dest='
 parser.add_argument('--only-denominator',action='store_true',default=False, dest='od', help='''only calculate denominator''')
 parser.add_argument('--use_hist_PISA',action='store_true',default=False, help='''Use event-by-event PISA; otherwise, use histogram-based PISA''') 
 parser.add_argument('--use_chi2',action='store_true',default=False, help='''Use chi2 instead of -llh for the minimizer.''') 
+parser.add_argument('--use_rnd_init',action='store_true',default=False, help='''Use random initial values for the minimizer.''') 
 args = parser.parse_args()
 set_verbosity(args.verbose)
 # -----------------------------------
@@ -304,7 +305,7 @@ for itrial in xrange(1,args.ntrials+1):
                     largs[2] = change_settings(largs[2],fix_param_scan_name,fix_param_scan_val,True)
 
             
-            res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
+            res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, use_rnd_init=args.use_rnd_init, *largs, **kwargs)
             res['chi2'] = [chi2]
             res['chi2_p'] = [chi2_p]
             res['dof'] = [dof]
@@ -343,7 +344,7 @@ for itrial in xrange(1,args.ntrials+1):
                     #    kwargs['no_optimize']=True
 
                     # execute optimizer
-                    res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, *largs, **kwargs)
+                    res, chi2, chi2_p, dof = find_max_llh_bfgs(blind_fit, num_data_events, use_chi2=args.use_chi2, use_rnd_init=args.use_rnd_init, *largs, **kwargs)
                     res['chi2'] = [chi2]
                     res['chi2_p'] = [chi2_p]
                     res['dof'] = [dof]
@@ -372,6 +373,12 @@ for itrial in xrange(1,args.ntrials+1):
     else:
         logging.info('Using -llh for minimizer')
         results['use_chi2_in_minimizing'] = 'False'
+    if args.use_rnd_init:
+        logging.info('Using random initial sys values for minimizer')
+        results['use_rnd_init'] = 'True'
+    else:
+        logging.info('Using always nominal values as initial values for minimizer')
+        results['use_rnd_init'] = 'False'
 
     # save PISA settings info
     if args.use_hist_PISA:

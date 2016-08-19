@@ -14,6 +14,7 @@ import copy
 import numpy as np
 import scipy.optimize as opt
 import scipy.stats as stats
+import random
 
 from pisa.utils.jsons import to_json
 from pisa.utils.log import logging, physics, profile
@@ -23,7 +24,7 @@ from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh, get_binwise
 from pisa.analysis.stats.Maps_nutau import get_true_template
 
 def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_normal,
-                           minimizer_settings,only_atm_params=True,check_octant=False,use_chi2=False):
+                           minimizer_settings,only_atm_params=True,check_octant=False,use_chi2=False,use_rnd_init=False):
     """
     For the hypothesis of the mass hierarchy being NMH
     ('normal_hierarchy'=True) or IMH ('normal_hierarchy'=False), finds the
@@ -55,7 +56,8 @@ def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_norm
             bfgs_settings=minimizer_settings,
             normal_hierarchy=hypo_normal,
             check_octant=check_octant,
-            use_chi2 = use_chi2
+            use_chi2=use_chi2,
+            use_rnd_init=use_rnd_init
         )
     profile.info("==> elapsed time for optimizer: %s sec"%t.secs)
 
@@ -80,7 +82,7 @@ def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
 
 def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, bfgs_settings,
                       save_steps=False, normal_hierarchy=None,
-                      check_octant=False, no_optimize=False, use_chi2=False):
+                      check_octant=False, no_optimize=False, use_chi2=False, use_rnd_init=False):
     """
     Finds the template (and free systematic params) that maximize
     likelihood that the data came from the chosen template of true
@@ -112,6 +114,11 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
     # Scale init-vals and bounds to work with bfgs opt:
     init_vals = np.array(init_vals)*np.array(scales)
     bounds = [bounds[i]*scales[i] for i in range(len(bounds))]
+    if use_rnd_init:
+        for i in range(0,len(init_vals)):
+            init_vals[i]=random.uniform(bounds[i][0], bounds[i][1])
+    print "init_vals = ", init_vals
+    print "bounds = ", bounds
 
     if len(free_params)==0 or no_optimize:
         f_opt_steps_dict = {key:[] for key in names}
