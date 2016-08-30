@@ -39,7 +39,7 @@ def get_low_level_quantities(file_name, file_type, anlys_ebins, czbins, fields, 
                     return_fields=fields)
     return cut_data
 
-def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, pid_remove, pid_bound, sim_version='4digit'):
+def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, pid_remove, pid_bound, further_bdt_cut, sim_version='4digit'):
     # right now only use burn sample with sim_version = '4digit'
     print "sim_version == ", sim_version
     if sim_version == "4digit":
@@ -92,9 +92,10 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     #dLLH_L6_cut1 = dLLH_L6
     #l5_cut1 = l5
 
-    # Cut2: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC agree much better)
-    print "Cut2, removing events with bdt_score < 0.2, i.e. only keep bdt > 0.2"
-    cut2 = l5_cut1>=0.2
+    # Cut2: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC agree much better); if use no
+    # such further cut, use further_bdt_cut = 0.1
+    print "Cut2, removing events with bdt_score < ", further_bdt_cut, " i.e. only keep bdt > ", further_bdt_cut
+    cut2 = l5_cut1>=further_bdt_cut
     reco_energy_cut2 = reco_energy_L6_cut1[cut2]
     reco_coszen_cut2 = reco_coszen_L6_cut1[cut2]
     dLLH_cut2 = dLLH_L6_cut1[cut2]
