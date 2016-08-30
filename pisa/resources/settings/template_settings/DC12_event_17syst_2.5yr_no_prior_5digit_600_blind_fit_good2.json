@@ -222,10 +222,6 @@
       "fixed": true,
       "value": true
     },
-    "use_atmmu_f":{
-      "fixed": true,
-      "value": true
-    },
     "atmmu_f": {
       "fixed": false,
       "prior": {
