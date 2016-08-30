@@ -36,7 +36,10 @@ parser.add_argument('-t','--template_settings',type=str,
                     help='''Settings related to the template generation and systematics.''')
 parser.add_argument('-s','--sim',type=str,
                     metavar='simu', required = True,
-                    help='''Which simulation, can only be 4digit, 5digit, or dima''')
+                    help='''Which simulation, can only be 4digit, 5digit, or dima_p1 or dima_p2''')
+parser.add_argument('--name',type=str,
+                    metavar='name', default='10_by_16', help ="name to be added at the end of all files,\
+                    avoid overwriting previous files when doing tests.")
 parser.add_argument('--templ_already_saved',action='store_true',default=False,
                     help="Read templates from already saved file; saves time when only need plotting.")
 parser.add_argument('--reco_prcs_vals',type=str,
@@ -46,8 +49,6 @@ parser.add_argument('--plot',action='store_true',default=False,
                     help="Plot the fits of DOM efficiency and hole ice for each bin.")
 parser.add_argument('--use_hist_PISA',action='store_true',default=False,
                     help="Use histogram-based PISA") 
-parser.add_argument('--no_NC_osc',action='store_true',default=False,
-                    help="Use no oscillation for NC, for cmpr with oscFit.") 
 parser.add_argument('--use_mask',action='store_true',default=False,
                     help="Mask the right corner when setting the y_val_max.") 
 parser.add_argument('--IMH',action='store_true',default=False,
@@ -77,16 +78,12 @@ else:
     from pisa.analysis.TemplateMaker_MC import TemplateMaker
     pisa_mode = 'event'
 use_NMH = not(args.IMH)
-if args.no_NC_osc:
-    nc_osc_mode = 'no_NC_osc'
-else:
-    nc_osc_mode = 'has_NC_osc'
 utils.mkdir(outdir)
 utils.mkdir(outdir+'/plots')
 utils.mkdir(outdir+'/plots/png/')
 if args.templ_already_saved:
     # if templates already saved
-    output_template = from_json(outdir+'/%s_%s_RecoPrcs_templates_%s.json'% (args.sim, pisa_mode, nc_osc_mode))
+    output_template = from_json(outdir+'/%s_%s_RecoPrcs_templates_%s_%s.json'% (args.sim, pisa_mode, nc_osc_mode, args.name))
     tmaps = output_template['tmaps']
     MCmaps = output_template['MCmaps']
     coeffs = output_template['coeffs']
@@ -96,7 +93,16 @@ else:
 
 czbin_edges = template_settings['binning']['czbins']
 ebin_edges = template_settings['binning']['anlys_ebins']
-template_settings['params']['atmos_mu_scale']['value'] = 0
+if args.use_hist_PISA:
+    template_settings['params']['atmos_mu_scale']['value'] = 0.0
+else:
+    template_settings['params']['use_atmmu_f']['value'] = False
+    template_settings['params']['atmmu_f']['value'] = 0.0
+
+if template_settings['params']['turn_off_osc_NC']['value']:
+    nc_osc_mode = 'no_NC_osc'
+else:
+    nc_osc_mode = 'has_NC_osc'
 
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 
@@ -228,7 +234,7 @@ if not args.templ_already_saved:
               'template_settings' : template_settings}
     if args.pseudo_data_settings is not None:
         output['pseudo_data_settings'] = pseudo_data_settings
-    to_json(output,outdir+'/%s_%s_RecoPrcs_templates_%s.json'% (args.sim, pisa_mode, nc_osc_mode))
+    to_json(output,outdir+'/%s_%s_RecoPrcs_templates_%s_%s.json'% (args.sim, pisa_mode, nc_osc_mode, args.name))
 
 
 #print "nominal MCmaps = ", MCmaps['e_reco_precision_up']['1.0']['cscd']
@@ -348,5 +354,5 @@ for precision_tag in ['e_reco_precision_up', 'e_reco_precision_down', 'cz_reco_p
 
 
 #And write to file
-to_json(coeffs,outdir+'/%s_%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_%s.json'%(args.sim, pisa_mode, min(reco_prcs_vals), max(reco_prcs_vals), nc_osc_mode))
+to_json(coeffs,outdir+'/%s_%s_RecoPrecisionCubicFitCoefficients_%s_%s_data_tau_%s_%s.json'%(args.sim, pisa_mode, min(reco_prcs_vals), max(reco_prcs_vals), nc_osc_mode, args.name))
 
