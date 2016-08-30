@@ -57,8 +57,6 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     reco_energy_all = np.array(burn_sample_file[Reco_Neutrino_Name]['energy'])
     reco_coszen_all = np.array(np.cos(burn_sample_file[Reco_Neutrino_Name]['zenith']))
     reco_trck_len_all = np.array(burn_sample_file[Reco_Track_Name]['length'])
-    burn_sample_file.close()
-    #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
     # sanity check 
     santa_doms = burn_sample_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
@@ -79,6 +77,8 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
     inverted_corridor_cut = corridor_doms_over_threshold > 1
     assert(np.all(inverted_corridor_cut) and np.all(l6['santa_direct_doms'] >= 3) and np.all(l6['mn_start_contained'] == 1.) and np.all(l6['mn_stop_contained'] == 1.))
+    burn_sample_file.close()
+    #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
