@@ -60,35 +60,66 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     burn_sample_file.close()
     #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
+    # sanity check 
+    santa_doms = burn_sample_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
+    l3 = burn_sample_file['IC86_Dunkman_L3']['value']
+    l4 = burn_sample_file['IC86_Dunkman_L4']['result']
+    l5 = burn_sample_file['IC86_Dunkman_L5']['bdt_score']
+    if use_def1==True:
+        l4_pass = np.all(l4==1)
+    else:
+        if sim_ver == 'dima' or sim_ver =='5digit':
+            l4_invVICH = burn_sample_file['IC86_Dunkman_L4']['result_invertedVICH']
+            l4_pass = np.all(np.logical_or(l4==1, l4_invVICH==1))
+        else:
+            print "For the old simulation, def.2 background not done yet, so still use def1 for it."
+            l4_pass = np.all(l4==1)
+    assert(np.all(santa_doms>=3) and np.all(l3 == 1) and l4_pass and np.all(l5 >= 0.1))
+    l6 = burn_sample_file['IC86_Dunkman_L6']
+    corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
+    inverted_corridor_cut = corridor_doms_over_threshold > 1
+    assert(np.all(inverted_corridor_cut) and np.all(l6['santa_direct_doms'] >= 3) and np.all(l6['mn_start_contained'] == 1.) and np.all(l6['mn_stop_contained'] == 1.))
+
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
 
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
-    # throw away dLLH < -3
-    reco_energy_L6_cut1 = reco_energy_L6[dLLH_L6>=pid_remove]
-    reco_coszen_L6_cut1 = reco_coszen_L6[dLLH_L6>=pid_remove]
-    dLLH_L6_cut1 = dLLH_L6[dLLH_L6>=pid_remove]
+    # Cut1: throw away dLLH < -3
+    print "Cut1, removing event with LLH < pid_remove"
+    cut1 = dLLH_L6>=pid_remove
+    reco_energy_L6_cut1 = reco_energy_L6[cut1]
+    reco_coszen_L6_cut1 = reco_coszen_L6[cut1]
+    dLLH_L6_cut1 = dLLH_L6[cut1]
+    l5_cut1 = l5[cut1]
 
     # don't throw away dLLH < -3, only use this when using param service for PID in PISA
     #reco_energy_L6_cut1 = reco_energy_L6
     #reco_coszen_L6_cut1 = reco_coszen_L6
     #dLLH_L6_cut1 = dLLH_L6
+    #l5_cut1 = l5
+
+    # Cut2: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC agree much better)
+    print "Cut2, removing events with bdt_score < 0.2, i.e. only keep bdt > 0.2"
+    cut2 = l5_cut1>=0.2
+    reco_energy_cut2 = reco_energy_L6_cut1[cut2]
+    reco_coszen_cut2 = reco_coszen_L6_cut1[cut2]
+    dLLH_cut2 = dLLH_L6_cut1[cut2]
 
     # get cscd array and trck array
     reco_energy = {}
     reco_coszen = {}
 
-    # write burn sample data to dictionary
+    # Cut3: pid cut. Write burn sample data to dictionary
     burn_sample_dict = {}
     for flav in ['cscd','trck']:
         if flav == 'cscd':
-            cut_pid = dLLH_L6_cut1 < pid_bound 
+            cut_pid = dLLH_cut2 < pid_bound 
         if flav == 'trck':
-            cut_pid = dLLH_L6_cut1 >= pid_bound 
-        reco_energy_L6_pid = reco_energy_L6_cut1[cut_pid]
-        reco_coszen_L6_pid = reco_coszen_L6_cut1[cut_pid]
+            cut_pid = dLLH_cut2 >= pid_bound 
+        reco_energy_L6_pid = reco_energy_cut2[cut_pid]
+        reco_coszen_L6_pid = reco_coszen_cut2[cut_pid]
 
         reco_energy[flav] = reco_energy_L6_pid
         reco_coszen[flav] = reco_coszen_L6_pid
