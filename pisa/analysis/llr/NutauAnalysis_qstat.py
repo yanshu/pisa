@@ -284,11 +284,11 @@ for itrial in xrange(1,args.ntrials+1):
 
         # --- perform the fits for the LLR: first numerator, then denominator
 
-        # common seetings
+        # common setings
         kwargs = {'normal_hierarchy':not(args.inv_h_hypo),'check_octant':args.check_octant, 'save_steps':args.save_steps}
         largs = [fmap, template_maker, None , minimizer_settings]
 
-        # - numerator (first fir for ratio)
+        # - numerator (first fit for ratio)
         if not args.od:
             # LLH
             if args.t_stat == 'llr':
