@@ -67,8 +67,8 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
 
     # l4==1 was not applied when i3 files were written to hdf5 files, so do it here
     dLLH = dLLH[l4==1]
-    reco_energy = reco_energy_all[l4==1]
-    reco_coszen = reco_coszen_all[l4==1]
+    reco_energy_all = reco_energy_all[l4==1]
+    reco_coszen_all = reco_coszen_all[l4==1]
     L6_result = L6_result[l4==1]
     burn_sample_file.close()
 
