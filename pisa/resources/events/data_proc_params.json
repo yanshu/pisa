@@ -260,7 +260,7 @@
                  "dunkman_L5",
                  "dunkman_L6"
                  ],
-             "pass_if": "(dunkman_direct_doms>=3) & (dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.1) & (dunkman_L6 == 1)"
+             "pass_if": "(dunkman_direct_doms>=3) & (dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.2) & (dunkman_L6 == 1)"
              }
          }
       }
