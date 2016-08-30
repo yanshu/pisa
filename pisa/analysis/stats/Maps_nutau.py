@@ -69,11 +69,13 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     dLLH = dLLH[l4==1]
     reco_energy_all = reco_energy_all[l4==1]
     reco_coszen_all = reco_coszen_all[l4==1]
+    l5 = l5[l4==1]
     L6_result = L6_result[l4==1]
     burn_sample_file.close()
 
     #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
     dLLH_L6 = dLLH[L6_result==1]
+    l5 = l5[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
