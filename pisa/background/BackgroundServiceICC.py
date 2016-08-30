@@ -62,31 +62,41 @@ class BackgroundServiceICC:
         else:
             raise ValueError('Only allow sim_ver  4digit, 5 digit or dima!')
 
-        # throw away delta LLH < pid_remove:
-        reco_energy_all = reco_energy_all[dLLH>=pid_remove]
-        reco_coszen_all = reco_coszen_all[dLLH>=pid_remove]
-        dLLH = dLLH[dLLH>=pid_remove]
+        # Cut1: throw away delta LLH < pid_remove:
+        print "Cut1, removing event with LLH < pid_remove"
+        cut1 = dLLH>=pid_remove
+        reco_energy_cut1 = reco_energy_all[cut1]
+        reco_coszen_cut1 = reco_coszen_all[cut1]
+        dLLH_cut1 = dLLH[cut1]
+        l5_cut1 = l5[cut1]
         pid_cut = pid_bound 
         print "pid_remove = ", pid_remove
         print "pid_bound = ", pid_bound
 
+        # Cut2: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC agree much better)
+        print "Cut2, removing events with bdt_score < 0.2, i.e. only keep bdt > 0.2"
+        cut2 = l5_cut1>=0.2
+        reco_energy_cut2 = reco_energy_cut1[cut2]
+        reco_coszen_cut2 = reco_coszen_cut1[cut2]
+        dLLH_cut2 = dLLH_cut1[cut2]
+
         # split in half for testing:
         #the commented out section was just a test for using subsets of the MC files
-        #reco_energy_all = reco_energy_all[len(reco_energy_all)/2:] 
-        #reco_coszen_all = reco_coszen_all[len(reco_coszen_all)/2:]
-        #dLLH = dLLH[len(dLLH)/2:]
-        #reco_energy_all = reco_energy_all[1::2]
-        #reco_coszen_all = reco_coszen_all[1::2]
-        #dLLH = dLLH[::2]
+        #reco_energy_cut2 = reco_energy_cut2[len(reco_energy_cut2)/2:] 
+        #reco_coszen_cut2 = reco_coszen_cut2[len(reco_coszen_cut2)/2:]
+        #dLLH_cut2 = dLLH_cut2[len(dLLH_cut2)/2:]
+        #reco_energy_cut2 = reco_energy_cut2[1::2]
+        #reco_coszen_cut2 = reco_coszen_cut2[1::2]
+        #dLLH_cut2 = dLLH_cut2[::2]
 
-        # write to dictionary
+        # Cut3: pid cut. Write to dictionary
         for flavor in ['cscd','trck']:
             if flavor == 'cscd':
-                cut = dLLH < pid_cut 
+                cut = dLLH_cut2 < pid_cut 
             if flavor == 'trck':
-                cut = dLLH >= pid_cut 
-            reco_energy = reco_energy_all[cut]
-            reco_coszen = reco_coszen_all[cut]
+                cut = dLLH_cut2 >= pid_cut 
+            reco_energy = reco_energy_cut2[cut]
+            reco_coszen = reco_coszen_cut2[cut]
 
             flavor_dict = {}
             logging.debug("Working on %s background"%flavor)
