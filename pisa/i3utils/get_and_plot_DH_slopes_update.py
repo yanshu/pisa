@@ -38,8 +38,6 @@ parser.add_argument('--name',type=str,
                     avoid overwriting previous files when doing tests.")
 parser.add_argument('--use_event_PISA',action='store_true',default=False,
                     help="Use event-by-event PISA; otherwise, use histogram-based PISA") 
-parser.add_argument('--no_NC_osc',action='store_true',default=False,
-                    help="Use no oscillation for NC, for cmpr with oscFit.") 
 parser.add_argument('--IMH',action='store_true',default=False,
                     help="Use inverted mass hiearchy.")
 parser.add_argument('--templ_already_saved',action='store_true',default=False,
@@ -89,6 +87,12 @@ if fit_thru_baseline:
     fitting_mode += 'thru_baseline'
 else:
     fitting_mode += 'no_thru_baseline'
+
+if template_settings['params']['turn_off_osc_NC']['value']:
+    fitting_mode += 'no_NC_osc'
+else:
+    fitting_mode += 'NC_osc'
+
 print "fitting_mode is ", fitting_mode
 
 
@@ -198,6 +202,8 @@ if not args.templ_already_saved:
         MCmaps[str(run_num)] = {'trck':{}, 'cscd':{}}
         templates[str(run_num)] = {'trck':{}, 'cscd':{}}
         print "run_num = ", run_num
+        # set it to false b/c for runs != 600, there is no genie weights written in the hdf5 files, and we don't need it
+        DH_template_settings['params']['use_oscFit_genie_barr_sys']['value'] = False 
         if args.sim == '5digit':
             assert(DH_template_settings['params']['pid_mode']['value']=='mc') # right now, only use MC mode for PID for the 5-digit sets 
             aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s-16%s:20000__proc_v5digit__unjoined.hdf5' % (run_num,run_num)
@@ -211,10 +217,16 @@ if not args.templ_already_saved:
             DH_template_settings['params']['pid_paramfile_up']['value'] = pid_param_file_up 
             DH_template_settings['params']['pid_paramfile_down']['value'] = pid_param_file_down
         elif args.sim == 'dima_p1':
-            aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
+            if run_num == '600':
+                aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes_GENIE_Barr.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
+            else:
+                aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
             reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num, run_num,run_num,run_num,run_num)
         else:
-            aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
+            if run_num == '600':
+                aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes_GENIE_Barr.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
+            else:
+                aeff_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__unjoined_with_fluxes.hdf5' % (run_num,run_num,run_num,run_num,run_num,run_num)
             reco_mc_file = 'aeff/events__deepcore__IC86__runs_12%s1-12%s3,14%s1-14%s3,16%s1-16%s3__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5' % (run_num, run_num, run_num,run_num,run_num,run_num)
         DH_template_settings['params']['aeff_weight_file']['value'] = aeff_mc_file
         DH_template_settings['params']['reco_mc_wt_file']['value'] = reco_mc_file
