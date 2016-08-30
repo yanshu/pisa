@@ -63,27 +63,19 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     l3 = burn_sample_file['IC86_Dunkman_L3']['value']
     l4 = burn_sample_file['IC86_Dunkman_L4']['result']
     l5 = burn_sample_file['IC86_Dunkman_L5']['bdt_score']
-    if use_def1==True:
-        l4_pass = np.all(l4==1)
-    else:
-        if sim_ver == 'dima' or sim_ver =='5digit':
-            l4_invVICH = burn_sample_file['IC86_Dunkman_L4']['result_invertedVICH']
-            l4_pass = np.all(np.logical_or(l4==1, l4_invVICH==1))
-        else:
-            print "For the old simulation, def.2 background not done yet, so still use def1 for it."
-            l4_pass = np.all(l4==1)
-    assert(np.all(santa_doms>=3) and np.all(l3 == 1) and l4_pass and np.all(l5 >= 0.1))
-    l6 = burn_sample_file['IC86_Dunkman_L6']
-    corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
-    inverted_corridor_cut = corridor_doms_over_threshold > 1
-    assert(np.all(inverted_corridor_cut) and np.all(l6['santa_direct_doms'] >= 3) and np.all(l6['mn_start_contained'] == 1.) and np.all(l6['mn_stop_contained'] == 1.))
-    burn_sample_file.close()
-    #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
+    assert(np.all(santa_doms>=3) and np.all(l3 == 1) and np.all(l5 >= 0.1))
 
+    # l4==1 was not applied when i3 files were written to hdf5 files, so do it here
+    dLLH = dLLH[l4==1]
+    reco_energy = reco_energy_all[l4==1]
+    reco_coszen = reco_coszen_all[l4==1]
+    L6_result = L6_result[l4==1]
+    burn_sample_file.close()
+
+    #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
     dLLH_L6 = dLLH[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
-
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # Cut1: throw away dLLH < -3
