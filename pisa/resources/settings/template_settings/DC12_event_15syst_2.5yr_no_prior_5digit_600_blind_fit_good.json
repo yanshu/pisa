@@ -821,15 +821,15 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_DomEff_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baselineno_NC_osc_DomEff_fits_blind_fit.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_HoleIce_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baselineno_NC_osc_HoleIce_fits_blind_fit.json"
     },
     "holeice_fwd_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_no_thru_baseline_HoleIce_fwd_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_no_thru_baselineno_NC_osc_HoleIce_fwd_fits_blind_fit.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,

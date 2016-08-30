@@ -63,27 +63,11 @@ set_verbosity(args.verbose)
 # Read in the settings
 template_settings = from_json(args.template_settings)
 czbins = template_settings['binning']['czbins']
-
-up_template_settings = copy.deepcopy(template_settings)
-up_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_up.hdf5'}
-up_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_up.hdf5'}
-
-down_template_settings = copy.deepcopy(template_settings)
-down_template_settings['params']['pid_paramfile'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/pid/DC12_down_pid.json'}
-down_template_settings['params']['reco_mc_wt_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_100_percent_down.hdf5'}
-down_template_settings['params']['reco_vbwkde_evts_file'] = {u'fixed': True, u'value': '~/pisa/pisa/resources/events/1X60_weighted_aeff_joined_nu_nubar_10_percent_down.hdf5'}
-
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 grid_settings  = from_json(args.grid_settings)
 
 #store results from all the trials
 trials = []
-
-template_maker_down = TemplateMaker(get_values(down_template_settings['params']),
-                                 **down_template_settings['binning'])
-template_maker_up = TemplateMaker(get_values(up_template_settings['params']),
-                               **up_template_settings['binning'])
-template_maker = [template_maker_up,template_maker_down]
 
 if args.pseudo_data_settings:
     pseudo_data_template_maker = TemplateMaker(get_values(pseudo_data_settings['params']),
@@ -99,68 +83,114 @@ if channel != pseudo_data_settings['params']['channel']['value']:
     error_msg += " template_settings: '%s', pseudo_data_settings: '%s' " %(channel,pseudo_data_settings['params']['channel']['value'])
     raise ValueError(error_msg)
 
-for itrial in xrange(1, args.ntrials+1):
+# perform n trials
+trials = []
+for itrial in xrange(1,args.ntrials+1):
+    results = {}
+
     profile.info("start trial %d"%itrial)
     logging.info(">"*10 + "Running trial: %05d"%itrial + "<"*10)
 
+    # --- Get the data, or psudeodata, and store it in fmap
 
-    # //////////////////////////////////////////////////////////////////////
-    # For each trial, generate two pseudo-data experiemnts (one for each
-    # hierarchy), and for each find the best matching template in each of the
-    # hierarchy hypothesis.
-    # //////////////////////////////////////////////////////////////////////
-    results = {}
-    data_normal = True
-    hypo_normal = True
-    #for data_tag, data_nutau_norm in [('data_notau',0.0)]:
-    for data_tag, data_nutau_norm in [('data_tau',1.0)]:
-    #for data_tag, data_nutau_norm in [('data_tau',1.0),('data_notau',0.0)]:
+    # if read fmap from json
+    if args.read_fmap_from_json != '':
+        file = from_json(args.read_fmap_from_json)
+        fmap = file['fmap']
+    else:
+        # Asimov dataset (exact expecation values)
+        if args.t_stat == 'asimov':
+            fmap = get_true_template(get_values(pseudo_data_settings['params']),
+                                                pseudo_data_template_maker,
+                                                num_data_events = None
+                    )
+            
+        # Real data
+        elif args.data_file:
+            logging.info('Running on real data! (%s)'%args.data_file)
+            physics.info('Running on real data! (%s)'%args.data_file)
+            fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
+        # Randomly sampled (poisson) data
+        else:
+            if args.seed:
+                results['seed'] = int(args.seed)
+            else:
+                results['seed'] = get_seed()
+            logging.info("  RNG seed: %ld"%results['seed'])
+            if args.fluct == 'poisson':
+                fmap = get_pseudo_data_fmap(pseudo_data_template_maker,
+                                            get_values(pseudo_data_settings['params']),
+                                            seed=results['seed'],
+                                            channel=channel
+                                            )
+            elif args.fluct == 'model_stat':
+                fmap = get_stat_fluct_map(pseudo_data_template_maker,
+                                            get_values(pseudo_data_settings['params']),
+                                            seed=results['seed'],
+                                            channel=channel
+                                            )
+            else:
+                raise Exception('psudo data fluctuation method not implemented!')
 
-        results[data_tag] = {}
-        # 0) get a random seed and store with the data
-        results[data_tag]['seed'] = get_seed()
-        #results[data_tag]['seed'] = 1004
-        logging.info("  RNG seed: %ld"%results[data_tag]['seed'])
-        # 1) get a pseudo data fmap from fiducial model (best fit vals of params).
-        fiducial_param_values = get_values(
-            select_hierarchy_and_nutau_norm(pseudo_data_settings['params'],
-                                            normal_hierarchy=data_normal,
-                                            nutau_norm_value=data_nutau_norm)
-        )
+    # if want to save fmap to json
+    if args.save_fmap_to_json != '':
+        to_json({'fmap':fmap}, args.save_fmap_to_json)
 
-        # Get pseudo data map
-        fmap = get_pseudo_data_fmap(template_maker=pseudo_data_template_maker,
-                                    fiducial_params=fiducial_param_values,
-                                    channel=channel,
-                                    seed=results[data_tag]['seed'])
+    # get the total no. of events in fmap
+    num_data_events = np.sum(fmap)
 
-        # Get true template 
-        #fmap = get_true_template(fiducial_param_values,template_maker)
+    # 2) find max llh (and best fit free params) from matching pseudo data
+    #    to templates.
+    profile.info("start scan")
+    hypo_params = change_nutau_norm_settings(
+        template_settings['params'],
+        hypo_nutau_norm,nutau_norm_fix,hypo_normal
+    )
+    # common setings
+    kwargs = {'normal_hierarchy':not(args.inv_h_hypo),'check_octant':args.check_octant, 'save_steps':args.save_steps}
+    largs = [fmap, template_maker, None , grid_settings]
+    largs[2] = change_settings(template_settings['params'],scan_param,pseudo_data_settings['params'][scan_param]['value'], False)
+    res, chi2, chi2_p, dof = find_max_grid(blind_fit, num_data_events, use_chi2=args.use_chi2, use_rnd_init=args.use_rnd_init, *largs, **kwargs)
+    res['chi2'] = [chi2]
+    res['chi2_p'] = [chi2_p]
+    res['dof'] = [dof]
+    fit_results.append(res)
+    print "chi2, chi2_p, dof = ", chi2, " ", chi2_p , " ", dof
+    fit_results = find_max_grid(fmap=fmap,
+                             template_maker=template_maker,
+                             params=hypo_params,
+                             grid_settings=grid_settings,
+                             save_steps=args.save_steps,
+                             normal_hierarchy=hypo_normal)
+    profile.info("stop scan")
 
-        # 2) find max llh (and best fit free params) from matching pseudo data
-        #    to templates.
-        rnd.seed(get_seed())
-        #init_nutau_norm = rnd.uniform(-0.7,3)
-        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',init_nutau_norm, False),('hypo_notau',0, True)]:
-        for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',1.0, True)]:
-        #for hypo_tag, hypo_nutau_norm, nutau_norm_fix in [('hypo_free',0.0, True)]:
-            physics.info("Finding best fit for %s under %s assumption"%(data_tag,hypo_tag))
-            profile.info("start scan")
-            hypo_params = change_nutau_norm_settings(
-                template_settings['params'],
-                hypo_nutau_norm,nutau_norm_fix,hypo_normal
-            )
-            llh_data = find_max_grid(fmap=fmap,
-                                     template_maker=template_maker,
-                                     params=hypo_params,
-                                     grid_settings=grid_settings,
-                                     save_steps=args.save_steps,
-                                     normal_hierarchy=hypo_normal)
-            profile.info("stop scan")
+    # store fit results
+    results['fit_results'] = fit_results
+    # store the value of interest, q = -2log(lh[0]/lh[1]) , llh here is already negative, so no need for the minus sign
+    if not any([args.on, args.od]):
+        results['q'] = np.array([2*(llh-fit_results[1]['llh'][0]) for llh in fit_results[0]['llh']])
+        physics.info('found q values %s'%results['q'])
+        physics.info('sqrt(q) = %s'%np.sqrt(results['q']))
 
-            # Store the LLH data
-            results[data_tag][hypo_tag] = llh_data
+    # save minimizer settings info
+    if args.use_chi2:
+        logging.info('Using chi2 for minimizer')
+        results['use_chi2_in_minimizing'] = 'True'
+    else:
+        logging.info('Using -llh for minimizer')
+        results['use_chi2_in_minimizing'] = 'False'
+    if args.use_rnd_init:
+        logging.info('Using random initial sys values for minimizer')
+        results['use_rnd_init'] = 'True'
+    else:
+        logging.info('Using always nominal values as initial values for minimizer')
+        results['use_rnd_init'] = 'False'
 
+    # save PISA settings info
+    if args.use_hist_PISA:
+        results['PISA'] = 'hist'
+    else:
+        results['PISA'] = 'MC'
 
     # Store this trial
     trials += [results]
@@ -168,8 +198,7 @@ for itrial in xrange(1, args.ntrials+1):
 
 # Assemble output dict
 output = {'trials' : trials,
-          'template_settings_up' : up_template_settings,
-          'template_settings_down' : down_template_settings,
+          'template_settings' : template_settings,
           'grid_settings' : grid_settings}
 output['pseudo_data_settings'] = pseudo_data_settings
 # And write to file
