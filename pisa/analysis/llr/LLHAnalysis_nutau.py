@@ -63,16 +63,16 @@ def find_alt_hierarchy_fit(asimov_data_set, template_maker,hypo_params,hypo_norm
 
     return llh_data, chi2, chi2_p, dof
 
-def display_optimizer_settings(free_params, names, init_vals, bounds, priors,
+def display_optimizer_settings(free_params, names, init_vals, best_vals, bounds, priors,
                                bfgs_settings):
     """
     Displays parameters and optimization settings that minimizer will run.
     """
     physics.info('%d parameters to be optimized'%len(free_params))
-    for name, init_val, bound, prior in zip(names, init_vals, bounds, priors):
+    for name, init_val, best_val, bound, prior in zip(names, init_vals, best_vals, bounds, priors):
         physics.info(('%20s : init = %6.4f, bounds = [%6.4f,%6.4f], '
                     'best = %6.4f, prior = %s') %
-                      (name, init_val, bound[0], bound[1], init_val, prior))
+                      (name, init_val, bound[0], bound[1], best_val, prior))
 
     physics.debug("Optimizer settings:")
     for key,item in bfgs_settings.items():
@@ -112,6 +112,8 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
     priors = get_param_priors(free_params)
     names  = sorted(free_params.keys())
     # Scale init-vals and bounds to work with bfgs opt:
+    # if not use_rnd_init, init_vals is just the best vals
+    best_vals = np.array(init_vals)*np.array(scales)
     init_vals = np.array(init_vals)*np.array(scales)
     bounds = [bounds[i]*scales[i] for i in range(len(bounds))]
     if use_rnd_init:
@@ -142,7 +144,7 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
 
     const_args = (num_data_events, names, scales, fmap, fixed_params, template_maker, opt_steps_dict, priors, use_chi2)
 
-    display_optimizer_settings(free_params, names, init_vals, bounds, priors, bfgs_settings)
+    display_optimizer_settings(free_params, names, init_vals, best_vals, bounds, priors, bfgs_settings)
 
     fiducial_vals = copy.deepcopy(init_vals)
 
@@ -166,8 +168,13 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
         old_th23_val = free_params['theta23']['value']
         delta = np.pi/4 - old_th23_val
         free_params['theta23']['value'] = np.pi/4 + delta
+        # if not use_rnd_init, init_vals is just the best vals
+        best_vals = get_param_values(free_params) 
         init_vals = get_param_values(free_params)
         init_vals = np.array(init_vals)*np.array(scales)
+        if use_rnd_init:
+            for i in range(0,len(init_vals)):
+                init_vals[i]=random.uniform(bounds[i][0], bounds[i][1])
 
         if not blind_fit:
             string = 'LLH'
@@ -181,6 +188,7 @@ def find_max_llh_bfgs(blind_fit, num_data_events, fmap, template_maker, params, 
         display_optimizer_settings(free_params=free_params,
                                    names=names,
                                    init_vals=init_vals,
+                                   best_vals=best_vals,
                                    bounds=bounds,
                                    priors=priors,
                                    bfgs_settings=bfgs_settings)
