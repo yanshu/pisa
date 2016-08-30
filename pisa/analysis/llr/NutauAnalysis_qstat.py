@@ -231,7 +231,7 @@ for itrial in xrange(1,args.ntrials+1):
         elif args.data_file:
             logging.info('Running on real data! (%s)'%args.data_file)
             physics.info('Running on real data! (%s)'%args.data_file)
-            fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], sim_version=template_settings['params']['sim_ver']['value'])
+            fmap = get_burn_sample_maps(file_name=args.data_file, anlys_ebins = anlys_ebins, czbins = czbins, output_form = 'array', channel=channel, pid_remove=template_settings['params']['pid_remove']['value'], pid_bound=template_settings['params']['pid_bound']['value'], further_bdt_cut=template_settings['params']['further_bdt_cut']['value'], sim_version=template_settings['params']['sim_ver']['value'])
         # Randomly sampled (poisson) data
         else:
             if args.seed:
