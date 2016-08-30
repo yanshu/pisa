@@ -15,7 +15,7 @@ from pisa.resources.resources import find_resource
 
 class BackgroundServiceICC:
 
-    def __init__(self,ebins,czbins,sim_ver,pid_bound,pid_remove,use_def1=False,icc_bg_file=None,**kwargs):
+    def __init__(self,ebins,czbins,sim_ver,pid_bound,pid_remove,further_bdt_cut,use_def1=False,icc_bg_file=None,**kwargs):
         self.ebins = ebins
         self.czbins = czbins
         logging.info('Initializing BackgroundServiceICC...')
@@ -73,9 +73,9 @@ class BackgroundServiceICC:
         print "pid_remove = ", pid_remove
         print "pid_bound = ", pid_bound
 
-        # Cut2: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC agree much better)
-        print "Cut2, removing events with bdt_score < 0.2, i.e. only keep bdt > 0.2"
-        cut2 = l5_cut1>=0.2
+        # Cut2: Only keep bdt score >= further_bdt_cut (further_bdt_cut=0.2, from MSU latest result, makes data/MC agree much better)
+        print "Cut2, removing events with bdt_score < ", further_bdt_cut, " i.e. only keep bdt > ", further_bdt_cut , "\n"
+        cut2 = l5_cut1>=further_bdt_cut
         reco_energy_cut2 = reco_energy_cut1[cut2]
         reco_coszen_cut2 = reco_coszen_cut1[cut2]
         dLLH_cut2 = dLLH_cut1[cut2]
