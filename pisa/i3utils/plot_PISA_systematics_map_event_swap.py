@@ -609,7 +609,7 @@ settings file. ''')
                 if group == 'nuall_nc':
                     flav = 'nc'
                 channel_jp = 'cascade' if channel=='cscd' else 'track'
-                #file_name = '/Users/feifeihuang/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_truth/sample_baseline_%s_%s_histo.csv'%(channel_jp, flav)
+                #file_name = '/gpfs/home/fxh140/work/pisa/pisa/i3utils/OscFit_PISA_cmpr/JP/1X600_truth/sample_baseline_%s_%s_histo.csv'%(channel_jp, flav)
                 #oscFit_data = pd.read_csv(file_name, sep=',',header=None)
                 #oscFit_data_x = oscFit_data[0].values
                 #oscFit_data_y = oscFit_data[1].values
