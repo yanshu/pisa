@@ -43,6 +43,10 @@
     "actual_oversample_e": 40 
   },
   "params": {
+    "further_bdt_cut":{
+      "fixed": true,
+      "value": 0.2 
+    },
     "sim_ver":{
       "fixed": true,
       "value": "dima"
@@ -241,9 +245,7 @@
     "cz_reco_precision_up": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.7,
@@ -255,9 +257,7 @@
     "cz_reco_precision_down": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.7,
@@ -298,8 +298,8 @@
         "kind": "uniform"
       },
       "range": [
-        -0.1,
-        0.10
+        -0.007,
+        0.007
       ],
       "scale": 100.0,
       "value": -0.00237
@@ -337,9 +337,7 @@
     "e_reco_precision_up": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.7,
@@ -351,9 +349,7 @@
     "e_reco_precision_down": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.7,
@@ -838,9 +834,7 @@
     "up_down_e_reco_prcs": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.8,
@@ -852,9 +846,7 @@
     "up_down_cz_reco_prcs": {
       "fixed": true,
       "prior": {
-        "fiducial": 1.0,
-        "kind": "gaussian",
-        "sigma": 0.05
+        "kind": "uniform"
       },
       "range": [
         0.8,
