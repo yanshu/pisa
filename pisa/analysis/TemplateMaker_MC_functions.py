@@ -87,18 +87,19 @@ def apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, t
 
     # nue_numu_ratio
     if params['nue_numu_ratio'] != 1:
-        scaled_nue_flux, scaled_numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=params['flux_sys_renorm'])
+        nue_flux, numu_flux = apply_ratio_scale(nue_flux, numu_flux, params['nue_numu_ratio'], sum_const=params['flux_sys_renorm'])
+        oppo_nue_flux, oppo_numu_flux = apply_ratio_scale(oppo_nue_flux, oppo_numu_flux, params['nue_numu_ratio'], sum_const=params['flux_sys_renorm'])
 
     # nu_nubar_ratio
     if params['nu_nubar_ratio'] != 1:
         if 'bar' not in prim:
-            scaled_nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
-            scaled_numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+            nue_flux,_ = apply_ratio_scale(nue_flux, oppo_nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+            numu_flux,_ = apply_ratio_scale(numu_flux, oppo_numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
         else:
             #nue(mu)_flux is actually nue(mu)_bar because prim has '_bar' in it
-            _, scaled_nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
-            _, scaled_numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
-    return scaled_nue_flux, scaled_numu_flux
+            _, nue_flux = apply_ratio_scale(oppo_nue_flux, nue_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+            _, numu_flux = apply_ratio_scale(oppo_numu_flux, numu_flux, params['nu_nubar_ratio'], sum_const=params['flux_sys_renorm'])
+    return nue_flux, numu_flux
 
 # apply Barr flux ratios ( oscFit way)
 def apply_GENIE_mod_oscFit(aeff_weights, linear_coeffs, quad_coeffs, param_value):
