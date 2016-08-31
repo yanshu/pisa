@@ -7,6 +7,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from matplotlib.offsetbox import AnchoredText
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
 from pisa.utils.plot import show_map
+import pisa.utils.utils as utils
 
 class plotter(object):
 
@@ -211,6 +212,7 @@ if __name__ == '__main__':
                         inverted corridor cut data''')
     args = parser.parse_args()
 
+    utils.mkdir(args.outdir)
     # get settings file for nutau norm = 1
     template_settings = from_json(args.template_settings)
 
@@ -233,9 +235,8 @@ if __name__ == '__main__':
 
     # get template
     new_template_settings = get_values(select_hierarchy_and_nutau_norm(template_settings['params'],normal_hierarchy=True,nutau_norm_value=1.0))
-    template_maker = TemplateMaker(new_template_settings,
-                                        **template_settings['binning'])
-    true_template = template_maker.get_template(new_template_settings)
+    template_maker = TemplateMaker(new_template_settings, **template_settings['binning'])
+    true_template = template_maker.get_template(new_template_settings, num_data_events=None)
     print true_template
     true_template['tot'] = {}
     true_template['tot']['map'] = true_template['cscd']['map'] + true_template['trck']['map']
