@@ -217,7 +217,8 @@ if __name__ == '__main__':
     for filename in os.listdir(args.dir):
         if filename.endswith('.json'):
             file = from_json(args.dir +'/'+filename)
-            name,_ = filename.split('.') 
+            #name,_ = filename.split('.') 
+            name = os.path.basename(filename)
             params = file['template_settings']['params']
             for trial in file['trials']:
                 ts = trial['test_statistics']
