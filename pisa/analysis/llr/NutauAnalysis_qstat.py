@@ -110,8 +110,6 @@ blind_fit = args.blind_fit
 # one sanity check for background scale
 if template_settings['params']['use_atmmu_f']['value'] == False:
     assert(template_settings['params']['atmmu_f']['fixed'] == True)
-else:
-    assert(template_settings['params']['atmos_mu_scale']['fixed'] == True)
 
 pseudo_data_settings = from_json(args.pseudo_data_settings) if args.pseudo_data_settings is not None else template_settings
 print 'livetime in pseudo_data_settings =', pseudo_data_settings['params']['livetime']['value']
