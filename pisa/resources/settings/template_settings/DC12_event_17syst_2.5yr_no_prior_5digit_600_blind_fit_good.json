@@ -45,7 +45,7 @@
   "params": {
     "further_bdt_cut":{
       "fixed": true,
-      "value": 0.1
+      "value": 0.2 
     },
     "sim_ver":{
       "fixed": true,
@@ -817,19 +817,19 @@
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_DomEff_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baselineno_NC_osc_DomEff_fits_blind_fit.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baseline_HoleIce_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_no_thru_baselineno_NC_osc_HoleIce_fits_blind_fit.json"
     },
     "holeice_fwd_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_no_thru_baseline_HoleIce_fwd_fits_blind_fit_1_no_NC_osc.json"
+      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_no_thru_baselineno_NC_osc_HoleIce_fwd_fits_blind_fit.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
+      "value": "reco_prcs/dima_p1_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc_blind_fit.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,
