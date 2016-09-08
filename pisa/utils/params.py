@@ -424,7 +424,7 @@ def float_param(params,param):
     # or initialize with new copy by dict(params)
     for key,value in params.items():
         new_params[key] = deepcopy(value)
-        if param in key:
+        if param==key:
             new_params[key]['fixed'] = False
 
     return new_params
