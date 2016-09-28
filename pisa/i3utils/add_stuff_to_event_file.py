@@ -76,8 +76,11 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                         data_file[prim][int_type][neutrino_weight_name+'_oppo_numu_flux'] = oppo_numu_flux
                     if add_weights:
                     # if need to calculate neutrino weights here
-                        osc_probs = osc_service.fill_osc_prob(true_e, true_cz, event_by_event=True, **phys_params)
-                        osc_flux = nue_flux*osc_probs['nue'+isbar+'_maps'][prim]+ numu_flux*osc_probs['numu'+isbar+'_maps'][prim]
+                        print 'type prim  = ', type(prim)
+                        nue_flux = flux_service.get_flux(true_e, true_cz, 'nue'+isbar, event_by_event=True)
+                        numu_flux = flux_service.get_flux(true_e, true_cz, 'numu'+isbar, event_by_event=True)
+                        osc_probs = osc_service.fill_osc_prob(true_e, true_cz, str(prim), event_by_event=True, **phys_params)
+                        osc_flux = nue_flux*osc_probs['nue_maps']+ numu_flux*osc_probs['numu_maps']
                         data_file[prim][int_type][neutrino_weight_name+'_weight'] = osc_flux * data_file[prim][int_type]['weighted_aeff'] 
                     if add_GENIE_Barr:
                         # code modified from Ste's apply_shape_mod() in Aeff.py
