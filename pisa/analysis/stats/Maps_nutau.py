@@ -53,6 +53,7 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
 
     burn_sample_file = h5py.File(find_resource(file_name),'r')
     L6_result = np.array(burn_sample_file['IC86_Dunkman_L6']['result'])
+    Livetime_in_s = np.array(burn_sample_file['Livetime_in_seconds']['value'])
     dLLH = np.array(burn_sample_file['IC86_Dunkman_L6']['delta_LLH'])
     reco_energy_all = np.array(burn_sample_file[Reco_Neutrino_Name]['energy'])
     reco_coszen_all = np.array(np.cos(burn_sample_file[Reco_Neutrino_Name]['zenith']))
@@ -68,6 +69,7 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     # l4==1 was not applied when i3 files were written to hdf5 files, so do it here
     dLLH = dLLH[l4==1]
     reco_energy_all = reco_energy_all[l4==1]
+    Livetime_in_s = Livetime_in_s[l4==1]
     reco_coszen_all = reco_coszen_all[l4==1]
     l5 = l5[l4==1]
     L6_result = L6_result[l4==1]
@@ -78,6 +80,7 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     l5 = l5[L6_result==1]
     reco_energy_L6 = reco_energy_all[L6_result==1]
     reco_coszen_L6 = reco_coszen_all[L6_result==1]
+    Livetime_in_s_L6 = Livetime_in_s[L6_result==1]
     #print "after L6 cut, no. of burn sample = ", len(reco_coszen_L6)
    
     # Cut1: throw away dLLH < -3
@@ -85,6 +88,7 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     cut1 = dLLH_L6>=pid_remove
     reco_energy_L6_cut1 = reco_energy_L6[cut1]
     reco_coszen_L6_cut1 = reco_coszen_L6[cut1]
+    Livetime_in_s_L6_cut1 = Livetime_in_s_L6[cut1]
     dLLH_L6_cut1 = dLLH_L6[cut1]
     l5_cut1 = l5[cut1]
 
@@ -100,7 +104,10 @@ def get_burn_sample_maps(file_name, anlys_ebins, czbins, output_form, channel, p
     cut2 = l5_cut1>=further_bdt_cut
     reco_energy_cut2 = reco_energy_L6_cut1[cut2]
     reco_coszen_cut2 = reco_coszen_L6_cut1[cut2]
+    Livetime_in_s_L6_cut2 = Livetime_in_s_L6_cut1[cut2]
     dLLH_cut2 = dLLH_L6_cut1[cut2]
+
+    print "livetime = ", sum(Livetime_in_s_L6_cut2)/31536000.
 
     # get cscd array and trck array
     reco_energy = {}
