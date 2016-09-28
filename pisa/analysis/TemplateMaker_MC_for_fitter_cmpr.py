@@ -28,7 +28,6 @@ from pisa.utils.utils import Timer, oversample_binning
 import pisa.utils.flavInt as flavInt
 import pisa.utils.events as events
 
-from pisa.flux.Flux import get_flux_maps
 from pisa.oscillations.Oscillation import get_osc_flux
 
 from pisa.reco.RecoServiceMC import RecoServiceMC
@@ -130,35 +129,15 @@ class TemplateMaker:
                     'osc_code = %s' % osc_code
             raise NotImplementedError(error_msg)
 
-        # Reco Event Rate Service:
-        reco_mode = template_settings['reco_mode']
-        if reco_mode == 'MC':
-            self.reco_service = RecoServiceMC(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'param':
-            self.reco_service = RecoServiceParam(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'stored':
-            self.reco_service = RecoServiceKernelFile(self.ebins, self.czbins,
-                                                **template_settings)
-        elif reco_mode == 'vbwkde':
-            self.reco_service = RecoServiceVBWKDE(self.ebins, self.czbins,
-                                                **template_settings)
-        else:
-            error_msg = "reco_mode: %s is not implemented! "%reco_mode
-            error_msg+=" Please choose among: ['MC', 'param', 'stored','vbwkde']"
-            raise NotImplementedError(error_msg)
-
         # Instantiate a PID service
         self.pid_service = PID.pid_service_factory(
             ebins= self.anlys_ebins, czbins=self.czbins, **template_settings
         )
         # set up pid ( remove pid < pid_remove and separate cscd and trck by pid_bound)
-        if self.sim_ver == '5digit':
-            self.pid_remove = -2
-        else:
-            self.pid_remove = -3
-        self.pid_bound = 3
+        self.pid_remove = self.params['pid_remove']
+        self.pid_bound = self.params['pid_bound'] 
+        print "self.pid_bound = ", self.pid_bound
+        print "self.pid_remove = ", self.pid_remove
 
         # background service
         self.background_service = BackgroundServiceICC(self.anlys_ebins, self.czbins,
@@ -230,9 +209,9 @@ class TemplateMaker:
         #mc_event_maps['nuall_nc'] = {u'czbins':self.czbins,u'ebins':self.ebins,u'map':nuall_nc_map}
         #final_MC_event_rate = self.pid_service.get_pid_maps(mc_event_maps)
 
-        use_cut_on_trueE = True
-        turn_off_osc_NC = False
-        osc_probs = get_osc_probs(evts, self.params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
+        use_cut_on_trueE = self.params['use_cut_on_trueE']
+        turn_off_osc_NC = self.params['turn_off_osc_NC'] 
+        osc_probs = get_osc_probs(evts, self.params, self.osc_service, self.ebins)
         all_reco_e = np.array([])
         all_reco_cz = np.array([])
         all_weight = np.array([])
@@ -326,7 +305,7 @@ class TemplateMaker:
                 oppo_numu_flux = evts[prim][int_type]['neutrino_oppo_numu_flux']
                 true_e = evts[prim][int_type]['true_energy']
                 # apply flux systematics (nue_numu_ratio, nu_nubar_ratio)
-                nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params,flux_sys_renorm=flux_sys_renorm)
+                nue_flux, numu_flux = apply_flux_ratio(prim, nue_flux, numu_flux, oppo_nue_flux, oppo_numu_flux, true_e, params)
                 self.fluxes[prim][int_type]['nue'] = nue_flux
                 self.fluxes[prim][int_type]['numu'] = numu_flux
 
@@ -346,7 +325,7 @@ class TemplateMaker:
         with Timer(verbose=False) as t:
             if any(step_changed[:2]):
                 physics.debug("STAGE 2: Getting osc prob maps...")
-                self.osc_probs = get_osc_probs(evts, params, self.osc_service, use_cut_on_trueE=use_cut_on_trueE, ebins=self.ebins, turn_off_osc_NC=turn_off_osc_NC)
+                self.osc_probs = get_osc_probs(evts, params, self.osc_service, self.ebins)
             else:
                 profile.info("STAGE 2: Reused from step before...")
         profile.debug("==> elapsed time to get osc_prob : %s sec"%t.secs)
@@ -401,7 +380,7 @@ class TemplateMaker:
                 # apply spectral index, use one pivot energy for all flavors
                 #egy_pivot = mean_true_e_all
                 egy_pivot =  24.0900951261  # the value that JP's using
-                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params, flux_sys_renorm=flux_sys_renorm)
+                nue_flux, numu_flux = apply_spectral_index(nue_flux, numu_flux, true_e, egy_pivot, aeff_weights, params)
 
                 # apply Barr systematics
                 nue_flux, numu_flux = apply_Barr_mod(prim, self.ebins, nue_flux, numu_flux, true_e, true_cz, barr_splines, **params)
@@ -475,8 +454,7 @@ class TemplateMaker:
                 tmp_event_rate_reco_maps[prim][int_type] = weighted_hist_reco * params['livetime'] * year * params['aeff_scale'] * nutau_scale * nc_scale
 
                 # Get event_rate_pid maps (step1, tmp maps in 12 flavs)
-                #pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
-                pid_cscd =  pid < self.pid_bound
+                pid_cscd =  np.logical_and(pid < self.pid_bound, pid>=self.pid_remove)
                 pid_trck =  pid >= self.pid_bound
                 weighted_hist_cscd,_, _ = np.histogram2d(reco_e[pid_cscd], reco_cz[pid_cscd], weights= final_weights[pid_cscd], bins=anlys_bins)
                 weighted_hist_trck,_, _ = np.histogram2d(reco_e[pid_trck], reco_cz[pid_trck], weights= final_weights[pid_trck], bins=anlys_bins)
@@ -585,7 +563,7 @@ class TemplateMaker:
         if any(step_changed[:7]):
             physics.debug("STAGE 7: Getting bkgd maps...")
             with Timer(verbose=False) as t:
-                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, **params)
+                self.final_event_rate = add_icc_background(self.sys_maps, self.background_service, num_data_events=None, **params)
             profile.debug("==> elapsed time for bkgd stage: %s sec"%t.secs)
         else:
             profile.debug("STAGE 7: Reused from step before...")
