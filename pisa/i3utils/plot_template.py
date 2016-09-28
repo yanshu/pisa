@@ -6,7 +6,9 @@ from matplotlib import pyplot as plt
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from matplotlib.offsetbox import AnchoredText
 from pisa.utils.utils import get_bin_centers, get_bin_sizes
-from pisa.utils.plot import show_map
+from pisa.utils.plot import show_map, plot_one_map
+from pisa.utils.plot import show_map_swap, sum_map, ratio_map, delta_map
+from pisa.analysis.stats.LLHStatistics_nutau import get_binwise_llh, get_binwise_smeared_llh, get_barlow_llh, get_chi2
 import pisa.utils.utils as utils
 
 class plotter(object):
@@ -57,7 +59,7 @@ class plotter(object):
             if name == 'data':
                 ax1.errorbar(x_bin_centers,map,yerr=error,fmt='o',color='black', markersize='4',label=name)
             else:
-                print map
+                #print map
                 hist,_,_ = ax1.hist(x_bin_centers,weights= map,bins=x_bin_edges,histtype='step',lw=1.5,color=color,linestyle=linestyle, label=name)
                 if error is not None:
                     ax1.bar(x_bin_edges[:-1],2*error, bottom=map-error, width=x_bin_width, color=color, alpha=0.25, linewidth=0)
@@ -186,6 +188,21 @@ class plotter(object):
                     perrors.append(np.sqrt(error[:,i]))
             self.plot_1d(pmaps, perrors, colors, names, axis, x_bin_edges, outname)
 
+def savetxt(tmpl, czbins, ebins, name):
+    cz_bin_centers = get_bin_centers(czbins)
+    e_bin_centers = get_bin_centers(anlys_ebins)
+    print "e_bin_centers = ", e_bin_centers
+    print "cz_bin_centers = ", cz_bin_centers
+    cz_centers = []
+    e_centers = []
+    z_values = []
+    for i in range(0,len(e_bin_centers)):
+        for j in range(0,len(cz_bin_centers)):
+            cz_centers.append(cz_bin_centers[j])
+            e_centers.append(e_bin_centers[i])
+            z_values.append(tmpl[i,j])
+    output = np.column_stack((e_centers,cz_centers,z_values))
+    np.savetxt('%s.csv'%name, output, delimiter=',')
 
 if __name__ == '__main__':
     from pisa.utils.log import set_verbosity,logging,profile
@@ -200,6 +217,10 @@ if __name__ == '__main__':
                                             making the final level hierarchy asymmetry plots from the input settings file. ''')
     parser.add_argument('-t','--template_settings',metavar='JSON',
                         help='Settings file to use for template generation')
+    parser.add_argument('-t2','--template_settings_2',metavar='JSON',
+                        help='Settings file to use for template generation, the second template')
+    parser.add_argument('--title',metavar='str',default='IC86',
+                        help='Title of figure.')
     parser.add_argument('-no_logE','--no_logE',action='store_true',default=False,
                         help='Energy in log scale.')
     parser.add_argument('-o','--outdir',metavar='DIR',default='.',
@@ -213,8 +234,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     utils.mkdir(args.outdir)
+    utils.mkdir(args.outdir+'/pdf')
+
     # get settings file for nutau norm = 1
     template_settings = from_json(args.template_settings)
+    print "type args.template_settings = ", type(args.template_settings)
+    if args.template_settings_2:
+        template_settings_2 = from_json(args.template_settings_2)
 
     if args.fit_file:
         # replace with parameters determ,ined in fit
@@ -230,14 +256,26 @@ if __name__ == '__main__':
 
     # get binning info
     anlys_ebins = template_settings['binning']['anlys_ebins']
+    print "anlys_ebins = ", anlys_ebins
     czbins = template_settings['binning']['czbins']
     livetime = template_settings['params']['livetime']['value']
+
+    if args.template_settings_2:
+        assert(np.all(anlys_ebins == template_settings_2['binning']['anlys_ebins']))
+        assert(np.all(czbins == template_settings_2['binning']['czbins']))
+        assert(livetime==template_settings_2['params']['livetime']['value'])
 
     # get template
     new_template_settings = get_values(select_hierarchy_and_nutau_norm(template_settings['params'],normal_hierarchy=True,nutau_norm_value=1.0))
     template_maker = TemplateMaker(new_template_settings, **template_settings['binning'])
     true_template = template_maker.get_template(new_template_settings, num_data_events=None)
-    print true_template
+    #print true_template
+
+    if args.template_settings_2:
+        new_template_settings_2 = get_values(select_hierarchy_and_nutau_norm(template_settings_2['params'],normal_hierarchy=True,nutau_norm_value=1.0))
+        template_maker_2 = TemplateMaker(new_template_settings_2, **template_settings_2['binning'])
+        true_template_2 = template_maker_2.get_template(new_template_settings, num_data_events=None)
+
     true_template['tot'] = {}
     true_template['tot']['map'] = true_template['cscd']['map'] + true_template['trck']['map']
     true_template['tot']['map_nu'] = true_template['cscd']['map_nu'] + true_template['trck']['map_nu']
@@ -265,10 +303,91 @@ if __name__ == '__main__':
                 plot_sumw2 = []
                 plot_colors = []
                 plot_names = []
-
             plot_maps.extend([true_template[channel]['map'],true_template[channel]['map_nu'],true_template[channel]['map_mu']])
             plot_sumw2.extend([true_template[channel]['sumw2'],true_template[channel]['sumw2_nu'],true_template[channel]['sumw2_mu']])
             plot_colors.extend(['b','g','r'])
             plot_names.extend(['total','neutrinos','atmospheric muons'])
-            myPlotter.plot_1d_projection(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
-            myPlotter.plot_1d_slices(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
+            #myPlotter.plot_1d_projection(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
+            #myPlotter.plot_1d_slices(plot_maps,plot_sumw2,plot_colors,plot_names ,axis, bins, channel)
+
+
+    # print
+    for channel in ['cscd', 'trck']:
+        # plot template
+        cscd_max = int(500 * livetime)
+        trck_max = int(420 * livetime)
+        all_max = int(600 * livetime)
+        true_template[channel]['ebins'] =  anlys_ebins
+        true_template[channel]['czbins'] = czbins 
+        data_map = true_template[channel]['map_nu']+ np.ones(np.shape(true_template[channel]))
+        data_sumw2 = true_template[channel]['map_nu']
+        print "data_map = ", data_map
+        print "data_sumw2 = ", data_sumw2
+        print "template = ", true_template[channel]['map_nu']
+        print "template sumw2 = ", true_template[channel]['sumw2_nu']
+        unscaled_best_fit_vals = []
+        priors = []
+        mod_chi2, chi2_p, dof = get_chi2(data_map, true_template[channel]['map_nu'], data_sumw2, true_template[channel]['sumw2_nu'], unscaled_best_fit_vals, priors)
+        print "getting mod_chi2 ", mod_chi2
+        plot_one_map(true_template[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_map1_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(true_template[channel]['map'])), save=True, max=cscd_max if channel=='cscd' else trck_max)
+
+        #print "[true_template[channel]['map'] = ", true_template[channel]['map']
+        #print "[true_template[channel]['sumw2'] = ", true_template[channel]['sumw2']
+        #print "sqrt [true_template[channel]['sumw2'] = ", np.sqrt(true_template[channel]['sumw2'])
+        #print "\n"
+        #print "[true_template[channel]['map_nu'] = ", true_template[channel]['map_nu']
+        #print "[true_template[channel]['sumw2_nu'] = ", true_template[channel]['sumw2_nu']
+        #print "sqrt [true_template[channel]['sumw2_nu'] = ", np.sqrt(true_template[channel]['sumw2_nu'])
+        #print "\n"
+
+        # save to txt
+        tmpl = true_template[channel]['map_nu']
+        name = '%s/true_template_%s'% (args.outdir, channel)
+        savetxt(tmpl, czbins, anlys_ebins, name)
+
+        error_nu = {}
+        error_nu['map'] = np.sqrt(true_template[channel]['sumw2_nu'])
+        error_nu['ebins'] =  anlys_ebins
+        error_nu['czbins'] = czbins 
+        plot_one_map(error_nu, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_nu_error_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, PISA \, \, nu \, error \, map \, %s }$'%(livetime, channel), save=True)
+        name = '%s/error_%s'% (args.outdir, channel)
+
+        #savetxt(error_nu['map'], czbins, anlys_ebins, name)
+
+
+
+            #############  Compare Final Stage Template ############
+
+    if args.template_settings_2:
+        for channel in ['cscd','trck']:
+            print "livetime = ", livetime
+            cscd_max = int(500 * livetime)
+            trck_max = int(420 * livetime)
+            all_max = int(600 * livetime)
+            print "cscd_max = ", cscd_max
+            print "trck_max = ", trck_max
+            print "all_max = ", all_max
+            print "true_template[channel].keys = ", true_template[channel].keys()
+            true_template[channel]['ebins'] =  anlys_ebins
+            true_template[channel]['czbins'] = czbins 
+            true_template_2[channel]['ebins'] =  anlys_ebins
+            true_template_2[channel]['czbins'] = czbins 
+            plot_one_map(true_template[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_map1_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \, PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(true_template[channel]['map'])), save=False, max=cscd_max if channel=='cscd' else trck_max)
+
+            plot_one_map(true_template_2[channel], args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_PISA_map2_final_NutauCCNorm_1_%s'% (channel), fig_title=r'${\rm %s \, yr \,  PISA \, map \, %s \, (Nevts: \, %.1f) }$'%(livetime, channel, np.sum(true_template_2[channel]['map'])), save=False, max=cscd_max if channel=='cscd' else trck_max)
+
+            ratio_template_1_2 = ratio_map(true_template[channel], true_template_2[channel])
+            plot_one_map(ratio_template_1_2, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Ratio_final_map_%s'% (channel), fig_title=r'${\rm Ratio \, of \, (map \, 1 \, / \, map \, 2 ) \, %s }$'%(channel), save=False, annotate_prcs=3) 
+            delta_template_1_2 = delta_map(true_template[channel], true_template_2[channel])
+            plot_one_map(delta_template_1_2, args.outdir, logE=not(args.no_logE), fig_name=args.title+ '_Delta_final_map_%s'% (channel), fig_title=r'${\rm Delta \, of \, (map \, 1 \, - \, map \, 2 ) \, %s }$'%(channel), save=False, annotate_prcs=3) 
+
+            print "In Final stage, from first template: \n",
+            print "no.of cscd (f = 1) in first template = ", np.sum(true_template['cscd']['map'])
+            print "no.of trck (f = 1) in first template = ", np.sum(true_template['trck']['map'])
+            print "total no. of cscd and trck  = ", np.sum(true_template['cscd']['map'])+np.sum(true_template['trck']['map'])
+            print "\n"
+            print "In Final stage, from first template: \n",
+            print "no.of cscd (f = 1) in first template = ", np.sum(true_template_2['cscd']['map'])
+            print "no.of trck (f = 1) in first template = ", np.sum(true_template_2['trck']['map'])
+            print "total no. of cscd and trck  = ", np.sum(true_template_2['cscd']['map'])+np.sum(true_template_2['trck']['map'])
+            print "\n"
