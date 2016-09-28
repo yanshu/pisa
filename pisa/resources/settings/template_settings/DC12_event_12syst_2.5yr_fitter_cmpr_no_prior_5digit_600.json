@@ -55,6 +55,10 @@
     "actual_oversample_e": 40 
   },
   "params": {
+    "further_bdt_cut":{
+      "fixed": true,
+      "value": 0.1 
+    },
     "sim_ver":{
       "fixed": true,
       "value": "dima"
@@ -170,7 +174,7 @@
     },
     "aeff_weight_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__unjoined_with_fluxes_GENIE_Barr.hdf5"
+      "value": "aeff/bdt_0.1/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__unjoined_with_fluxes_GENIE_Barr.hdf5"
     },
     "atm_delta_index": {
       "fixed": false,
@@ -775,7 +779,7 @@
     },
     "pid_events": {
       "fixed": true,
-      "value": "aeff/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/bdt_0.1/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "pid_ver": {
       "fixed": true,
@@ -807,7 +811,7 @@
     },
     "reco_mc_wt_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/bdt_0.1/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "reco_mode": {
       "fixed": true,
@@ -819,23 +823,23 @@
     },
     "reco_vbwkde_evts_file": {
       "fixed": true,
-      "value": "aeff/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
+      "value": "aeff/bdt_0.1/events__deepcore__IC86__runs_126001-126003,146001-146003,166001-166003__proc_v5digit__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5"
     },
     "domeff_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_DomEff_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/bdt_0.1/dima_p1_event_polyfit_bin_count_DomEff_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "holeice_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p1_event_polyfit_bin_count_HoleIce_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/bdt_0.1/dima_p1_event_polyfit_bin_count_HoleIce_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "holeice_fwd_slope_file": {
       "fixed": true,
-      "value": "domeff_holeice/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_fitter_10_by_10_no_NC_osc.json"
+      "value": "domeff_holeice/bdt_0.1/dima_p2_event_polyfit_bin_count_HoleIce_fwd_fits_fitter_10_by_10_no_NC_osc.json"
     },
     "reco_prcs_coeff_file": {
       "fixed": true,
-      "value": "reco_prcs/5digit_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
+      "value": "reco_prcs/bdt_0.1/5digit_event_RecoPrecisionCubicFitCoefficients_0.7_1.3_data_tau_no_NC_osc.json"
     },
     "up_down_e_reco_prcs": {
       "fixed": true,
