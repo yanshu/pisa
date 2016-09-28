@@ -160,7 +160,7 @@ class TemplateMaker:
             self.Resolution_cz_up = Resolution(template_settings['reco_prcs_coeff_file'],'cz','up')
             self.Resolution_cz_down = Resolution(template_settings['reco_prcs_coeff_file'],'cz','down')
 
-        self.calc_mc_errors()
+        #self.calc_mc_errors()
 
     def downsample_binning(self,maps):
         # the ugliest way to handle this.....sorry
@@ -188,7 +188,27 @@ class TemplateMaker:
             logging.error(e)
             sys.exit(1)
         print "self.aeff_weight_file = " , self.aeff_weight_file
-
+        
+        # only keep events using bdt_score > bdt_cut
+        print "self.params['further_bdt_cut'] = ", self.params['further_bdt_cut']
+        for prim in ['nue', 'numu','nutau', 'nue_bar', 'numu_bar', 'nutau_bar']:
+            for int_type in ['cc','nc']:
+                l5_bdt_score = evts[prim][int_type]['dunkman_L5'].astype(np.float64)
+                cut = l5_bdt_score >= self.params['further_bdt_cut']
+                #print "np.shape of cut = ", np.shape(cut)
+                #print "before bdt cut , len evts[prim][int_type][true_energy] = ", len(evts[prim][int_type]['true_energy'])
+                #print "evts[prim][int_type].keys() = ", evts[prim][int_type].keys()
+                for var in evts[prim][int_type].keys():
+                    if var=='BARR_splines' or var=='GENSYS_splines':
+                        for sys in evts[prim][int_type][var].keys():
+                            evts[prim][int_type][var][sys] = evts[prim][int_type][var][sys][cut]
+                        continue
+                    try:
+                        evts[prim][int_type][var] = evts[prim][int_type][var][cut]
+                    except KeyError:
+                        evts[prim][int_type][var] = np.ones_like(evts[prim][int_type]['true_energy'])
+                #print "after bdt cut , len evts[prim][int_type][true_energy] = ", len(evts[prim][int_type]['true_energy'])
+        
         osc_probs = get_osc_probs(evts, self.params, self.osc_service, ebins=self.ebins)
         all_reco_e = np.array([])
         all_reco_cz = np.array([])
@@ -273,6 +293,26 @@ class TemplateMaker:
         evts = events.Events(self.aeff_weight_file)
         bins = (self.ebins, self.czbins)
         anlys_bins = (self.anlys_ebins, self.czbins)
+
+        # only keep events using bdt_score > bdt_cut
+        print "self.params['further_bdt_cut'] = ", self.params['further_bdt_cut']
+        for prim in ['nue', 'numu','nutau', 'nue_bar', 'numu_bar', 'nutau_bar']:
+            for int_type in ['cc','nc']:
+                l5_bdt_score = evts[prim][int_type]['dunkman_L5'].astype(np.float64)
+                cut = l5_bdt_score >= self.params['further_bdt_cut']
+                #print "np.shape of cut = ", np.shape(cut)
+                #print "before bdt cut , len evts[prim][int_type][true_energy] = ", len(evts[prim][int_type]['true_energy'])
+                #print "evts[prim][int_type].keys() = ", evts[prim][int_type].keys()
+                for var in evts[prim][int_type].keys():
+                    if var=='BARR_splines' or var=='GENSYS_splines':
+                        for sys in evts[prim][int_type][var].keys():
+                            evts[prim][int_type][var][sys] = evts[prim][int_type][var][sys][cut]
+                        continue
+                    try:
+                        evts[prim][int_type][var] = evts[prim][int_type][var][cut]
+                    except KeyError:
+                        evts[prim][int_type][var] = np.ones_like(evts[prim][int_type]['true_energy'])
+                #print "after bdt cut , len evts[prim][int_type][true_energy] = ", len(evts[prim][int_type]['true_energy'])
 
         # set up flux
         if any(step_changed[:1]):
@@ -526,6 +566,7 @@ class TemplateMaker:
         #self.final_event_rate['trck']['sumw2_nu'] = (self.final_event_rate['trck']['map_nu']* self.rel_error['trck'])**2
         # Calculate the sum_w2, method 2: sum_w2 get updated every time get_template() is called
         self.final_event_rate['cscd']['sumw2_nu'] = self.wgt2_pid_map_cscd     
+        #print "self.wgt2_pid_map_cscd = ", self.wgt2_pid_map_cscd
         self.final_event_rate['trck']['sumw2_nu'] = self.wgt2_pid_map_trck
         self.final_event_rate['cscd']['sumw2'] = self.final_event_rate['cscd']['sumw2_nu'] + self.final_event_rate['cscd']['sumw2_mu']
         self.final_event_rate['trck']['sumw2'] = self.final_event_rate['trck']['sumw2_nu'] + self.final_event_rate['trck']['sumw2_mu']
