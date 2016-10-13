@@ -266,30 +266,30 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
-	"l6_bdt": "L6BDT/BDTScore",
-	"pid": "IC86_Larson_L6/value"
+        "l6_bdt": "L6BDT/BDTScore",
+        "pid": "IC86_Larson_L6/value"
       },
       "cuts": {
-	"bdt": {
+        "bdt": {
           "fields": [
             "l6_bdt"
           ],
           "pass_if": "(l6_bdt > 0.2)"
         },
-	"analysis": {
-	  "fields": [
-	    "l6_bdt"
-	  ],
-	  "pass_if": "(l6_bdt < 10.0)"
-	}
+        "analysis": {
+          "fields": [
+            "l6_bdt"
+            ],
+          "pass_if": "(l6_bdt < 10.0)"
+        }
       },
       "cuts_comments":{
         "bdt":{
-	  "_comment_": "this bdt cut will change the final level files to have passed a bdt rather than straight cuts. This reduces background significantly, but means an inverted cut for background estimation CANNOT be used."
-	},
-	"analysis":{
-	  "_comment_": "the nbi processed files are already at final analysis level so use some dummy proxy non-cut"
-	}
+          "_comment_": "this bdt cut will change the final level files to have passed a bdt rather than straight cuts. This reduces background significantly, but means an inverted cut for background estimation CANNOT be used."
+        },
+        "analysis":{
+          "_comment_": "the nbi processed files are already at final analysis level so use some dummy proxy non-cut"
+        }
       },
       "pid": {
         "trck": {
@@ -502,7 +502,7 @@
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
         "pid": "IC86_Dunkman_L6/delta_LLH",
         "dunkman_L3": "IC86_Dunkman_L3/value",
-	"dunkman_L4": "IC86_Dunkman_L4/result",
+        "dunkman_L4": "IC86_Dunkman_L4/result",
         "dunkman_L5": "IC86_Dunkman_L5/bdt_score",
         "dunkman_direct_doms": "IC86_Dunkman_L6_SANTA_DirectDOMs/value",
         "dunkman_L6": "IC86_Dunkman_L6/result"
