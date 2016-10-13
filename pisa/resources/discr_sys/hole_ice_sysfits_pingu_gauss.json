@@ -1,12 +1,12 @@
 {
   "function": "fit_fun = lambda x, *p: np.polynomial.polynomial.polyval(x, [1.] + list(p))",
   "map_names": [
-    "nu"
+    "evts"
   ],
   "nominal": 25.0,
   "pname": "hole_ice",
   "binning_hash": 4343667288690271033,
-  "nu": [
+  "evts": [
     [
       [
         [
