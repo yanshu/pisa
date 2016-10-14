@@ -168,6 +168,7 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+		"track_length": "MultiNest_8D_Track/length",
         "cuts_step_1": "Cuts_V5.1_Step1/value",
         "cuts_step_2": "Cuts_V5.1_Step2/value"
       },
