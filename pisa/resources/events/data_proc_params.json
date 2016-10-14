@@ -168,7 +168,7 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
-		"track_length": "MultiNest_8D_Track/length",
+        "pid": "MultiNest_8D_Track/length",
         "cuts_step_1": "Cuts_V5.1_Step1/value",
         "cuts_step_2": "Cuts_V5.1_Step2/value"
       },
@@ -241,6 +241,47 @@
             "pid"
           ],
           "criteria": "pid <= 0.55"
+        }
+      }
+    },
+    "V6.nopid": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "I3MCTree/pdg_encoding",
+        "true_energy": "I3MCTree/energy",
+        "true_zenith": "I3MCTree/zenith",
+        "reco_energy": "MultiNest_8D_Neutrino/energy",
+        "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "cuts_step_1": "Cuts_V6_Step1.1/value",
+        "cuts_step_2": "Cuts_V5.1_Step2/value"
+      },
+      "cuts": {
+        "bgrej": {
+          "fields": [
+            "cuts_step_1"
+          ],
+          "pass_if": "cuts_step_1 == 1"
+        },
+        "analysis": {
+          "fields": [
+            "cuts_step_1",
+            "cuts_step_2"
+          ],
+          "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
         }
       }
     }
