@@ -146,6 +146,102 @@
         }
       }
     },
+    "V5.1.nopid": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "I3MCTree/pdg_encoding",
+        "true_energy": "I3MCTree/energy",
+        "true_zenith": "I3MCTree/zenith",
+        "reco_energy": "MultiNest_8D_Neutrino/energy",
+        "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid": "MultiNest_8D_Track/length",
+        "cuts_step_1": "Cuts_V5.1_Step1/value",
+        "cuts_step_2": "Cuts_V5.1_Step2/value"
+      },
+      "cuts": {
+        "bgrej": {
+          "fields": [
+            "cuts_step_1"
+          ],
+          "pass_if": "cuts_step_1 == 1"
+        },
+        "analysis": {
+          "fields": [
+            "cuts_step_1",
+            "cuts_step_2"
+          ],
+          "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      }
+    },
+    "V5.1.pidV47.1": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "I3MCTree/pdg_encoding",
+        "true_energy": "I3MCTree/energy",
+        "true_zenith": "I3MCTree/zenith",
+        "reco_energy": "MultiNest_8D_Neutrino/energy",
+        "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "pid_e2wgt_bdtg": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_BDTG.weights.xml",
+        "pid_e2wgt_bdtg_original": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_BDTG_original.weights.xml",
+        "pid_e2wgt_fisherg": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_FisherG.weights.xml",
+        "pid_e2wgt_likelihoodkde": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_LikelihoodKDE.weights.xml",
+        "pid_e2wgt_mlpbnn": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_MLPBNN.weights.xml",
+        "pid_e2wgt_tmlpann": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_TMlpANN.weights.xml",
+        "pid_nowgt_bdtg.": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_BDTG.weights.xml",
+        "pid_nowgt_bdtg_original": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_BDTG_original.weights.xml",
+        "pid_nowgt_fisherg": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_FisherG.weights.xml",
+        "pid_nowgt_likelihoodkde": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_LikelihoodKDE.weights.xml",
+        "pid_nowgt_mlpbnn": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_MLPBNN.weights.xml",
+        "pid_nowgt_tmlpann": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_TMlpANN.weights.xml",
+        "pid": "MultiNest_8D_Track/length",
+        "cuts_step_1": "Cuts_V5.1_Step1/value",
+        "cuts_step_2": "Cuts_V5.1_Step2/value"
+      },
+      "cuts": {
+        "bgrej": {
+          "fields": [
+            "cuts_step_1"
+          ],
+          "pass_if": "cuts_step_1 == 1"
+        },
+        "analysis": {
+          "fields": [
+            "cuts_step_1",
+            "cuts_step_2"
+          ],
+          "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      }
+    },
     "V5.1": {
       "field_map": {
         "run": "I3EventHeader/Run",
@@ -201,6 +297,47 @@
           "criteria": "pid <= 0.55"
         }
       }
+    },
+    "V6.nopid": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "I3MCTree/pdg_encoding",
+        "true_energy": "I3MCTree/energy",
+        "true_zenith": "I3MCTree/zenith",
+        "reco_energy": "MultiNest_8D_Neutrino/energy",
+        "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "one_weight": "I3MCWeightDict/OneWeight",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MinEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "cuts_step_1": "Cuts_V6_Step1.1/value",
+        "cuts_step_2": "Cuts_V5.1_Step2/value"
+      },
+      "cuts": {
+        "bgrej": {
+          "fields": [
+            "cuts_step_1"
+          ],
+          "pass_if": "cuts_step_1 == 1"
+        },
+        "analysis": {
+          "fields": [
+            "cuts_step_1",
+            "cuts_step_2"
+          ],
+          "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      }
     }
   },
   "deepcore": {
@@ -216,6 +353,7 @@
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "interaction_type": "I3MCWeightDict/InteractionType",
         "azimuth_min": "I3MCWeightDict/MinAzimuth",
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
@@ -225,30 +363,30 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
-	"l6_bdt": "L6BDT/BDTScore",
-	"pid": "IC86_Larson_L6/value"
+        "l6_bdt": "L6BDT/BDTScore",
+        "pid": "IC86_Larson_L6/value"
       },
       "cuts": {
-	"bdt": {
+        "bdt": {
           "fields": [
             "l6_bdt"
           ],
           "pass_if": "(l6_bdt > 0.2)"
         },
-	"analysis": {
-	  "fields": [
-	    "l6_bdt"
-	  ],
-	  "pass_if": "(l6_bdt < 10.0)"
-	}
+        "analysis": {
+          "fields": [
+            "l6_bdt"
+            ],
+          "pass_if": "(l6_bdt < 10.0)"
+        }
       },
       "cuts_comments":{
         "bdt":{
-	  "_comment_": "this bdt cut will change the final level files to have passed a bdt rather than straight cuts. This reduces background significantly, but means an inverted cut for background estimation CANNOT be used."
-	},
-	"analysis":{
-	  "_comment_": "the nbi processed files are already at final analysis level so use some dummy proxy non-cut"
-	}
+          "_comment_": "this bdt cut will change the final level files to have passed a bdt rather than straight cuts. This reduces background significantly, but means an inverted cut for background estimation CANNOT be used."
+        },
+        "analysis":{
+          "_comment_": "the nbi processed files are already at final analysis level so use some dummy proxy non-cut"
+        }
       },
       "pid": {
         "trck": {
@@ -262,6 +400,70 @@
             "pid"
           ],
           "criteria": "pid <= 0.15"
+        }
+      }
+    },
+    "GRECO1X6": {
+      "field_map": {
+        "run": "I3EventHeader/Run",
+        "nu_code": "MCNeutrino/pdg_encoding",
+        "true_energy": "MCNeutrino/energy",
+        "true_zenith": "MCNeutrino/zenith",
+        "true_azimuth": "MCNeutrino/azimuth",
+        "reco_energy": "Pegleg_Fit_MNTrack/energy + Pegleg_Fit_MNHDCasc/energy",
+        "reco_zenith": "Pegleg_Fit_MNTrack/zenith",
+        "reco_azimuth": "Pegleg_Fit_MNTrack/azimuth",
+        "one_weight": "I3MCWeightDict/OneWeight",
+        "generator_volume": "I3MCWeightDict/GeneratorVolume",
+        "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
+        "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
+        "interaction_type": "I3MCWeightDict/InteractionType",
+        "azimuth_min": "I3MCWeightDict/MinAzimuth",
+        "azimuth_max": "I3MCWeightDict/MaxAzimuth",
+        "zenith_min": "I3MCWeightDict/MinZenith",
+        "zenith_max": "I3MCWeightDict/MaxZenith",
+        "energy_log_min": "I3MCWeightDict/MaxEnergyLog",
+        "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
+        "num_events_per_file": "I3MCWeightDict/NEvents",
+        "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "l6_bdt": "L6BDT/BDTScore",
+        "pid": "Pegleg_Fit_MNTrack/length"
+      },
+      "cuts": {
+        "bdt": {
+          "fields": [
+            "l6_bdt"
+          ],
+          "pass_if": "(l6_bdt > 0.2)"
+        },
+        "analysis": {
+          "fields": [
+            "l6_bdt"
+            ],
+          "pass_if": "(l6_bdt < 10.0)"
+        }
+      },
+      "cuts_comments":{
+        "bdt":{
+          "_comment_": "this bdt cut will change the final level files to have passed a bdt rather than straight cuts. This reduces background significantly, but means an inverted cut for background estimation CANNOT be used."
+        },
+        "analysis":{
+          "_comment_": "the nbi processed files are already at final analysis level so use some dummy proxy non-cut"
+        }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 50"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 50"
         }
       }
     },
@@ -340,6 +542,7 @@
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "interaction_type": "I3MCWeightDict/InteractionType",
         "azimuth_min": "I3MCWeightDict/MinAzimuth",
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
@@ -427,7 +630,7 @@
         "spe11_zenith": "IC86_Dunkman_L5/spe11_zenith",
         "total_charge": "IC86_Dunkman_L5/total_charge",
         "corridor_doms_over_threshold": "IC86_Dunkman_L6/corridor_doms_over_threshold",
-       "santa_direct_charge": "IC86_Dunkman_L6/santa_direct_charge",
+        "santa_direct_charge": "IC86_Dunkman_L6/santa_direct_charge",
         "santa_direct_doms": "IC86_Dunkman_L6/santa_direct_doms",
         "mn_start_contained": "IC86_Dunkman_L6/mn_start_contained",
         "mn_stop_contained": "IC86_Dunkman_L6/mn_stop_contained",
@@ -450,6 +653,7 @@
         "generator_volume": "I3MCWeightDict/GeneratorVolume",
         "generator_radius": "I3MCWeightDict/InjectionSurfaceR",
         "detection_length": "I3MCWeightDict/TotalDetectionLength",
+        "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
         "interaction_type": "I3MCWeightDict/InteractionType",
         "azimuth_min": "I3MCWeightDict/MinAzimuth",
         "azimuth_max": "I3MCWeightDict/MaxAzimuth",
@@ -461,7 +665,7 @@
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
         "pid": "IC86_Dunkman_L6/delta_LLH",
         "dunkman_L3": "IC86_Dunkman_L3/value",
-	"dunkman_L4": "IC86_Dunkman_L4/result",
+        "dunkman_L4": "IC86_Dunkman_L4/result",
         "dunkman_L5": "IC86_Dunkman_L5/bdt_score",
         "dunkman_direct_doms": "IC86_Dunkman_L6_SANTA_DirectDOMs/value",
         "dunkman_L6": "IC86_Dunkman_L6/result"
