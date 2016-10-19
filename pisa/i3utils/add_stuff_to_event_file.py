@@ -95,8 +95,6 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                             barr_spline_service = SplineService(ebins=ebins, evals=true_e, dictFile = phys_params['flux_uncertainty_inputs'])
                         print("==> time initialize SplineService : %s sec"%t.secs)
 
-                        genie_splines = {} 
-                        barr_splines = {}
                         with Timer(verbose=False) as t:
                             for entry in GENSYS.keys():
                                 if entry == "MaCCQE" and int_type=='nc': continue
@@ -105,13 +103,10 @@ def add_stuff_to_file(data_file_path, file_type, ebins, phys_params, flux_servic
                                     genie_spline = genie_spline_service.get_genie_spline(entry, flav)
                                 else:
                                     genie_spline = genie_spline_service.get_genie_spline(entry, prim)
-                                genie_splines[entry] = genie_spline
+                                data_file[prim][int_type]['GENSYS_splines_'+entry] = genie_spline
                             for entry in Flux_Mod_Dict.keys():
                                 barr_spline = barr_spline_service.get_barr_spline(entry)
-                                barr_splines[entry] = barr_spline
-
-                            data_file[prim][int_type]['GENSYS_splines'] = genie_splines
-                            data_file[prim][int_type]['BARR_splines'] = barr_splines
+                                data_file[prim][int_type]['BARR_splines_'+entry] = barr_spline
                         print("==> time getting genie_splines : %s sec"%t.secs)
 
                         # add quadratic fit of gensys (from oscFit)
