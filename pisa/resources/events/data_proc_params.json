@@ -194,8 +194,10 @@
         "nu_code": "I3MCTree/pdg_encoding",
         "true_energy": "I3MCTree/energy",
         "true_zenith": "I3MCTree/zenith",
+        "true_azimuth": "I3MCTree/azimuth",
         "reco_energy": "MultiNest_8D_Neutrino/energy",
         "reco_zenith": "MultiNest_8D_Neutrino/zenith",
+        "reco_azimuth": "MultiNest_8D_Neutrino/azimuth",
         "one_weight": "I3MCWeightDict/OneWeight",
         "interaction_type": "I3MCWeightDict/InteractionType",
         "interaction_prob": "I3MCWeightDict/TotalInteractionProbabilityWeight",
@@ -210,6 +212,8 @@
         "energy_log_max": "I3MCWeightDict/MaxEnergyLog",
         "num_events_per_file": "I3MCWeightDict/NEvents",
         "sim_spectral_index": "I3MCWeightDict/PowerLawIndex",
+        "track_length": "MultiNest_8D_Track/length",
+        "pid_inelasticity": "PINGU_PID_Score/Inelasticity",
         "pid_e2wgt_bdtg": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_BDTG.weights.xml",
         "pid_e2wgt_bdtg_original": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_BDTG_original.weights.xml",
         "pid_e2wgt_fisherg": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_FisherG.weights.xml",
@@ -222,7 +226,7 @@
         "pid_nowgt_likelihoodkde": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_LikelihoodKDE.weights.xml",
         "pid_nowgt_mlpbnn": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_MLPBNN.weights.xml",
         "pid_nowgt_tmlpann": "PINGU_PID_Score/PID_PINGU_V47_HE_nowgt_TMlpANN.weights.xml",
-        "pid": "MultiNest_8D_Track/length",
+        "pid": "PINGU_PID_Score/PID_PINGU_V47_HE_E2wgt_MLPBNN.weights.xml",
         "cuts_step_1": "Cuts_V5.1_Step1/value",
         "cuts_step_2": "Cuts_V5.1_Step2/value"
       },
@@ -239,6 +243,20 @@
             "cuts_step_2"
           ],
           "pass_if": "(cuts_step_1 == 1) & (cuts_step_2 == 1)"
+        }
+      },
+      "pid": {
+        "trck": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid > 0.55"
+        },
+        "cscd": {
+          "fields": [
+            "pid"
+          ],
+          "criteria": "pid <= 0.55"
         }
       }
     },
