@@ -505,6 +505,28 @@
       "xsec": "genie_2.8.6",
       "zenith_max": "pi",
       "zenith_min": 0
+    },
+    "1013": {
+      "geom": "V47",
+      "all_gen_events_file": null,
+      "azimuth_max": "2*pi",
+      "azimuth_min": 0,
+      "energy_max": 80,
+      "energy_min": 1,
+      "physical_events_fract": 0.8095,
+      "genie_prescale_factor": 1.2,
+      "flavints": "nutau,nutaubar",
+      "ice_model": "SPICE Mie",
+      "noise_model": "Vuvuzela",
+      "injection_surface_radius": 400,
+      "nu_to_total_fract": 0.5,
+      "num_events_per_file": 5000,
+      "num_i3_files": 809,
+      "sim_spectral_index": 1,
+      "total_detection_length": 600,
+      "xsec": "genie_2.8.6",
+      "zenith_max": "pi",
+      "zenith_min": 0
     }
   },
   "deepcore": {
