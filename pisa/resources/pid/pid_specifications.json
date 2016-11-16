@@ -64,6 +64,19 @@
           }
         }
       }
+    },
+    "V47": {
+      "V5.1.pidV47.1": {
+        "V1": {
+          "field_map": {
+            "pid": "MultiNest_8D_Track/length"
+          },
+          "criteria": {
+            "cscd": "pid <= 25",
+            "trck": "pid > 25"
+          }
+        }
+      }
     }
   }
 }
