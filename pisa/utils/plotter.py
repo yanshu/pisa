@@ -402,6 +402,7 @@ class Plotter(object):
         axis = plt.gca()
         plt_binning = map.binning[plot_axis]
         hist = self.project_1d(map, plot_axis)
+        split_axis = kwargs.pop('split_axis', None)
         if map.tex == 'data':
             axis.errorbar(plt_binning.weighted_centers.m,
                     unp.nominal_values(hist),yerr=unp.std_devs(hist), fmt='o', markersize='4', label='data', color='k', ecolor='k', mec='k', **kwargs)
@@ -428,10 +429,10 @@ class Plotter(object):
         ''' sum up a map along all axes except plot_axis '''
         hist = map.hist
         plt_axis_n = map.binning.names.index(plot_axis)
-        for i in range(len(map.binning)):
-            if i == plt_axis_n:
-                continue
-            hist = np.sum(map.hist, i)
+        idx = range(0,len(map.binning))
+        idx.remove(plt_axis_n)
+        sum_over_axis = tuple(idx)
+        hist = np.sum(map.hist, sum_over_axis)
         return hist
 
     def plot_1d_ratio(self, maps, plot_axis):
