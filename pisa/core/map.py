@@ -394,7 +394,7 @@ class Map(object):
         #fract_diff.name = '(' + self.name + '-' + ref.name + ')/' + ref.name
         #fract_diff.tex = '(' + self.tex + '-' + ref.tex + ')/' + ref.tex
 
-        max_diff_ratio = np.nanmax(np.abs(fract_diff.hist))
+        max_diff_ratio = np.nanmax(np.abs(fract_diff.nominal_values))
 
         # Handle cases where ratio returns infinite
         # This isn't necessarily a fail, since all it means is the referene was
@@ -409,11 +409,11 @@ class Map(object):
             max_diff = np.nanmax(np.abs(diff.hist[~finite_mask]))
         else:
             # Without any infinite elements we can ignore this second test
-            max_diff = np.nanmax(np.abs(diff.hist))
+            max_diff = np.nanmax(np.abs(diff.nominal_values))
 
-        nanmatch = bool(np.all(np.isnan(self.hist) == np.isnan(ref.hist)))
+        nanmatch = bool(np.all(np.isnan(self.nominal_values) == np.isnan(ref.nominal_values)))
         infmatch = bool(np.all(
-            self.hist[np.isinf(self.hist)] == ref.hist[np.isinf(ref.hist)]
+            self.nominal_values[np.isinf(self.nominal_values)] == ref.nominal_values[np.isinf(ref.nominal_values)]
         ))
 
         comparisons = OrderedDict([
