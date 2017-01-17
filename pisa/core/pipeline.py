@@ -74,7 +74,6 @@ class Pipeline(object):
                 '`config` passed is of type %s but must be string,'
                 ' BetterConfigParser, or OrderedDict' % type(config).__name__
             )
-
         self._stages = []
         self._config = config
         self._init_stages()
@@ -139,7 +138,7 @@ class Pipeline(object):
         """
         self._stages = []
         for stage_num, ((stage_name, service_name), settings) \
-                in enumerate(self.config.items()):
+                in enumerate(self._config.items()):
             try:
                 logging.debug('instantiating stage %s / service %s'
                               %(stage_name, service_name))
