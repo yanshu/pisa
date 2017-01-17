@@ -684,6 +684,7 @@
         "pid": "IC86_Dunkman_L6/delta_LLH",
         "dunkman_L3": "IC86_Dunkman_L3/value",
         "dunkman_L4": "IC86_Dunkman_L4/result",
+        "l4_inv_VICH": "IC86_Dunkman_L4/result_invertedVICH",
         "dunkman_L5": "IC86_Dunkman_L5/bdt_score",
         "dunkman_direct_doms": "IC86_Dunkman_L6_SANTA_DirectDOMs/value",
         "dunkman_L6": "IC86_Dunkman_L6/result"
@@ -706,6 +707,44 @@
             "dunkman_L6"
           ],
           "pass_if": "(dunkman_direct_doms>=3) & (dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.1) & (dunkman_L6 == 1)"
+        },
+        "icc_def1": {
+          "fields": [
+            "corridor_doms_over_threshold",
+            "santa_direct_doms",
+            "dunkman_L3",
+            "dunkman_L4",
+            "dunkman_L5",
+            "mn_start_contained",
+            "mn_stop_contained"
+          ],
+          "pass_if": "(corridor_doms_over_threshold>1) & (santa_direct_doms>=3) & (dunkman_L3 == 1) & (dunkman_L4 == 1) & (dunkman_L5 >= 0.1) & (mn_start_contained==1) & (mn_stop_contained==1)"
+        },
+        "icc_def2": {
+          "fields": [
+            "corridor_doms_over_threshold",
+            "santa_direct_doms",
+            "dunkman_L3",
+            "dunkman_L4",
+            "l4_inv_VICH",
+            "dunkman_L5",
+            "mn_start_contained",
+            "mn_stop_contained"
+          ],
+          "pass_if": "(corridor_doms_over_threshold>1) & (santa_direct_doms>=3) & (dunkman_L3 == 1) & ((dunkman_L4 == 1) | (l4_inv_VICH==1)) & (dunkman_L5 >= 0.1) & (mn_start_contained==1) & (mn_stop_contained==1)"
+        },
+        "icc_def3": {
+          "fields": [
+            "corridor_doms_over_threshold",
+            "santa_direct_doms",
+            "dunkman_L3",
+            "dunkman_L4",
+            "l4_inv_VICH",
+            "dunkman_L5",
+            "mn_start_contained",
+            "mn_stop_contained"
+          ],
+          "pass_if": "(corridor_doms_over_threshold>2) & (santa_direct_doms>=3) & (dunkman_L3 == 1) & ((dunkman_L4 == 1) | (l4_inv_VICH==1)) & (dunkman_L5 >= 0.1) & (mn_start_contained==1) & (mn_stop_contained==1)"
         }
       }
     }
