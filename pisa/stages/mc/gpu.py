@@ -462,6 +462,48 @@ class gpu(Stage):
             self.events_dict[flav]['host'][var]
         )
 
+    def get_fields(self, fields):
+        ''' Copy back a dictionary with event by event information'''
+        return_events = {}
+        variables = ['weight', 'sumw2', 'reco_energy', 'reco_coszen', 'pid'] + fields
+
+        self.bin_names = self.output_binning.names
+        # TODO: convert units using e.g. `comp_units` in stages/reco/hist.py
+        self.bin_edges = []
+        for name in self.bin_names:
+            if 'energy' in name:
+                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
+            else:
+                bin_edges = self.output_binning[name].bin_edges.magnitude
+            self.bin_edges.append(bin_edges)
+        evts = Events(self.params.events_file.value)
+        if self.params.bdt_cut.value == None:
+            bdt_cut = None
+        else:
+            bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
+        for flav in self.flavs:
+            if evts[flav].has_key('dunkman_L5'):
+                l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
+                if bdt_cut is not None:
+                    cuts = l5_bdt_score >= bdt_cut
+            else:
+                evts[flav].keys()
+                cuts = np.ones(len(evts[flav]['reco_energy']), dtype=bool)
+            for name, edge in zip(self.bin_names, self.bin_edges):
+                bin_cut = np.logical_and(evts[flav][name]<= edge[-1], evts[flav][name]>= edge[0])
+                cuts = np.logical_and(cuts,bin_cut)
+            return_events[flav] = {}
+            for var in variables:
+                if var in self.events_dict[flav]['device'].keys():
+                    buff = np.ones(self.events_dict[flav]['n_evts'])
+                    cuda.memcpy_dtoh(buff, self.events_dict[flav]['device'][var])
+                    return_events[flav][var] = buff
+                else:
+                    return_events[flav][var] = evts[flav][var][cuts]
+            for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
+                assert(np.all(np.logical_and(return_events[flav][bin_name]<= bin_edge[-1], return_events[flav][bin_name]>= bin_edge[0])))
+        return return_events
+
     def get_device_arrays(self, variables=['weight']):
         """Copy back event by event information into the host dict"""
         for flav in self.flavs:
@@ -469,7 +511,7 @@ class gpu(Stage):
                 buff = np.full(self.events_dict[flav]['n_evts'],
                                fill_value=np.nan, dtype=FTYPE)
                 cuda.memcpy_dtoh(buff, self.events_dict[flav]['device'][var])
-                assert np.all(np.isvalid(buff))
+                assert np.all(np.isfinite(buff))
                 self.events_dict[flav]['host'][var] = buff
 
     def sum_array(self, x, n_evts):
