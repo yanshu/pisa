@@ -25,10 +25,6 @@ class icc(Stage):
     params : ParamSet
         icc_bg_file : string
             path pointing to the hdf5 file containing the events
-        pid_bound : float
-            boundary between cascade and track channel
-        pid_remo : float
-            lower cutoff value, below which events get rejected
         proc_ver: string
             indicating the proc version, for example msu_4digit, msu_5digit
         bdt_cut : float
@@ -205,7 +201,7 @@ class icc(Stage):
         icc_file_name: string
             the icc hdf5 file name
         cuts: string
-            can be one of 'icc_def1', 'icc_def2', 'icc_def3', see their defs in data_proc_params.json
+            definition for icc, for example: 'icc_def1', 'icc_def2', 'icc_def3', see their defs in data_proc_params.json
 
         """
         proc_version = self.params.proc_ver.value
@@ -218,38 +214,22 @@ class icc(Stage):
         data = data_proc_params.getData(find_resource(icc_file_name), run_settings=run_settings, file_type='data')
         # get some params for cuts
         fields_for_cuts = copy.deepcopy(fields)
-        for param in ['pid', 'dunkman_L3', 'dunkman_L4', 'l4_inv_VICH', 'dunkman_L5', 'santa_direct_doms', 'mn_start_contained', 'mn_stop_contained', 'corridor_doms_over_threshold', 'reco_energy', 'reco_zenith']:
+        for param in ['reco_energy', 'reco_coszen', 'pid']:
             if param not in fields:
                 fields_for_cuts.append(param)
+                if 'dunkman_L5' in data.keys():
+                    fields_for_cuts.append(param)
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
-        cut_data['reco_coszen'] = np.cos(cut_data['reco_zenith'])
-
-        dunkman_L3 = cut_data['dunkman_L3']
-        dunkman_L4 = cut_data['dunkman_L4']
-        l4_inv_VICH = cut_data['l4_inv_VICH']
-        bdt_score = cut_data['dunkman_L5']
-        corridor_doms_over_threshold = cut_data['corridor_doms_over_threshold']
-        santa_direct_doms = cut_data['santa_direct_doms']
-        mn_start_contained = cut_data['mn_start_contained']
-        mn_stop_contained = cut_data['mn_stop_contained']
-        pid = cut_data['pid']
-        reco_energy = cut_data['reco_energy']
-        reco_coszen = cut_data['reco_coszen']
-
-        # sanity check
-        assert(np.all(mn_start_contained==1) and np.all(mn_stop_contained==1) and np.all(santa_direct_doms>=3) and np.all(dunkman_L3==1))
-        if cuts=='icc_def1':
-            assert(np.all(dunkman_L4==1))
-        else:
-            assert(np.all(np.logical_or(dunkman_L4==1, l4_inv_VICH==1)))
-            if cuts=='icc_def2':
-                assert(np.all(corridor_doms_over_threshold>1))
-            if cuts=='icc_def3':
-                assert(np.all(corridor_doms_over_threshold>2))
 
         scale = self.params.atm_muon_scale.value.m_as('dimensionless')
         scale *= self.params.livetime.value.m_as('common_year')
-        all_cuts = bdt_score>=bdt_cut
+        # apply bdt_score cut if needed 
+        if cut_data.has_key('dunkman_L5'):
+            if bdt_cut is not None:
+                bdt_score = cut_data['dunkman_L5']
+                all_cuts = bdt_score>=bdt_cut
+        else:
+            all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
         for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
             bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
             all_cuts = np.logical_and(all_cuts, bin_cut)
