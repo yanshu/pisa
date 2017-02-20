@@ -128,15 +128,15 @@ class data(Stage):
         for param in ['reco_energy', 'reco_coszen', 'pid']:
             if param not in fields:
                 fields_for_cuts.append(param)
-                if 'dunkman_L5' in data.keys():
-                    fields_for_cuts.append(param)
+        # bdt_score 
+        if 'dunkman_L5' in data.keys():
+            fields_for_cuts.append('dunkman_L5')
         # get data after cuts
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
         # apply bdt_score cut if needed 
         if cut_data.has_key('dunkman_L5'):
             bdt_score = cut_data['dunkman_L5']
             if bdt_cut is not None:
-                l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
                 all_cuts = bdt_score>=bdt_cut
                 logging.info(
                     "Cut2, removing events with bdt_score < %s i.e. only keep bdt > %s"

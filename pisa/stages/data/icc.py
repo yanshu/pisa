@@ -151,7 +151,9 @@ class icc(Stage):
             else:
                 self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
             # only interested in shape difference, not rate
-            scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
+            scale = 1
+            if alt_icc_bg_file is not None:
+                scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale
 
     def _compute_outputs(self, inputs=None):
@@ -212,13 +214,15 @@ class icc(Stage):
                 data_proc_params=find_resource(data_proc_file))
         run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector='deepcore')
         data = data_proc_params.getData(find_resource(icc_file_name), run_settings=run_settings, file_type='data')
+        pid_g = data['pid']
+        dnkm = data['dunkman_L5']
         # get some params for cuts
         fields_for_cuts = copy.deepcopy(fields)
         for param in ['reco_energy', 'reco_coszen', 'pid']:
             if param not in fields:
                 fields_for_cuts.append(param)
-                if 'dunkman_L5' in data.keys():
-                    fields_for_cuts.append(param)
+        if 'dunkman_L5' in data.keys():
+            fields_for_cuts.append('dunkman_L5')
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
 
         scale = self.params.atm_muon_scale.value.m_as('dimensionless')
@@ -236,5 +240,5 @@ class icc(Stage):
         return_data = {}
         for key in fields:
             return_data[key] = cut_data[key][all_cuts]
-        return_data['weight'] = scale 
+        return_data['weight'] = scale
         return return_data
