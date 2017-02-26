@@ -21,6 +21,7 @@ from pisa.utils.config_parser import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
+from pisa.utils.fileio import from_file
 from copy import deepcopy
 
 
@@ -61,6 +62,7 @@ class gpu(Stage):
             Genie_Ma_QE : quantity (dimensionless)
             Genie_Ma_RES : quantity (dimensionless)
             events_file : hdf5 file path (output from make_events), including flux weights and Genie systematics coefficients
+            reweight_file : dict file path (the dictionary contains reweights from a certain variable, e.g. cog_q1_z, first_hlc_z)
             nutau_cc_norm : quantity (dimensionless)
             nutau_norm : quantity (dimensionless)
             reco_e_res_raw : quantity (dimensionless)
@@ -147,6 +149,7 @@ class gpu(Stage):
             'Genie_Ma_QE',
             'Genie_Ma_RES',
             'events_file',
+            'reweight_file',
             'nutau_cc_norm',
             'nutau_norm',
             'reco_e_res_raw',
@@ -282,6 +285,7 @@ class gpu(Stage):
             'quad_fit_MaCCQE',
             'linear_fit_MaCCRES',
             'quad_fit_MaCCRES',
+            #'cog_q1_z',
         ]
 
         # Allocate empty arrays (filled with 1s) on GPU
@@ -375,6 +379,22 @@ class gpu(Stage):
             #cut = np.zeros_like(self.events_dict[flav]['host']['weighted_aeff'])
             #cut[9::10] = 1
             #self.events_dict[flav]['host']['weighted_aeff']*=cut
+
+            # if using reweight
+            if self.params.reweight_file.value!=None:
+                reweight_file = from_file(self.params.reweight_file.value)
+                #name = 'cog_q1_z'
+                #name = 'first_hlc_z'
+                name = 'dunkman_L5'
+                reweight_bins = reweight_file[name]['bin_edges']
+                reweight_vals = reweight_file[name]['bin_vals']
+                digitized_idx = np.digitize(self.events_dict[flav]['host'][name], reweight_bins, right=True)
+                # make the index start from 0
+                digitized_idx -= 1
+                reweights = np.array([reweight_vals[i] for i in digitized_idx])
+                self.events_dict[flav]['host']['weighted_aeff'] *= reweights
+                #self.events_dict[flav]['host']['weighted_aeff'] /= reweights
+
             for var in empty:
                 if (self.params.no_nc_osc and
                         ((flav in ['nue_nc', 'nuebar_nc'] and var == 'prob_e')
@@ -495,7 +515,8 @@ class gpu(Stage):
             return_events[flav] = {}
             for var in variables:
                 if var in self.events_dict[flav]['device'].keys():
-                    buff = np.ones(self.events_dict[flav]['n_evts'])
+                    buff = np.full(self.events_dict[flav]['n_evts'],
+                               fill_value=np.nan, dtype=FTYPE)
                     cuda.memcpy_dtoh(buff, self.events_dict[flav]['device'][var])
                     return_events[flav][var] = buff
                 else:
