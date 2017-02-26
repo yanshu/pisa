@@ -19,6 +19,7 @@ import numpy as np
 from scipy import interpolate
 from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
+import copy
 
 from pisa.core.map import Map, MapSet
 from pisa.core.pipeline import Pipeline
@@ -143,20 +144,31 @@ def main():
         for name in map_names:
             arrays[name] = []
             for x in x_values:
+                #if 0 in unp.nominal_values(inputs[nominal][name]):
+                #    print "unp.nominal_values(inputs[nominal][name]) = ", unp.nominal_values(inputs[nominal][name])
                 arrays[name].append(
                     inputs[x][name] / unp.nominal_values(inputs[nominal][name])
                 )
             a = np.array(arrays[name])
             arrays[name] = np.rollaxis(a, 0, len(a.shape))
+        for x in x_values:
+            num_sum = np.sum([unp.nominal_values(inputs[x][name]) for name in map_names])
 
         # Shift to get deltas
         x_values -= nominal
 
         # Binning object (assuming they're all the same)
         binning = template.maps[0].binning
-
+        binning_edges = binning.bin_edges
+        binning_names = binning.names
+        for d in binning:
+            if 'energy' in d.name:
+                ebin_edges = d.bin_edges.m_as('gigaelectron_volt')
+            elif 'coszen' in d.name:
+                czbin_edges = d.bin_edges.m_as('dimensionless')
         shape = [d.num_bins for d in binning] + [degree]
         shape_small = [d.num_bins for d in binning]
+        #print "shape_small= ", shape_small
 
         outputs = {}
         errors = {}
@@ -180,31 +192,48 @@ def main():
                     outputs[name][idx][k] = p
                     errors[name][idx][k] = perr[k]
 
-                # TODO(philippeller): the below block of code will fail
-
                 # Maybe plot
-                #if args.plot:
-                #    fig_num = i + nx * j
-                #    if fig_num == 0:
-                #        fig = plt.figure(num=1, figsize=( 4*nx, 4*ny))
-                #    subplot_idx = nx*(ny-1-j)+ i + 1
-                #    plt.subplot(ny, nx, subplot_idx)
-                #    #plt.snameter(x_values, y_values, color=plt_colors[name])
-                #    plt.gca().errorbar(x_values, y_values, yerr=y_sigma,
-                #                       fmt='o', color=plt_colors[name],
-                #                       ecolor=plt_colors[name],
-                #                       mec=plt_colors[name])
-                #    # Plot nominal point again in black
-                #    plt.snameter([0.0], [1.0], color='k')
-                #    f_values = fit_fun(x_values, *popt)
-                #    fun_plot, = plt.plot(x_values, f_values,
-                #            color=plt_colors[name])
-                #    plt.ylim(np.min(unp.nominal_values(arrays[name]))*0.9,
-                #             np.max(unp.nominal_values(arrays[name]))*1.1)
-                #    if i > 0:
-                #        plt.setp(plt.gca().get_yticklabels(), visible=False)
-                #    if j > 0:
-                #        plt.setp(plt.gca().get_xticklabels(), visible=False)
+                if args.plot:
+                    i = idx[0]
+                    j = idx[1]
+                    k = idx[2]
+                    plt_colors = ['r', 'b', 'g', 'magenta']
+                    nx = shape_small[0]
+                    ny = shape_small[1]
+                    fig_num = i + nx * j
+                    fig = plt.figure(num=k, figsize=( 4*nx, 4*ny))
+                    subplot_idx = nx*(ny-1-j)+ i + 1
+                    plt.subplot(ny, nx, subplot_idx)
+                    plt.title("CZ:[%.2f, %.2f] E:[%.1f, %.1f]"% (czbin_edges[j], czbin_edges[j+1], ebin_edges[i], ebin_edges[i+1]))
+                    #plt.snameter(x_values, y_values, color=plt_colors[name])
+                    plt.gca().errorbar(x_values, y_values, yerr=y_sigma,
+                                       fmt='o',
+                                       color=plt_colors[k],
+                                       ecolor=plt_colors[k],
+                                       mec=plt_colors[k])
+                    # Plot nominal point again in black
+                    #plt.snameter([0.0], [1.0], color='k')
+                    plt.plot([0.0], [1.0], color='k')
+                    final_popt = copy.deepcopy(popt)
+                    if smooth == 'gauss':
+                        for popt_idx, popt_val in enumerate(popt):
+                            final_popt[popt_idx] = gaussian_filter(popt_val, sigma=1)
+                    if smooth == 'gauss_pid':
+                        #TODO#
+                        print "To do"
+                    f_values = fit_fun(x_values, *final_popt)
+                    fun_plot, = plt.plot(x_values, f_values, plt_colors[k])
+                    dx = max(x_values) - min(x_values)
+                    plt.xlim(min(x_values)-0.05*dx, max(x_values)+0.05*dx)
+                    plt.ylim(np.min(unp.nominal_values(arrays[name]))*0.9,
+                             np.max(unp.nominal_values(arrays[name]))*1.1)
+                    if i > 0:
+                        plt.setp(plt.gca().get_yticklabels(), visible=False)
+                    if j > 0:
+                        plt.setp(plt.gca().get_xticklabels(), visible=False)
+                    if(fig_num == nx * ny-1):
+                        plt.savefig(args.out_dir+smooth+'_'+args.tag+'fit_plot_'+sys+'_pid_bin_'+str(k)+'.pdf')
+                        plt.clf()
 
         if smooth == 'gauss':
             for name in map_names:
