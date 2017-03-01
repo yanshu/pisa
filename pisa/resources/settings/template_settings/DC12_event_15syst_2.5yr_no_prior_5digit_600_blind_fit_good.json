@@ -302,7 +302,7 @@
         0.007
       ],
       "scale": 100.0,
-      "value": -0.00237
+      "value": -0.002374
     },
     "deltam31_nh": {
       "fixed": false,
@@ -867,7 +867,7 @@
         0.6283185307179586
       ],
       "scale": 1.0,
-      "value": 0.5839958715755919
+      "value": 0.5843362335677015
     },
     "theta13": {
       "fixed": false,
@@ -881,7 +881,7 @@
         0.158824961931484
       ],
       "scale": 1.0,
-      "value": 0.14819001778459273
+      "value": 0.14835298641951802
     },
     "theta23_ih": {
       "fixed": false,
@@ -905,7 +905,7 @@
         1.0
       ],
       "scale": 1.0,
-      "value": 0.7373241279447564
+      "value": 0.7382742735936014
     },
       "GENSYS_files" : {
 	  "value" : "aeff/relative-crosssections/genie-weigthed-crosssections.json",
