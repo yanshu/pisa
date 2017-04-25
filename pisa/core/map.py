@@ -399,6 +399,7 @@ class Map(object):
         comparisons : OrderedDict containing the following key/value pairs:
           * 'diff' : Map, `self - ref`
           * 'fractdiff' : Map, `(self - ref) / ref`
+          * 'asymmetry' : Map, `(self - ref) / sqrt(ref)`
           * 'max_abs_diff' : float, `max(abs(diff))`
           * 'max_abs_fractdiff' : float, `max(abs(fractdiff))`
           * 'nanmatch' : bool, whether nan elements match
@@ -408,8 +409,10 @@ class Map(object):
         assert isinstance(ref, Map)
         assert ref.binning == self.binning
         diff = self - ref
+        sqrt_ref = ref.sqrt()
         with np.errstate(divide='ignore', invalid='ignore'):
             fractdiff = diff / ref
+            asymmetry = diff / sqrt_ref
 
         max_abs_fractdiff = np.nanmax(np.abs(fractdiff.nominal_values))
 
@@ -445,6 +448,7 @@ class Map(object):
         comparisons = OrderedDict([
             ('diff', diff),
             ('fractdiff', fractdiff),
+            ('asymmetry', asymmetry),
             ('max_abs_fractdiff', max_abs_fractdiff),
             ('max_abs_diff', max_abs_diff),
             ('nanmatch', nanmatch),
@@ -744,6 +748,27 @@ class Map(object):
                 )
                 hist_vals[nan_at] = np.nan
 
+                error_vals = np.empty_like(orig_hist, dtype=np.float64)
+                error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
+                error_vals[nan_at] = np.nan
+            return {'hist': unp.uarray(hist_vals, error_vals)}
+
+        elif method == 'gauss':
+            random_state = get_random_state(random_state, jumpahead=jumpahead)
+            with np.errstate(invalid='ignore'):
+                orig_hist = self.nominal_values
+                sigma = self.std_devs
+                #print "orig_hist = ", orig_hist
+                #sigma = np.sqrt(orig_hist) 
+                #print "simga = ", self.std_devs
+                #print "sqrt = ", np.sqrt(orig_hist)
+                nan_at = np.isnan(orig_hist)
+                valid_mask = ~nan_at
+                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals[valid_mask] = norm.rvs(
+                    loc=orig_hist[valid_mask], scale=sigma[valid_mask]
+                )
+                hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 error_vals[nan_at] = np.nan
