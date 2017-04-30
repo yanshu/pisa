@@ -63,6 +63,16 @@ class data(Stage):
             debug_mode=debug_mode
         )
 
+        # TODO: convert units using e.g. `comp_units` in stages/reco/hist.py
+        self.bin_names = self.output_binning.names
+        self.bin_edges = []
+        for name in self.bin_names:
+            if 'energy' in name:
+                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
+            else:
+                bin_edges = self.output_binning[name].bin_edges.magnitude
+            self.bin_edges.append(bin_edges)
+
     def _compute_nominal_outputs(self):
         """load the evnts from file, perform sanity checks and histogram them
         (into final MapSet)
@@ -74,15 +84,6 @@ class data(Stage):
         bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
 
         self.bin_names = self.output_binning.names
-
-        # TODO: convert units using e.g. `comp_units` in stages/reco/hist.py
-        self.bin_edges = []
-        for name in self.bin_names:
-            if 'energy' in  name:
-                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
-            else:
-                bin_edges = self.output_binning[name].bin_edges.magnitude
-            self.bin_edges.append(bin_edges)
 
         # get data with cuts defined as 'analysis' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
@@ -105,7 +106,7 @@ class data(Stage):
         return self.template
 
     def get_fields(self, fields, cuts='analysis', run_setting_file='events/mc_sim_run_settings.json',
-                        data_proc_file='events/data_proc_params.json'):
+                        data_proc_file='events/data_proc_params.json', no_reco=False):
         """ Return data events' fields
         
         Paramaters
@@ -134,19 +135,22 @@ class data(Stage):
         # get data after cuts
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
         # apply bdt_score cut if needed 
-        if cut_data.has_key('dunkman_L5'):
-            bdt_score = cut_data['dunkman_L5']
-            if bdt_cut is not None:
-                all_cuts = bdt_score>=bdt_cut
-                logging.info(
-                    "Cut2, removing events with bdt_score < %s i.e. only keep bdt > %s"
-                    %(bdt_cut, bdt_cut)
-                )
+        if no_reco==False:
+            if cut_data.has_key('dunkman_L5'):
+                bdt_score = cut_data['dunkman_L5']
+                if bdt_cut is not None:
+                    all_cuts = bdt_score>=bdt_cut
+                    logging.info(
+                        "Cut2, removing events with bdt_score < %s i.e. only keep bdt > %s"
+                        %(bdt_cut, bdt_cut)
+                    )
+            else:
+                all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
+            for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
+                bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
+                all_cuts = np.logical_and(all_cuts, bin_cut)
         else:
             all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
-        for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
-            bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
-            all_cuts = np.logical_and(all_cuts, bin_cut)
         return_data = {} 
         for key in fields:
             return_data[key] = cut_data[key][all_cuts]
