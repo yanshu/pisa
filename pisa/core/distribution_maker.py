@@ -109,6 +109,61 @@ class DistributionMaker(object):
             outputs = MapSet(outputs)
         return outputs
 
+    def get_low_level_quantities(self, lower_level_variables, no_reco=False, apply_sys_to_mc=True, return_stages=['mc','icc']):
+        # Note: only works with mc, icc and/or data stages
+        print "apply_sys_to_mc ", apply_sys_to_mc
+        pipelines = self._pipelines
+        mc_stage = None
+        icc_stage = None
+        data_stage = None
+        sys_stage = None
+        for i in range(0, len(pipelines)):
+            pipe = pipelines[i]
+            print "pipe stages = ", pipe.stage_names
+            if 'mc' in pipelines[i].stage_names:
+                mc_stage = pipelines[i]['mc']
+            if 'discr_sys' in pipelines[i].stage_names:
+                sys_stage = pipelines[i]['discr_sys']
+            if 'data' in pipelines[i].stage_names:
+                if pipelines[i]['data'].service_name == 'icc':
+                    icc_stage = pipelines[i]['data'] 
+                if pipelines[i]['data'].service_name == 'data':
+                    data_stage = pipelines[i]['data'] 
+
+        # params for icc 
+        if icc_stage != None and 'icc' in return_stages:
+            icc_lowlevel_params = icc_stage.get_fields(fields=lower_level_variables, icc_file_name = icc_stage.params.icc_bg_file.value, no_reco=no_reco)
+        else:
+            icc_lowlevel_params = None
+
+        # params for data
+        if data_stage != None and 'data' in return_stages:
+            data_lowlevel_params = data_stage.get_fields(fields=lower_level_variables, no_reco=no_reco)
+        else:
+            data_lowlevel_params = None
+
+        # params for mc 
+        if mc_stage != None and 'mc' in return_stages:
+            mc_lowlevel_params = mc_stage.get_fields(fields=lower_level_variables, no_reco=no_reco)
+            if sys_stage != None and apply_sys_to_mc:
+                transforms = sys_stage.get_transforms()
+                transform = transforms[0]
+                transform_array = transform.xform_array
+                print "shape transform_array = ", np.shape(transform_array)
+                for flav in mc_lowlevel_params.keys():
+                    weight = mc_lowlevel_params[flav]['weight']
+                    bin_idx = []
+                    for bin_names, bin_edges in zip(transform.input_binning.names, transform.input_binning.bin_edges):
+                        digitized_idx = np.digitize(mc_lowlevel_params[flav][bin_names], bin_edges)
+                        # get the index starting from 0
+                        digitized_idx -= 1
+                        bin_idx.append(digitized_idx)
+                    transform_in_bin = np.array([transform_array[i][j][k] for i,j,k in zip(bin_idx[0], bin_idx[1], bin_idx[2])])
+                    mc_lowlevel_params[flav]['weight']*= transform_in_bin
+        else:
+            mc_lowlevel_params = None
+        return mc_lowlevel_params, icc_lowlevel_params, data_lowlevel_params
+
     def update_params(self, params):
         [pipeline.update_params(params) for pipeline in self]
 
