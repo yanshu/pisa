@@ -197,7 +197,7 @@ class gpu(Stage):
             assert (params.kde.value == False), 'The hist_epid_scale can only be used with histograms, not KDEs!'
 
 
-    def _compute_nominal_outputs(self):
+    def _compute_nominal_outputs(self, no_reco=False):
         # Store hashes for caching that is done inside the stage
         self.osc_hash = None
         self.flux_hash = None
@@ -257,9 +257,9 @@ class gpu(Stage):
             self.histogrammer = self.GPUHist(*bin_edges)
 
         # load events
-        self.load_events()
+        self.load_events(no_reco)
 
-    def load_events(self):
+    def load_events(self, no_reco=False):
         # --- Load events
         # open Events file
         evts = Events(self.params.events_file.value)
@@ -322,25 +322,26 @@ class gpu(Stage):
         kFlavs = [0, 1, 2] * 4
         kNuBars = [1] *6 + [-1] * 6
 
-        for flav, kFlav, kNuBar in zip(self.flavs, kFlavs, kNuBars):
-            cuts = []
-            if self.params.cut_outer.value:
-                for name, edge in zip(self.bin_names, self.bin_edges):
-                    cuts.append(evts[flav][name] >= edge[0])
-                    cuts.append(evts[flav][name] <= edge[-1])
-            if evts[flav].has_key('dunkman_L5'):
-                if bdt_cut is not None:
-                    # only keep events using bdt_score > bdt_cut
-                    l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
-                    cuts.append(l5_bdt_score >= bdt_cut)
-            if len(cuts) > 0:
-                cut = np.all(cuts, axis=0)
-                for var in variables:
-                    try:
-                        #if cut is not None:
-                        evts[flav][var] = evts[flav][var][cut]
-                    except KeyError:
-                        pass
+        if no_reco==False:
+            for flav, kFlav, kNuBar in zip(self.flavs, kFlavs, kNuBars):
+                cuts = []
+                if self.params.cut_outer.value:
+                    for name, edge in zip(self.bin_names, self.bin_edges):
+                        cuts.append(evts[flav][name] >= edge[0])
+                        cuts.append(evts[flav][name] <= edge[-1])
+                if evts[flav].has_key('dunkman_L5'):
+                    if bdt_cut is not None:
+                        # only keep events using bdt_score > bdt_cut
+                        l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
+                        cuts.append(l5_bdt_score >= bdt_cut)
+                if len(cuts) > 0:
+                    cut = np.all(cuts, axis=0)
+                    for var in variables:
+                        try:
+                            #if cut is not None:
+                            evts[flav][var] = evts[flav][var][cut]
+                        except KeyError:
+                            pass
 
         logging.debug('read in events and copy to GPU')
         start_t = time.time()
@@ -482,36 +483,40 @@ class gpu(Stage):
             self.events_dict[flav]['host'][var]
         )
 
-    def get_fields(self, fields):
+    def get_fields(self, fields, no_reco=False):
         ''' Copy back a dictionary with event by event information'''
+        self._compute_nominal_outputs(no_reco)
+        self._compute_outputs(no_reco)
         return_events = {}
         variables = ['weight', 'sumw2', 'reco_energy', 'reco_coszen', 'pid'] + fields
 
-        self.bin_names = self.output_binning.names
         # TODO: convert units using e.g. `comp_units` in stages/reco/hist.py
-        self.bin_edges = []
-        for name in self.bin_names:
-            if 'energy' in name:
-                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
-            else:
-                bin_edges = self.output_binning[name].bin_edges.magnitude
-            self.bin_edges.append(bin_edges)
+        #self.bin_names = self.output_binning.names
+        #self.bin_edges = []
+        #for name in self.bin_names:
+        #    if 'energy' in name:
+        #        bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
+        #    else:
+        #        bin_edges = self.output_binning[name].bin_edges.magnitude
+        #    self.bin_edges.append(bin_edges)
         evts = Events(self.params.events_file.value)
         if self.params.bdt_cut.value == None:
             bdt_cut = None
         else:
             bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
         for flav in self.flavs:
-            if evts[flav].has_key('dunkman_L5'):
-                l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
-                if bdt_cut is not None:
-                    cuts = l5_bdt_score >= bdt_cut
+            if no_reco:
+                cuts = np.ones(len(evts[flav]['true_energy']), dtype=bool)
             else:
-                evts[flav].keys()
-                cuts = np.ones(len(evts[flav]['reco_energy']), dtype=bool)
-            for name, edge in zip(self.bin_names, self.bin_edges):
-                bin_cut = np.logical_and(evts[flav][name]<= edge[-1], evts[flav][name]>= edge[0])
-                cuts = np.logical_and(cuts,bin_cut)
+                if evts[flav].has_key('dunkman_L5'):
+                    l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
+                    if bdt_cut is not None:
+                        cuts = l5_bdt_score >= bdt_cut
+                else:
+                    cuts = np.ones(len(evts[flav]['true_energy']), dtype=bool)
+                for name, edge in zip(self.bin_names, self.bin_edges):
+                    bin_cut = np.logical_and(evts[flav][name]<= edge[-1], evts[flav][name]>= edge[0])
+                    cuts = np.logical_and(cuts,bin_cut)
             return_events[flav] = {}
             for var in variables:
                 if var in self.events_dict[flav]['device'].keys():
@@ -521,8 +526,6 @@ class gpu(Stage):
                     return_events[flav][var] = buff
                 else:
                     return_events[flav][var] = evts[flav][var][cuts]
-            for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
-                assert(np.all(np.logical_and(return_events[flav][bin_name]<= bin_edge[-1], return_events[flav][bin_name]>= bin_edge[0])))
         return return_events
 
     def get_device_arrays(self, variables=['weight']):
@@ -544,7 +547,7 @@ class gpu(Stage):
         cuda.memcpy_dtoh(out, d_out)
         return out[0]
 
-    def _compute_outputs(self, inputs=None):
+    def _compute_outputs(self, inputs=None, no_reco=False):
         logging.debug('retreive weighted histo')
 
         # Get hash to decide whether expensive stuff needs to be recalculated
@@ -656,6 +659,9 @@ class gpu(Stage):
         end_t = time.time()
         logging.debug('GPU calc done in %.4f ms for %s events'
                       %(((end_t - start_t) * 1000), tot))
+        if no_reco:
+            self.get_device_arrays(variables=['weight', 'sumw2'])
+            return
 
         if self.params.kde.value:
             start_t = time.time()
