@@ -79,6 +79,16 @@ class icc(Stage):
             from pisa.utils.kde_hist import kde_histogramdd
             self.kde_histogramdd = kde_histogramdd
 
+        self.bin_names = self.output_binning.names
+        self.bin_edges = []
+        for name in self.bin_names:
+            if 'energy' in  name:
+                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
+            else:
+                bin_edges = self.output_binning[name].bin_edges.magnitude
+            self.bin_edges.append(bin_edges)
+
+
     def _compute_nominal_outputs(self):
         '''
         load events, perform sanity check and put them into histograms,
@@ -92,15 +102,6 @@ class icc(Stage):
         else:
             alt_icc_bg_file = None
         bdt_cut = self.params.bdt_cut.m_as('dimensionless')
-
-        self.bin_names = self.output_binning.names
-        self.bin_edges = []
-        for name in self.bin_names:
-            if 'energy' in  name:
-                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
-            else:
-                bin_edges = self.output_binning[name].bin_edges.magnitude
-            self.bin_edges.append(bin_edges)
 
         # get data with cuts defined as 'icc_def2' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
@@ -193,7 +194,7 @@ class icc(Stage):
         return MapSet(maps, name='icc')
 
     def get_fields(self, fields, icc_file_name, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
-                        data_proc_file='events/data_proc_params.json'):
+                        data_proc_file='events/data_proc_params.json', no_reco=False):
         """ Return icc events' fields with the chosen icc background definition.
         
         Paramaters
@@ -206,6 +207,8 @@ class icc(Stage):
             definition for icc, for example: 'icc_def1', 'icc_def2', 'icc_def3', see their defs in data_proc_params.json
 
         """
+        #print "icc_file_name ", icc_file_name
+        #print "no_reco = ", no_reco
         proc_version = self.params.proc_ver.value
         bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
         data_proc_params = DPP.DataProcParams(
@@ -228,15 +231,18 @@ class icc(Stage):
         scale = self.params.atm_muon_scale.value.m_as('dimensionless')
         scale *= self.params.livetime.value.m_as('common_year')
         # apply bdt_score cut if needed 
-        if cut_data.has_key('dunkman_L5'):
-            if bdt_cut is not None:
-                bdt_score = cut_data['dunkman_L5']
-                all_cuts = bdt_score>=bdt_cut
+        if no_reco==False:
+            if cut_data.has_key('dunkman_L5'):
+                if bdt_cut is not None:
+                    bdt_score = cut_data['dunkman_L5']
+                    all_cuts = bdt_score>=bdt_cut
+            else:
+                all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
+            for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
+                bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
+                all_cuts = np.logical_and(all_cuts, bin_cut)
         else:
             all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
-        for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
-            bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
-            all_cuts = np.logical_and(all_cuts, bin_cut)
         return_data = {}
         for key in fields:
             return_data[key] = cut_data[key][all_cuts]
