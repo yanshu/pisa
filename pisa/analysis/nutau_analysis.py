@@ -9,9 +9,11 @@ from scipy.stats import chisqprob
 import time
 from uncertainties import unumpy as unp
 import random
+import os
 
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.fileio import from_file
+from pisa.utils.plotter import Plotter
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa import ureg, Q_
@@ -92,6 +94,8 @@ class Analysis(object):
             self.pseudodata = self.data.fluctuate('poisson', random_state=data_random_state)
         elif self.pseudodata_method == 'gauss+poisson':
             self.pseudodata = self.data.fluctuate('gauss+poisson', random_state=data_random_state)
+        elif self.pseudodata_method == 'gauss':
+            self.pseudodata = self.data.fluctuate('gauss', random_state=data_random_state)
         else:
             raise Exception('unknown method %s'%method)
         self.N_data = sum([unp.nominal_values(map.hist).sum() for map in self.pseudodata])
@@ -227,7 +231,6 @@ class Analysis(object):
             self.pseudodata.metric_total(expected_values=template, metric=self.metric)
             + template_maker.params.priors_penalty(metric=self.metric)
         )
-
         mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
             + template_maker.params.priors_penalty(metric='mod_chi2'))
         chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='chi2')
@@ -439,8 +442,10 @@ if __name__ == '__main__':
                         help='''fix parameter''')
     parser.add_argument('-spf', '--fix-param-scan', type=str, default='',
                         help='''fix parameter for scan only in hypo''')
+    parser.add_argument('-spd', '--set-param-data', type=str, default='',
+                        help='''fix parameter only for data''')
     parser.add_argument('-pd', '--pseudo-data', type=str, default='poisson',
-                        choices=['poisson', 'gauss+poisson', 'asimov', 'data'], 
+                        choices=['poisson', 'gauss+poisson', 'asimov', 'data', 'gauss'], 
                         help='''Mode for pseudo data sampling''')
     parser.add_argument('--var', type=str, default='nutau_norm',
                         help='''param to be profiled''')
@@ -456,70 +461,132 @@ if __name__ == '__main__':
     parser.add_argument('-f','--function', type=str,
                         choices=['profile','fit'], default='profile',
                         help='''what shpuld be executed''')
+    parser.add_argument('--save-ll',action='store_true',default=False,
+                        help='''Save lower level quantities (with weights from best fit) to hdf5 file''')
+    parser.add_argument('--logy',action='store_true',default=False,
+                        help='''Use logy for plots''')
+    parser.add_argument('--save-ll-outdir', type=str, default='output_plots/',
+                        help='''Directory to save lower level quantities (with weights from best fit) plots.''')
     args = parser.parse_args()
 
     set_verbosity(args.v)
 
-    if args.blind:
-        assert(args.function == 'fit')
-        assert(args.pseudo_data == 'data')
-
-    if args.data_settings is None:
-        data_settings = args.template_settings
+    if os.path.isfile(args.outfile):
+        print "Output file ", args.outfile, " already existed, delete or remove it."
     else:
-        data_settings = args.data_settings
+        if args.blind:
+            assert(args.function == 'fit')
+            assert(args.pseudo_data == 'data')
 
-    data_maker = DistributionMaker(data_settings)
-    template_maker = DistributionMaker(args.template_settings)
+        if args.data_settings is None:
+            data_settings = args.template_settings
+        else:
+            data_settings = args.data_settings
 
-    if not args.fix_param == '':
-        template_maker.params.fix(args.fix_param)
-    if not args.set_param == '':
-        p_name,value = args.set_param.split("=")
-        print "p_name,value= ", p_name, " ", value
-        value = parse_quantity(value)
-        value = value.n * value.units
-        test = template_maker.params[p_name]
-        test.value = value
-        template_maker.update_params(test)
-        if p_name in data_maker.params.names:
+        data_maker = DistributionMaker(data_settings)
+        template_maker = DistributionMaker(args.template_settings)
+
+        if not args.fix_param == '':
+            template_maker.params.fix(args.fix_param)
+        if not args.set_param == '':
+            p_name,value = args.set_param.split("=")
+            print "set param ", p_name, " to ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            test = template_maker.params[p_name]
+            test.value = value
+            template_maker.update_params(test)
+            if p_name in data_maker.params.names:
+                test = data_maker.params[p_name]
+                test.value = value
+                data_maker.update_params(test)
+        if not args.set_param_data == '':
+            p_name,value = args.set_param_data.split("=")
+            print "set param for data template", p_name, " ", value
+            #value = parse_quantity(value)
+            #value = value.n * value.units
             test = data_maker.params[p_name]
             test.value = value
             data_maker.update_params(test)
-    if not args.fix_param_scan == '':
-        p_name,value = args.fix_param_scan.split("=")
-        print "p_name,value= ", p_name, " ", value
-        value = parse_quantity(value)
-        value = value.n * value.units
-        test = template_maker.params[p_name]
-        test.value = value
-        template_maker.update_params(test)
-        template_maker.params.fix(p_name)
+            data_maker.params.fix(p_name)
+        if not args.fix_param_scan == '':
+            p_name,value = args.fix_param_scan.split("=")
+            print "fix param scan", p_name, " ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            test = template_maker.params[p_name]
+            test.value = value
+            template_maker.update_params(test)
+            template_maker.params.fix(p_name)
 
-    analysis = Analysis(data_maker=data_maker,
-                        template_maker=template_maker,
-                        metric=args.metric,
-                        blind=args.blind)
+        analysis = Analysis(data_maker=data_maker,
+                            template_maker=template_maker,
+                            metric=args.metric,
+                            blind=args.blind)
 
-    analysis.minimizer_settings = from_file(args.minimizer_settings)
-    analysis.pseudodata_method = args.pseudo_data
-    
-    #analysis.randomize_free_params()
-
-    results = []
-
-    for i in range(args.num_trials):
-        logging.info('Running trial %i'%i)
-        np.random.seed()
-        analysis.generate_psudodata()
+        analysis.minimizer_settings = from_file(args.minimizer_settings)
+        analysis.pseudodata_method = args.pseudo_data
         
-        if args.function == 'profile':
-            if args.mode == 'H0':
-                results.append(analysis.profile(args.var,[0.]*ureg.dimensionless))
-            elif args.mode == 'scan':
-                results.append(analysis.profile(args.var,eval(args.range)))
-        elif args.function == 'fit':
-            results.append(analysis.find_best_fit())
+        #analysis.randomize_free_params()
 
-    to_file(results, args.outfile)
-    logging.info('Done.')
+        results = []
+
+        for i in range(args.num_trials):
+            logging.info('Running trial %i'%i)
+            np.random.seed()
+            analysis.generate_psudodata()
+            
+            if args.function == 'profile':
+                if args.mode == 'H0':
+                    results.append(analysis.profile(args.var,[0.]*ureg.dimensionless))
+                elif args.mode == 'scan':
+                    results.append(analysis.profile(args.var,eval(args.range)))
+            elif args.function == 'fit':
+                results.append(analysis.find_best_fit())
+
+            if args.save_ll:
+                bdt_cut = template_maker.params['bdt_cut'].nominal_value.m_as('dimensionless')
+                print "template_maker.params['bdt_cut'] = ", template_maker.params['bdt_cut']
+                #print "data_maker.params['bdt_cut'] = ", data_maker.params['bdt_cut']
+                print "template_maker.params['livetime'] = ", template_maker.params['livetime']
+                my_plotter = Plotter(stamp='nutau', outdir=args.save_ll_outdir, fmt='pdf', log=False, annotate=True, symmetric=False, ratio=True)
+                dir_name, file_name = os.path.split(args.outfile)
+                file_name = file_name.split('.json')[0]+'_trial_%s'%i
+                print "file_name = ", file_name
+
+                lower_level_variables = ['dunkman_L5','C2QR3', 'C2QR6', 'CausalVetoHits', 'CausalVetoPE', 'DCFiducialPE', 'ICVetoPE', 'NAbove200PE',
+                        'NchCleaned', 'NoiseEngine', 'QR3', 'STW9000_DTW300Hits', 'STW9000_DTW300PE', 'num_hit_doms', 'linefit_speed',
+                        'cog_q1_rho', 'cog_q1_z', 'cog_sigma_time', 'cog_sigma_z', 'dcc_veto_charge', 'first_hlc_rho', 'first_hlc_z', 'interval',
+                        'pid', 'rt_fid_charge', 'santa_direct_charge', 'santa_direct_doms', 'separation', 'total_charge', 'vich_charge']
+                #lower_level_variables = ['dunkman_L5','cog_q1_z', 'first_hlc_z']
+                #mc_lowlevel_params, icc_lowlevel_params,_ = template_maker.get_low_level_quantities(lower_level_variables, apply_sys_to_mc=True, return_stages=['mc', 'icc'])
+                mc_lowlevel_params, icc_lowlevel_params,_ = template_maker.get_low_level_quantities(lower_level_variables, apply_sys_to_mc=False, return_stages=['mc', 'icc'])
+                #data_lowlevel_params = data_maker.pipelines[0].stages[0].get_fields(fields=lower_level_variables)
+                _,_,data_lowlevel_params = data_maker.get_low_level_quantities(lower_level_variables, return_stages=['data'])
+                #not get_low_level_quantities(self, lower_level_variables, no_reco=False, apply_sys_to_mc=False, return_stages=['mc','icc','data'])
+                #bs_lowlevel_params = data_maker.pipelines[1].stages[0].get_fields(fields=lower_level_variables)
+                #data_lowlevel_params_all = [data_lowlevel_params, bs_lowlevel_params]
+                to_file(mc_lowlevel_params, dir_name + '/'+file_name+'_mc.hdf5')
+                to_file(data_lowlevel_params, dir_name + '/'+file_name+'_data.hdf5')
+                if icc_lowlevel_params!=None:
+                    to_file(icc_lowlevel_params, dir_name + '/'+file_name+'_icc.hdf5')
+
+                if args.pseudo_data == 'data':
+                    data_type='real'
+                else:
+                    data_type='pseudo'
+
+                ratio_dict = {}
+                for param in lower_level_variables:
+                    if param not in mc_lowlevel_params['nue_cc'].keys():
+                        continue
+                    if param in ['cog_q1_z', 'first_hlc_z', 'dunkman_L5']:
+                        save_ratio= True
+                        ratio_dict[param] = my_plotter.plot_low_level_quantities(mc_lowlevel_params, icc_lowlevel_params, data_lowlevel_params, param, fig_name='%s'%(file_name), outdir=args.save_ll_outdir,title='best fit / data',logy=args.logy, save_ratio=save_ratio, data_type=data_type)
+                    else:
+                        save_ratio= False
+                        my_plotter.plot_low_level_quantities(mc_lowlevel_params, icc_lowlevel_params, data_lowlevel_params, param, fig_name='%s'%(file_name), outdir=args.save_ll_outdir,title='best fit / data',logy=args.logy, save_ratio=save_ratio, data_type=data_type)
+                to_file(ratio_dict, args.save_ll_outdir+'/'+file_name+'_bestfit_to_data_ratios.json')
+
+        to_file(results, args.outfile)
+        logging.info('Done.')
