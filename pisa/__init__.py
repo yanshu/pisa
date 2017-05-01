@@ -25,7 +25,8 @@ Q_ = ureg.Quantity
 
 
 # Default value for FTYPE
-FTYPE = np.float64
+#FTYPE = np.float64
+FTYPE = np.float32
 """Global floating-point data type. C, CUDA, and Numba datatype definitions are
 derived from this"""
 
