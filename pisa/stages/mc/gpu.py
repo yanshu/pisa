@@ -23,6 +23,8 @@ from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 from pisa.utils.fileio import from_file
 from copy import deepcopy
+import pisa.utils.mcSimRunSettings as MCSRS
+import pisa.utils.dataProcParams as DPP
 
 
 __all__ = ['gpu']
@@ -158,6 +160,7 @@ class gpu(Stage):
             'hist_e_scale',
             'hist_pid_scale',
             'bdt_cut',
+            'proc_ver',
             'kde',
             'cut_outer',
         )
@@ -318,6 +321,8 @@ class gpu(Stage):
             'nutaubar_nc'
         ]
 
+        evts = self.cut_extra(evts, self.flavs)
+
         # Corresponding numbers for the flavours defined above, needed bi Prob3
         kFlavs = [0, 1, 2] * 4
         kNuBars = [1] *6 + [-1] * 6
@@ -440,6 +445,19 @@ class gpu(Stage):
         # Apply raw reco sys
         self.apply_reco()
 
+    def cut_extra(self, evts, flavs):
+        proc_version = self.params.proc_ver.value
+        run_setting_file='events/mc_sim_run_settings.json'
+        data_proc_file='events/data_proc_params.json'
+        data_proc_params = DPP.DataProcParams(detector='deepcore', proc_ver=proc_version,
+                data_proc_params=find_resource(data_proc_file))
+        run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector='deepcore')
+        cut_evts=deepcopy(evts)
+        for flav in flavs:
+            keys = evts[flav].keys()
+            cut_evts[flav] = data_proc_params.applyCuts(evts[flav], cuts='extra_cuts', return_fields=keys)
+        return cut_evts
+
     def apply_reco(self):
         """Apply raw reco systematics (to use as inputs to polyfit stage)"""
         for flav in self.flavs:
@@ -500,6 +518,7 @@ class gpu(Stage):
         #        bin_edges = self.output_binning[name].bin_edges.magnitude
         #    self.bin_edges.append(bin_edges)
         evts = Events(self.params.events_file.value)
+        evts = self.cut_extra(evts, self.flavs)
         if self.params.bdt_cut.value == None:
             bdt_cut = None
         else:
