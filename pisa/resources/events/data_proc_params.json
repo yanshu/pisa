@@ -698,6 +698,12 @@
         "134": -16
       },
       "cuts": {
+        "extra_cuts": {
+          "fields": [
+            "first_hlc_z"
+          ],
+          "pass_if": "(first_hlc_z > -280) | ((first_hlc_z < -315) & (first_hlc_z>-380)) | (first_hlc_z<-450)"
+        },
         "analysis": {
           "fields": [
             "dunkman_direct_doms",
