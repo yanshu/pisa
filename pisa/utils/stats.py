@@ -361,10 +361,16 @@ def mod_chi2(actual_values, expected_values):
     # Replace 0's with small positive numbers to avoid inf in log
     np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
             out=expected_values)
+    sigma_actual = unp.std_devs(actual_values).ravel()
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
+    #print "sigma = ", sigma
+    #print "sigma_actual = ", sigma_actual
+    #print "actual_values  ", actual_values
     expected_values = unp.nominal_values(expected_values).ravel()
     m_chi2 = (
-        (actual_values - expected_values)**2 / (sigma**2 + expected_values)
+        #(actual_values - expected_values)**2 / (sigma**2 + expected_values)
+        #(actual_values - expected_values)**2 / (sigma**2)
+        (actual_values - expected_values)**2 / (sigma_actual**2 + sigma**2)
     )
     return np.sum(m_chi2)
