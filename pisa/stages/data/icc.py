@@ -106,12 +106,14 @@ class icc(Stage):
         # get data with cuts defined as 'icc_def2' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
         cut_events = self.get_fields(fields, icc_file_name = icc_bg_file,
-                cuts='icc_def2',
+                #cuts='icc_def2',
+                cuts=['icc_def2','extra_cuts'],
                 run_setting_file='events/mc_sim_run_settings.json',
                 data_proc_file='events/data_proc_params.json')
         if alt_icc_bg_file is not None:
             alt_cut_events = self.get_fields(fields, icc_file_name = alt_icc_bg_file,
-                    cuts='icc_def3',
+                    #cuts='icc_def3',
+                    cuts=['icc_def3','extra_cuts'],
                     run_setting_file='events/mc_sim_run_settings.json',
                     data_proc_file='events/data_proc_params.json')
 
