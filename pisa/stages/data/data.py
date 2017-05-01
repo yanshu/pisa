@@ -87,7 +87,8 @@ class data(Stage):
 
         # get data with cuts defined as 'analysis' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
-        cut_events = self.get_fields(fields, cuts='analysis',
+        #cut_events = self.get_fields(fields, cuts='analysis',
+        cut_events = self.get_fields(fields, cuts=['analysis','extra_cuts'],
                         run_setting_file='events/mc_sim_run_settings.json',
                         data_proc_file='events/data_proc_params.json')
         hist, _ = np.histogramdd(sample = np.array(
