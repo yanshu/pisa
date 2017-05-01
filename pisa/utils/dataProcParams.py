@@ -618,9 +618,18 @@ class DataProcParams(dict):
         # Evaluate cuts, returning a boolean array
         try:
             bool_idx = eval(cut_string)
+            #print "cut_string ", cut_string
         except:
             logging.error('Failed to evaluate `cut_string` "%s"' %cut_string)
             raise
 
         # Return specified (or all) fields, indexed by boolean array
-        return {f:np.array(data[f])[bool_idx] for f in return_fields}
+        return_dict = {}
+        for f in return_fields:
+            if 'splines' in f:
+                return_dict[f]={}
+                for key in data[f].keys():
+                    return_dict[f][key]=data[f][key][bool_idx]
+            else:
+                return_dict[f] = np.array(data[f])[bool_idx]
+        return return_dict
