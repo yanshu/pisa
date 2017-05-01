@@ -28,10 +28,18 @@ else:
 count = 0 
 
 for aFile in dirListing:
+    if not aFile.endswith('hdf5'):
+        continue
     data_file = "%s/%s" % (data_dir, aFile)	
     print "data_file = ", data_file
-    file_name = aFile.split('.')[0]
-    run_num = file_name.split('_')[1]
+    print "aFile ", aFile
+    #file_name = aFile.split('.')[0]
+    #run_num = file_name.split('_')[2]
+
+    file_name = aFile.split('.')[2]
+    run_num = file_name.lstrip('0')
+
+    #run_num = '16600'
     print "run_num = ", run_num
 
     run_num_1 = run_num + '1'
@@ -51,6 +59,7 @@ for aFile in dirListing:
     run = hdf_file['I3EventHeader']['Run']
     true_e = hdf_file['trueNeutrino']['energy']
     for i in range(0,len(true_e)):
+        #print "true_e[i] = ", true_e[i]
         if true_e[i] <= energy_1:
             run[i] = run_num_1
         elif true_e[i] <= energy_2:
@@ -58,4 +67,5 @@ for aFile in dirListing:
         else:
             run[i] = run_num_3 
     hdf_file['I3EventHeader']['Run'] = run
+    print "hdf_file['I3EventHeader']['Run'] = ", hdf_file['I3EventHeader']['Run'] 
     hdf_file.close()
