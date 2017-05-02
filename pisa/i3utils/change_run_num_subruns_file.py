@@ -13,30 +13,24 @@ from optparse import OptionParser
 
 parser = OptionParser()
 
-parser.add_option("-i", dest="data_dir", help="Input data dir.")
+parser.add_option("-i", dest="infile", help="Input file.")
 
 (options, args) = parser.parse_args()
-data_dir = options.data_dir
-print data_dir
+infile = options.infile
+print infile
 
-if not os.path.isdir(options.data_dir):
+if not os.path.exists(options.infile):
     print "The directory you gave does not exist, please try again."
 else:
-    dirListing = os.listdir(options.data_dir)
-    totFileCount = len(dirListing)
-
-count = 0 
-
-for aFile in dirListing:
-    if not aFile.endswith('hdf5'):
-        continue
-    data_file = "%s/%s" % (data_dir, aFile)	
+    if not infile.endswith('hdf5'):
+        print "file not hdf5"
+        pass
+    data_file = os.path.basename(infile)
     print "data_file = ", data_file
-    print "aFile ", aFile
-    #file_name = aFile.split('.')[0]
+    #file_name = data_file.split('.')[0]
     #run_num = file_name.split('_')[2]
 
-    file_name = aFile.split('.')[2]
+    file_name = data_file.split('.')[2]
     run_num = file_name.lstrip('0')
 
     #run_num = '16600'
@@ -55,7 +49,7 @@ for aFile in dirListing:
         energy_1 = 10 
         energy_2 = 30 
 
-    hdf_file = h5py.File(data_file, "r+")
+    hdf_file = h5py.File(infile, "r+")
     run = hdf_file['I3EventHeader']['Run']
     true_e = hdf_file['trueNeutrino']['energy']
     for i in range(0,len(true_e)):
