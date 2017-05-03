@@ -700,9 +700,10 @@
       "cuts": {
         "extra_cuts": {
           "fields": [
-            "first_hlc_z"
+              "santa_direct_doms",
+              "num_hit_doms"
           ],
-          "pass_if": "(first_hlc_z > -280) | ((first_hlc_z < -315) & (first_hlc_z>-380)) | (first_hlc_z<-450)"
+          "pass_if": "(santa_direct_doms / num_hit_doms) > 0.2"
         },
         "analysis": {
           "fields": [
