@@ -650,6 +650,14 @@ class Plotter(object):
 
             if param_to_plot=='first_hlc_rho':
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=200, **kwargs)
+            elif param_to_plot=='santa_direct_doms':
+                mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0, 45),**kwargs)
+            elif param_to_plot=='num_hit_doms':
+                mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0, 90),**kwargs)
+            elif param_to_plot=='separation':
+                mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0, 600),**kwargs)
+            elif param_to_plot=='CausalVetoHits':
+                mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0, 9),**kwargs)
             elif param_to_plot=='pid':
                 x_bins = np.array([ -3, -2.35354689, -1.76935606, -1.33017144, 0.0, 1.0, 1.33017144, 1.76935606, 2.35354689, 3.13062086, 4.16426245,
                     5.53918298, 7.368063, 9.80078696, 13.0367269, 17.34108178, 23.06661171, 30.68254809, 40.81304915, 54.28835233, 72.21281575,
@@ -658,8 +666,9 @@ class Plotter(object):
                 plt.gca().set_xscale('symlog')
             elif param_to_plot=='linefit_speed':
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0,0.5),**kwargs)
-            #elif param_to_plot=='dunkman_L5':
+            elif param_to_plot=='dunkman_L5':
                 #mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(-0.2,0.65),**kwargs)
+                mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0,0.7),**kwargs)
             elif param_to_plot=='cog_q1_z':
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(-475, -174),**kwargs)
             elif param_to_plot in ['DCFiducialPE', 'rt_fid_charge', 'santa_direct_charge', 'STW9000_DTW300PE', 'total_charge']:
