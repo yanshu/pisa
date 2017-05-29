@@ -380,7 +380,7 @@ class DataProcParams(dict):
                 if key_name  in h5.keys():
                     data[name] = self.retrieveNodeData(h5, path)
                 else:
-                    print key, " can't be written, because ", key_name, " not in hdf5 file"
+                    print name, " can't be written, because ", key_name, " not in hdf5 file"
         finally:
             if myfile and isinstance(h5, h5py.File):
                 try:
