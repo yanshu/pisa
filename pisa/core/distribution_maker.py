@@ -15,12 +15,12 @@ import os
 
 import numpy as np
 
-from pisa import ureg
+from pisa import ureg, Q_
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expandPath, mkdir, to_file, from_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
@@ -166,6 +166,17 @@ class DistributionMaker(object):
 
     def update_params(self, params):
         [pipeline.update_params(params) for pipeline in self]
+
+    def update(self, fitfile):
+        params = from_file(fitfile)
+        for key,val in params[0].items():
+            if key in self.params.names:
+                p = self.params[key]
+                if len(val[1]) == 0:
+                    p.value = Q_(val[0])
+                else:
+                    p.value = Q_(val[0],'%s^%s'%(val[1][0][0],val[1][0][1]))
+                self.update_params(p)
 
     def select_params(self, selections, error_on_missing=True):
         successes = 0
