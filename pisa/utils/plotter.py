@@ -648,6 +648,12 @@ class Plotter(object):
                 mc_weight_all = np.append(mc_weight_all, weight)
                 mc_sumw2_all = np.append(mc_sumw2_all, sumw2)
 
+            # get rid of nans
+            cut=np.logical_not(np.isnan(mc_param_all))
+            mc_param_all = mc_param_all[cut]
+            mc_weight_all= mc_weight_all[cut]
+            mc_sumw2_all = mc_sumw2_all[cut]
+
             if param_to_plot=='first_hlc_rho':
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=200, **kwargs)
             elif param_to_plot=='santa_direct_doms':
@@ -676,6 +682,10 @@ class Plotter(object):
             elif param_to_plot=='ICVetoPE':
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, range=(0,5),**kwargs)
             else:
+                #print "aram = ", param_to_plot
+                #print "max mc_param_all ", max(mc_param_all)
+                #print "min mc_param_all ", min(mc_param_all)
+                #print "\n"
                 mc_y, x_edges = np.histogram(mc_param_all, weights=mc_weight_all, bins=nbins, **kwargs)
             mc_sumw2, x_edges = np.histogram(mc_param_all, weights=mc_sumw2_all, bins=x_edges, **kwargs)
         else:
