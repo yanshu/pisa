@@ -409,6 +409,7 @@ class DataProcParams(dict):
             ]
         if file_type == 'mc':
             data['true_coszen'] = np.cos(data['true_zenith'])
+            # if no reco information, comment below 3 lines
             data['reco_coszen'] = np.cos(data['reco_zenith'])
         if file_type == 'data':
             data['reco_coszen'] = np.cos(data['reco_zenith'])
