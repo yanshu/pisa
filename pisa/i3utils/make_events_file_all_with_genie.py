@@ -29,7 +29,6 @@ CMSQ_TO_MSQ = 1.0e-4
 # Note that *_coszen is generated from *_zenith
 EXTRACT_FIELDS = (
     'genie_weight',
-    'reco_trck_zenith',
     'run',
     'event',
     'true_x',
@@ -41,6 +40,7 @@ EXTRACT_FIELDS = (
     'reco_x',
     'reco_y',
     'reco_z',
+    'reco_trck_zenith',
     'reco_azimuth',
     'reco_trck_len',
     'reco_trck_azimuth',
@@ -92,12 +92,11 @@ EXTRACT_FIELDS = (
     'dcc_veto_charge', 'vich_charge', 'cog_q1_rho', 'cog_q1_z', 'first_hlc_rho', 'first_hlc_z', 'interval', 'C2QR3', 'QR3', 'linefit_speed',
     'linefit_zenith', 'separation',   'total_charge', 'santa_direct_charge', 'mn_start_contained', 'mn_stop_contained', 'x_prime', 'y_prime',
     'z_prime', 't_prime', 'r_prime', 'rho_prime', 'theta_prime', 'phi_prime', 'stop_x_prime', 'stop_y_prime', 'stop_z_prime', 'stop_r_prime',
-    'stop_rho_prime', 'stop_theta_prime', 'stop_phi_prime', 'santa_direct_doms', 'spe11_zenith'
+    'stop_rho_prime', 'stop_theta_prime', 'stop_phi_prime', 'santa_direct_doms', 'spe11_zenith', 'corridor_doms_over_threshold'
 )
 
 # Default fields to output to destination PISA events HDF5 file
 OUTPUT_FIELDS = (
-    'reco_trck_zenith',
     'run',
     'event',
     'true_x',
@@ -109,6 +108,7 @@ OUTPUT_FIELDS = (
     'reco_x',
     'reco_y',
     'reco_z',
+    'reco_trck_zenith',
     'reco_azimuth',
     'reco_trck_len',
     'reco_trck_azimuth',
@@ -162,7 +162,7 @@ OUTPUT_FIELDS = (
     'dcc_veto_charge', 'vich_charge', 'cog_q1_rho', 'cog_q1_z', 'first_hlc_rho', 'first_hlc_z', 'interval', 'C2QR3', 'QR3', 'linefit_speed',
     'linefit_zenith', 'separation',   'total_charge', 'santa_direct_charge', 'mn_start_contained', 'mn_stop_contained', 'x_prime', 'y_prime',
     'z_prime', 't_prime', 'r_prime', 'rho_prime', 'theta_prime', 'phi_prime', 'stop_x_prime', 'stop_y_prime', 'stop_z_prime', 'stop_r_prime',
-    'stop_rho_prime', 'stop_theta_prime', 'stop_phi_prime', 'santa_direct_doms', 'spe11_zenith'
+    'stop_rho_prime', 'stop_theta_prime', 'stop_phi_prime', 'santa_direct_doms', 'spe11_zenith', 'corridor_doms_over_threshold'
 )
 
 
